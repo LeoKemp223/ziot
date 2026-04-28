@@ -368,7 +368,7 @@ curl "http://localhost:3000/api/v1/products?page=1&page_size=20"
 当前限制：
 
 - `keyword` 当前只匹配 `name`，不匹配 `product_key`。
-- 暂未实现权限校验，默认使用临时组织上下文。
+- 需要登录，并按当前组织和 `product:read` / `product:write` 权限访问。
 
 ### `POST /api/v1/products`
 
@@ -638,7 +638,209 @@ HTTP 状态码：`200`
 
 物模型校验失败返回 `400001`，`message` 中包含结构化校验错误。
 
-## 7. 已验证用例
+## 7. 设备 API
+
+### 设备对象
+
+```json
+{
+  "id": "dev_demo",
+  "org_id": "org_default",
+  "product_id": "prd_demo",
+  "product_name": "演示产品",
+  "product_key": "pk_demo",
+  "device_key": "dk_demo",
+  "name": "演示设备",
+  "status": "active",
+  "online_status": "unknown",
+  "firmware_version": null,
+  "tags": {},
+  "last_heartbeat_at": null,
+  "created_at": "2026-04-28T09:05:44.384Z",
+  "updated_at": "2026-04-28T09:05:44.384Z"
+}
+```
+
+创建和重置密钥的响应会额外返回 `device_secret`。该字段只显示一次，数据库只保存 `device_secret_hash`。
+
+### `GET /api/v1/devices`
+
+查询当前组织设备列表。需要 `device:read` 权限。
+
+查询参数：
+
+| 参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `product_id` | string | 否 | 只返回指定产品下的设备 |
+
+### `POST /api/v1/devices`
+
+创建设备。需要 `device:write` 权限。
+
+请求体：
+
+```json
+{
+  "product_id": "prd_demo",
+  "name": "温湿度传感器",
+  "device_key": "dk_sensor_001",
+  "firmware_version": "v1.0.0",
+  "tags": {
+    "location": "office"
+  }
+}
+```
+
+字段规则：
+
+| 字段 | 类型 | 必填 | 规则 |
+| --- | --- | --- | --- |
+| `product_id` | string | 是 | 必须属于当前组织且未删除 |
+| `name` | string | 是 | 1-128 位 |
+| `device_key` | string | 否 | 3-128 位，只允许字母、数字、下划线和中划线；不传时服务端生成 |
+| `firmware_version` | string | 否 | 固件版本标识 |
+| `tags` | object | 否 | 非对象会回退为空对象 |
+
+成功响应 HTTP 状态码：`201`。
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "request_id": "req_xxx",
+  "data": {
+    "id": "dev_xxx",
+    "product_id": "prd_demo",
+    "product_name": "演示产品",
+    "product_key": "pk_demo",
+    "device_key": "dk_sensor_001",
+    "device_secret": "ds_xxx",
+    "name": "温湿度传感器",
+    "status": "active",
+    "online_status": "unknown",
+    "firmware_version": "v1.0.0",
+    "tags": {
+      "location": "office"
+    },
+    "last_heartbeat_at": null,
+    "created_at": "2026-04-28T09:10:33.579Z",
+    "updated_at": "2026-04-28T09:10:33.579Z"
+  }
+}
+```
+
+常见错误：
+
+- `400001`: `name` 或 `device_key` 格式不合法。
+- `404001`: 产品不存在、不是当前组织产品或已删除。
+- `409001`: 同一产品下 `device_key` 已存在。
+
+### `GET /api/v1/devices/{device_id}`
+
+查询设备详情。需要 `device:read` 权限。
+
+### `PATCH /api/v1/devices/{device_id}`
+
+更新设备基础信息。需要 `device:write` 权限。
+
+请求体示例：
+
+```json
+{
+  "name": "更新后的设备名称",
+  "status": "disabled",
+  "firmware_version": "v1.0.1",
+  "tags": {
+    "location": "lab"
+  }
+}
+```
+
+`status` 当前支持 `active` / `disabled`。禁用后的设备会在后续接入认证中被拒绝。
+
+### `DELETE /api/v1/devices/{device_id}`
+
+软删除设备。需要 `device:write` 权限。
+
+成功响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "request_id": "req_xxx",
+  "data": {
+    "id": "dev_xxx",
+    "deleted_at": "2026-04-28T09:30:33.579Z"
+  }
+}
+```
+
+### `POST /api/v1/devices/{device_id}/secret`
+
+重置设备密钥。需要 `device:write` 权限。响应中的 `device_secret` 只显示一次。
+
+### `GET /api/v1/devices/{device_id}/shadow`
+
+查询设备影子。需要 `device:read` 权限。
+
+```json
+{
+  "device_id": "dev_demo",
+  "reported": {},
+  "desired": {},
+  "version": 1,
+  "updated_at": "2026-04-28T09:05:44.384Z"
+}
+```
+
+### `PATCH /api/v1/devices/{device_id}/shadow`
+
+更新设备影子的期望状态。需要 `device:write` 权限。
+
+请求体：
+
+```json
+{
+  "desired": {
+    "power": true,
+    "target_temperature": 24
+  }
+}
+```
+
+`desired` 必须是 JSON 对象。每次成功更新会将 `version` 递增 1。
+
+### `GET /api/v1/device-groups`
+
+查询设备分组列表。需要 `device:read` 权限。
+
+### `POST /api/v1/device-groups`
+
+创建设备分组，或添加设备到分组。需要 `device:write` 权限。
+
+创建设备分组：
+
+```json
+{
+  "product_id": "prd_demo",
+  "name": "办公室设备",
+  "description": "办公室传感器"
+}
+```
+
+添加设备到分组：
+
+```json
+{
+  "group_id": "dgp_demo",
+  "device_id": "dev_demo"
+}
+```
+
+分组在 MVP 中必须绑定一个产品。添加成员时，如果设备和分组不属于同一产品，接口返回 `409001`。
+
+## 8. 已验证用例
 
 2026-04-28 本地验证过以下用例：
 
@@ -661,7 +863,17 @@ HTTP 状态码：`200`
 | `GET /api/v1/products/{product_id}/thing-model` | 返回产品物模型 |
 | `PUT /api/v1/products/{product_id}/thing-model` | 返回 HTTP `200`，物模型成功更新 |
 | `GET /products` | 产品列表展示编辑、删除操作按钮 |
-| 数据库直查 | `products` 表可查到新建产品 |
+| `GET /api/v1/devices` | 返回当前组织设备列表 |
+| `POST /api/v1/devices` | 返回 HTTP `201`，只在创建响应中包含明文设备密钥 |
+| `GET /api/v1/devices/{device_id}` | 返回设备详情 |
+| `PATCH /api/v1/devices/{device_id}` | 可更新名称、状态、固件版本和标签 |
+| `DELETE /api/v1/devices/{device_id}` | 返回 HTTP `200`，设备成功软删除 |
+| `POST /api/v1/devices/{device_id}/secret` | 返回新密钥，旧密钥哈希被替换 |
+| `GET /api/v1/devices/{device_id}/shadow` | 返回 reported、desired、version 和 updated_at |
+| `PATCH /api/v1/devices/{device_id}/shadow` | 更新 desired 并递增 version |
+| `GET /api/v1/device-groups` | 返回设备分组列表 |
+| `POST /api/v1/device-groups` | 可创建同产品分组并添加设备成员 |
+| 数据库直查 | `products`、`devices`、`device_groups`、`device_shadows` 表可查到对应数据 |
 
 验证日志：
 
@@ -669,13 +881,12 @@ HTTP 状态码：`200`
 docs/dev-logs/2026-04-28-local-db-and-product-api.md
 ```
 
-## 8. 待补充接口
+## 9. 待补充接口
 
 以下接口在 PRD 中已规划，但当前尚未实现：
 
 | 接口 | 状态 |
 | --- | --- |
-| 设备 API | 未实现 |
 | 控制 API | 未实现 |
 | OTA API | 未实现 |
 | 日志 API | 未实现 |

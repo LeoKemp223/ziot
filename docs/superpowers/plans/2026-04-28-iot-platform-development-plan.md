@@ -475,26 +475,30 @@ Verification status on 2026-04-28:
 **Files:**
 
 - Create: `apps/web/features/devices/`
-- Create: `apps/web/app/(console)/devices/page.tsx`
-- Create: `apps/web/app/(console)/devices/[deviceId]/page.tsx`
+- Create: `apps/web/app/devices/page.tsx`
+- Create: `apps/web/app/devices/[deviceId]/page.tsx`
 - Create: `apps/web/app/api/v1/devices/route.ts`
 - Create: `apps/web/app/api/v1/devices/[deviceId]/route.ts`
+- Create: `apps/web/app/api/v1/devices/[deviceId]/secret/route.ts`
 - Create: `apps/web/app/api/v1/devices/[deviceId]/shadow/route.ts`
 - Create: `apps/web/app/api/v1/device-groups/route.ts`
-- Modify: `packages/domain/src/devices/shadow.ts`
+- Create: `apps/web/lib/devices/device-service.ts`
+- Create: `apps/web/lib/devices/device-service.test.ts`
+- Create: `apps/web/components/devices/device-list-panel.tsx`
+- Create: `apps/web/components/devices/device-detail-panel.tsx`
 
-- [ ] Implement device create, update, enable, disable, delete, list, and detail.
-- [ ] Generate `device_key` and one-time visible `device_secret`.
-- [ ] Store only `device_secret_hash`.
-- [ ] Implement reset device secret.
-- [ ] Implement same-product device groups and group membership.
-- [ ] Reject adding a device to a group that belongs to a different product.
-- [ ] Implement device shadow read and desired-state update.
-- [ ] Implement device list, create device, device detail, shadow tab, and group management.
-- [ ] Document batch import as outside MVP runtime scope; do not implement CSV/Excel parsing in MVP.
-- [ ] Add API tests for device secret one-time return, disabled device, duplicate device key, same-product group membership, cross-product group rejection, and shadow versioning.
-- [ ] Run: `pnpm test -- --run devices`.
-- [ ] Commit: `feat: add device management groups and shadow`.
+- [x] Implement device create, update, enable, disable, delete, list, and detail.
+- [x] Generate `device_key` and one-time visible `device_secret`.
+- [x] Store only `device_secret_hash`.
+- [x] Implement reset device secret.
+- [x] Implement same-product device groups and group membership.
+- [x] Reject adding a device to a group that belongs to a different product.
+- [x] Implement device shadow read and desired-state update.
+- [x] Implement device list, create device, device detail, shadow tab, and group management.
+- [x] Document batch import as outside MVP runtime scope; do not implement CSV/Excel parsing in MVP.
+- [x] Add API tests for device secret one-time return, disabled device, duplicate device key, same-product group membership, cross-product group rejection, and shadow versioning.
+- [x] Run: `pnpm test -- --run devices`.
+- [x] Commit: `feat: add device management groups and shadow`.
 
 Acceptance:
 
@@ -503,6 +507,20 @@ Acceptance:
 - Disabled devices cannot be used by ingress authentication.
 - Device groups contain devices from only one product.
 - Device shadow stores `reported`, `desired`, `version`, and `updated_at`.
+
+Verification status on 2026-04-28:
+
+- `POST /api/v1/devices` creates a device under the seed product and returns `device_secret` only in the creation response.
+- `GET /api/v1/devices` and `GET /api/v1/devices/{device_id}` return current-organization devices.
+- `PATCH /api/v1/devices/{device_id}` updates name, `active` / `disabled` status, firmware version, and tags.
+- `DELETE /api/v1/devices/{device_id}` soft-deletes a device.
+- `POST /api/v1/devices/{device_id}/secret` returns a new one-time secret and stores only the hash.
+- `GET /api/v1/devices/{device_id}/shadow` returns `reported`, `desired`, `version`, and `updated_at`.
+- `PATCH /api/v1/devices/{device_id}/shadow` validates object payloads and increments `version`.
+- `POST /api/v1/device-groups` creates same-product groups and rejects cross-product membership with `409001`.
+- `/devices` shows device create/list/update/delete controls and same-product group management.
+- `/devices/{device_id}` shows device detail, secret reset, and reported/desired shadow editing.
+- `pnpm test -- --run devices` and `pnpm --filter @ziot/web typecheck` pass.
 
 ### Task 4: MQTT Device Access
 
