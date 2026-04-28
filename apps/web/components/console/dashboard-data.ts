@@ -34,7 +34,8 @@ export const navItems: NavItem[] = [
   { label: "设备控制", href: "/controls", icon: "radio" },
   { label: "OTA 升级", href: "/ota", icon: "upload" },
   { label: "日志中心", href: "/logs", icon: "logs" },
-  { label: "用户与权限", href: "/users", icon: "users" },
+  { label: "用户管理", href: "/users", icon: "users" },
+  { label: "邀请码", href: "/invitations", icon: "users" },
   { label: "系统设置", href: "/settings", icon: "settings" }
 ];
 

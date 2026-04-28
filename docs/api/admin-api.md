@@ -113,7 +113,149 @@ curl http://localhost:3000/api/v1/health
 | `service` | string | 服务名 |
 | `timestamp` | string | 服务端当前时间，ISO 8601 |
 
-## 5. 产品 API
+## 5. 身份与邀请码 API
+
+### `POST /api/v1/auth/login`
+
+使用账号密码登录。成功后服务端设置 `ziot_access_token`、`ziot_refresh_token` 和 `ziot_current_org_id` HttpOnly Cookie。
+
+请求体：
+
+```json
+{
+  "account": "admin@example.com",
+  "password": "Admin123456"
+}
+```
+
+成功响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "request_id": "req_xxx",
+  "data": {
+    "id": "usr_admin",
+    "account": "admin@example.com",
+    "display_name": "平台管理员",
+    "current_org_id": "org_default",
+    "organizations": [
+      {
+        "id": "org_default",
+        "name": "默认组织",
+        "roles": [{ "id": "role_org_admin", "code": "org_admin", "name": "组织管理员" }]
+      }
+    ],
+    "permissions": ["user:read", "invite:write"]
+  }
+}
+```
+
+### `POST /api/v1/auth/register`
+
+使用邀请码注册并登录。邀请码只存储 hash，明文邀请码只在创建时返回一次。
+
+请求体：
+
+```json
+{
+  "account": "user@example.com",
+  "password": "Password123",
+  "display_name": "设备管理员",
+  "invitation_code": "inv_xxx"
+}
+```
+
+成功响应 HTTP 状态码：`201`，响应体同登录用户结构。
+
+### `POST /api/v1/auth/refresh`
+
+使用 refresh token Cookie 换发新 session，并撤销旧 refresh token。
+
+### `POST /api/v1/auth/logout`
+
+撤销当前 refresh token 并清空登录 Cookie。
+
+### `GET /api/v1/me`
+
+返回当前登录用户、当前组织、可切换组织和当前组织权限集合。
+
+### `PATCH /api/v1/me`
+
+切换当前组织。
+
+请求体：
+
+```json
+{
+  "current_org_id": "org_default"
+}
+```
+
+### `GET /api/v1/users`
+
+查询当前组织用户列表。需要 `user:read` 权限。
+
+### `GET /api/v1/roles`
+
+查询当前组织角色列表。
+
+### `GET /api/v1/invitations`
+
+查询当前组织邀请码列表。需要 `invite:read` 或 `invite:write` 权限。
+
+### `POST /api/v1/invitations`
+
+创建邀请码。需要 `invite:write` 权限。
+
+请求体：
+
+```json
+{
+  "role_id": "role_org_admin",
+  "max_uses": 1
+}
+```
+
+成功响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "request_id": "req_xxx",
+  "data": {
+    "id": "inv_xxx",
+    "role_id": "role_org_admin",
+    "role_name": "组织管理员",
+    "max_uses": 1,
+    "used_count": 0,
+    "status": "active",
+    "expires_at": "2026-05-05T10:13:38.810Z",
+    "created_at": "2026-04-28T10:13:38.814Z",
+    "code": "inv_plain_code_only_once"
+  }
+}
+```
+
+### `GET /api/v1/invitations/{invitation_id}`
+
+查询邀请码详情和使用记录。需要 `invite:read` 权限。
+
+### `PATCH /api/v1/invitations/{invitation_id}`
+
+禁用邀请码。需要 `invite:write` 权限。
+
+请求体：
+
+```json
+{
+  "status": "disabled"
+}
+```
+
+## 6. 产品 API
 
 ### 产品对象
 
@@ -450,13 +592,21 @@ HTTP 状态码：`200`
 }
 ```
 
-## 6. 已验证用例
+## 7. 已验证用例
 
 2026-04-28 本地验证过以下用例：
 
 | 用例 | 结果 |
 | --- | --- |
 | `GET /api/v1/health` | 返回 `code=0` |
+| `POST /api/v1/auth/login` | 返回 `code=0`，写入登录 Cookie |
+| `GET /api/v1/me` | 返回当前用户、当前组织和权限集合 |
+| `GET /api/v1/users` | 返回当前组织成员 |
+| `GET /api/v1/roles` | 返回当前组织角色 |
+| `POST /api/v1/invitations` | 返回 HTTP `201`，只在创建响应中包含明文邀请码 |
+| `GET /api/v1/invitations/{invitation_id}` | 返回邀请码详情和使用记录 |
+| `PATCH /api/v1/invitations/{invitation_id}` | 可禁用邀请码 |
+| `POST /api/v1/auth/register` | 有效邀请码可注册并登录 |
 | `GET /api/v1/products` | 返回 seed 产品和接口创建产品 |
 | `POST /api/v1/products` | 返回 HTTP `201`，产品成功写入 PostgreSQL |
 | `PATCH /api/v1/products/{product_id}` | 返回 HTTP `200`，产品名称成功更新 |
@@ -470,7 +620,7 @@ HTTP 状态码：`200`
 docs/dev-logs/2026-04-28-local-db-and-product-api.md
 ```
 
-## 7. 待补充接口
+## 8. 待补充接口
 
 以下接口在 PRD 中已规划，但当前尚未实现：
 
@@ -479,7 +629,6 @@ docs/dev-logs/2026-04-28-local-db-and-product-api.md
 | `GET /api/v1/products/{product_id}` | 未实现 |
 | `GET /api/v1/products/{product_id}/thing-model` | 未实现 |
 | `PUT /api/v1/products/{product_id}/thing-model` | 未实现 |
-| 账号与登录 API | 未实现 |
 | 设备 API | 未实现 |
 | 控制 API | 未实现 |
 | OTA API | 未实现 |

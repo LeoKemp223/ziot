@@ -208,6 +208,8 @@ export type UserWhereInput = {
   updated_at?: Prisma.DateTimeFilter<"User"> | Date | string
   user_org_roles?: Prisma.UserOrgRoleListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
+  invitation_usages?: Prisma.InvitationUsageListRelationFilter
+  refresh_tokens?: Prisma.RefreshTokenListRelationFilter
   device_commands?: Prisma.DeviceCommandListRelationFilter
   firmwares?: Prisma.FirmwareListRelationFilter
   ota_tasks?: Prisma.OtaTaskListRelationFilter
@@ -225,6 +227,8 @@ export type UserOrderByWithRelationInput = {
   updated_at?: Prisma.SortOrder
   user_org_roles?: Prisma.UserOrgRoleOrderByRelationAggregateInput
   invitations?: Prisma.InvitationOrderByRelationAggregateInput
+  invitation_usages?: Prisma.InvitationUsageOrderByRelationAggregateInput
+  refresh_tokens?: Prisma.RefreshTokenOrderByRelationAggregateInput
   device_commands?: Prisma.DeviceCommandOrderByRelationAggregateInput
   firmwares?: Prisma.FirmwareOrderByRelationAggregateInput
   ota_tasks?: Prisma.OtaTaskOrderByRelationAggregateInput
@@ -245,6 +249,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   updated_at?: Prisma.DateTimeFilter<"User"> | Date | string
   user_org_roles?: Prisma.UserOrgRoleListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
+  invitation_usages?: Prisma.InvitationUsageListRelationFilter
+  refresh_tokens?: Prisma.RefreshTokenListRelationFilter
   device_commands?: Prisma.DeviceCommandListRelationFilter
   firmwares?: Prisma.FirmwareListRelationFilter
   ota_tasks?: Prisma.OtaTaskListRelationFilter
@@ -290,6 +296,8 @@ export type UserCreateInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutUserInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   device_commands?: Prisma.DeviceCommandCreateNestedManyWithoutCreatorInput
   firmwares?: Prisma.FirmwareCreateNestedManyWithoutCreatorInput
   ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutCreatorInput
@@ -307,6 +315,8 @@ export type UserUncheckedCreateInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutUserInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   device_commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutCreatorInput
   firmwares?: Prisma.FirmwareUncheckedCreateNestedManyWithoutCreatorInput
   ota_tasks?: Prisma.OtaTaskUncheckedCreateNestedManyWithoutCreatorInput
@@ -324,6 +334,8 @@ export type UserUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutUserNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   device_commands?: Prisma.DeviceCommandUpdateManyWithoutCreatorNestedInput
   firmwares?: Prisma.FirmwareUpdateManyWithoutCreatorNestedInput
   ota_tasks?: Prisma.OtaTaskUpdateManyWithoutCreatorNestedInput
@@ -341,6 +353,8 @@ export type UserUncheckedUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutUserNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   device_commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutCreatorNestedInput
   firmwares?: Prisma.FirmwareUncheckedUpdateManyWithoutCreatorNestedInput
   ota_tasks?: Prisma.OtaTaskUncheckedUpdateManyWithoutCreatorNestedInput
@@ -450,6 +464,34 @@ export type UserUpdateOneRequiredWithoutInvitationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutInvitationsInput, Prisma.UserUpdateWithoutInvitationsInput>, Prisma.UserUncheckedUpdateWithoutInvitationsInput>
 }
 
+export type UserCreateNestedOneWithoutInvitation_usagesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutInvitation_usagesInput, Prisma.UserUncheckedCreateWithoutInvitation_usagesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutInvitation_usagesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutInvitation_usagesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutInvitation_usagesInput, Prisma.UserUncheckedCreateWithoutInvitation_usagesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutInvitation_usagesInput
+  upsert?: Prisma.UserUpsertWithoutInvitation_usagesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutInvitation_usagesInput, Prisma.UserUpdateWithoutInvitation_usagesInput>, Prisma.UserUncheckedUpdateWithoutInvitation_usagesInput>
+}
+
+export type UserCreateNestedOneWithoutRefresh_tokensInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRefresh_tokensInput, Prisma.UserUncheckedCreateWithoutRefresh_tokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRefresh_tokensInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRefresh_tokensNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRefresh_tokensInput, Prisma.UserUncheckedCreateWithoutRefresh_tokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRefresh_tokensInput
+  upsert?: Prisma.UserUpsertWithoutRefresh_tokensInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRefresh_tokensInput, Prisma.UserUpdateWithoutRefresh_tokensInput>, Prisma.UserUncheckedUpdateWithoutRefresh_tokensInput>
+}
+
 export type UserCreateNestedOneWithoutDevice_commandsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutDevice_commandsInput, Prisma.UserUncheckedCreateWithoutDevice_commandsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutDevice_commandsInput
@@ -516,6 +558,8 @@ export type UserCreateWithoutUser_org_rolesInput = {
   created_at?: Date | string
   updated_at?: Date | string
   invitations?: Prisma.InvitationCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   device_commands?: Prisma.DeviceCommandCreateNestedManyWithoutCreatorInput
   firmwares?: Prisma.FirmwareCreateNestedManyWithoutCreatorInput
   ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutCreatorInput
@@ -532,6 +576,8 @@ export type UserUncheckedCreateWithoutUser_org_rolesInput = {
   created_at?: Date | string
   updated_at?: Date | string
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   device_commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutCreatorInput
   firmwares?: Prisma.FirmwareUncheckedCreateNestedManyWithoutCreatorInput
   ota_tasks?: Prisma.OtaTaskUncheckedCreateNestedManyWithoutCreatorInput
@@ -564,6 +610,8 @@ export type UserUpdateWithoutUser_org_rolesInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   invitations?: Prisma.InvitationUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   device_commands?: Prisma.DeviceCommandUpdateManyWithoutCreatorNestedInput
   firmwares?: Prisma.FirmwareUpdateManyWithoutCreatorNestedInput
   ota_tasks?: Prisma.OtaTaskUpdateManyWithoutCreatorNestedInput
@@ -580,6 +628,8 @@ export type UserUncheckedUpdateWithoutUser_org_rolesInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   device_commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutCreatorNestedInput
   firmwares?: Prisma.FirmwareUncheckedUpdateManyWithoutCreatorNestedInput
   ota_tasks?: Prisma.OtaTaskUncheckedUpdateManyWithoutCreatorNestedInput
@@ -596,6 +646,8 @@ export type UserCreateWithoutInvitationsInput = {
   created_at?: Date | string
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutUserInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   device_commands?: Prisma.DeviceCommandCreateNestedManyWithoutCreatorInput
   firmwares?: Prisma.FirmwareCreateNestedManyWithoutCreatorInput
   ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutCreatorInput
@@ -612,6 +664,8 @@ export type UserUncheckedCreateWithoutInvitationsInput = {
   created_at?: Date | string
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutUserInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   device_commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutCreatorInput
   firmwares?: Prisma.FirmwareUncheckedCreateNestedManyWithoutCreatorInput
   ota_tasks?: Prisma.OtaTaskUncheckedCreateNestedManyWithoutCreatorInput
@@ -644,6 +698,8 @@ export type UserUpdateWithoutInvitationsInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutUserNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   device_commands?: Prisma.DeviceCommandUpdateManyWithoutCreatorNestedInput
   firmwares?: Prisma.FirmwareUpdateManyWithoutCreatorNestedInput
   ota_tasks?: Prisma.OtaTaskUpdateManyWithoutCreatorNestedInput
@@ -660,6 +716,184 @@ export type UserUncheckedUpdateWithoutInvitationsInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutUserNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  device_commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutCreatorNestedInput
+  firmwares?: Prisma.FirmwareUncheckedUpdateManyWithoutCreatorNestedInput
+  ota_tasks?: Prisma.OtaTaskUncheckedUpdateManyWithoutCreatorNestedInput
+  audit_logs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutInvitation_usagesInput = {
+  id: string
+  account: string
+  password_hash: string
+  display_name: string
+  status?: $Enums.ResourceStatus
+  last_login_at?: Date | string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutUserInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutCreatorInput
+  refresh_tokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  device_commands?: Prisma.DeviceCommandCreateNestedManyWithoutCreatorInput
+  firmwares?: Prisma.FirmwareCreateNestedManyWithoutCreatorInput
+  ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutCreatorInput
+  audit_logs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutInvitation_usagesInput = {
+  id: string
+  account: string
+  password_hash: string
+  display_name: string
+  status?: $Enums.ResourceStatus
+  last_login_at?: Date | string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutUserInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutCreatorInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  device_commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutCreatorInput
+  firmwares?: Prisma.FirmwareUncheckedCreateNestedManyWithoutCreatorInput
+  ota_tasks?: Prisma.OtaTaskUncheckedCreateNestedManyWithoutCreatorInput
+  audit_logs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutInvitation_usagesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutInvitation_usagesInput, Prisma.UserUncheckedCreateWithoutInvitation_usagesInput>
+}
+
+export type UserUpsertWithoutInvitation_usagesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutInvitation_usagesInput, Prisma.UserUncheckedUpdateWithoutInvitation_usagesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutInvitation_usagesInput, Prisma.UserUncheckedCreateWithoutInvitation_usagesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutInvitation_usagesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutInvitation_usagesInput, Prisma.UserUncheckedUpdateWithoutInvitation_usagesInput>
+}
+
+export type UserUpdateWithoutInvitation_usagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  account?: Prisma.StringFieldUpdateOperationsInput | string
+  password_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  display_name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
+  last_login_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutUserNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutCreatorNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  device_commands?: Prisma.DeviceCommandUpdateManyWithoutCreatorNestedInput
+  firmwares?: Prisma.FirmwareUpdateManyWithoutCreatorNestedInput
+  ota_tasks?: Prisma.OtaTaskUpdateManyWithoutCreatorNestedInput
+  audit_logs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutInvitation_usagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  account?: Prisma.StringFieldUpdateOperationsInput | string
+  password_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  display_name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
+  last_login_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutUserNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutCreatorNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  device_commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutCreatorNestedInput
+  firmwares?: Prisma.FirmwareUncheckedUpdateManyWithoutCreatorNestedInput
+  ota_tasks?: Prisma.OtaTaskUncheckedUpdateManyWithoutCreatorNestedInput
+  audit_logs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutRefresh_tokensInput = {
+  id: string
+  account: string
+  password_hash: string
+  display_name: string
+  status?: $Enums.ResourceStatus
+  last_login_at?: Date | string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutUserInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutUserInput
+  device_commands?: Prisma.DeviceCommandCreateNestedManyWithoutCreatorInput
+  firmwares?: Prisma.FirmwareCreateNestedManyWithoutCreatorInput
+  ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutCreatorInput
+  audit_logs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutRefresh_tokensInput = {
+  id: string
+  account: string
+  password_hash: string
+  display_name: string
+  status?: $Enums.ResourceStatus
+  last_login_at?: Date | string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutUserInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutUserInput
+  device_commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutCreatorInput
+  firmwares?: Prisma.FirmwareUncheckedCreateNestedManyWithoutCreatorInput
+  ota_tasks?: Prisma.OtaTaskUncheckedCreateNestedManyWithoutCreatorInput
+  audit_logs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutRefresh_tokensInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRefresh_tokensInput, Prisma.UserUncheckedCreateWithoutRefresh_tokensInput>
+}
+
+export type UserUpsertWithoutRefresh_tokensInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRefresh_tokensInput, Prisma.UserUncheckedUpdateWithoutRefresh_tokensInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRefresh_tokensInput, Prisma.UserUncheckedCreateWithoutRefresh_tokensInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRefresh_tokensInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRefresh_tokensInput, Prisma.UserUncheckedUpdateWithoutRefresh_tokensInput>
+}
+
+export type UserUpdateWithoutRefresh_tokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  account?: Prisma.StringFieldUpdateOperationsInput | string
+  password_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  display_name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
+  last_login_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutUserNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutUserNestedInput
+  device_commands?: Prisma.DeviceCommandUpdateManyWithoutCreatorNestedInput
+  firmwares?: Prisma.FirmwareUpdateManyWithoutCreatorNestedInput
+  ota_tasks?: Prisma.OtaTaskUpdateManyWithoutCreatorNestedInput
+  audit_logs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRefresh_tokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  account?: Prisma.StringFieldUpdateOperationsInput | string
+  password_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  display_name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
+  last_login_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutUserNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutUserNestedInput
   device_commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutCreatorNestedInput
   firmwares?: Prisma.FirmwareUncheckedUpdateManyWithoutCreatorNestedInput
   ota_tasks?: Prisma.OtaTaskUncheckedUpdateManyWithoutCreatorNestedInput
@@ -677,6 +911,8 @@ export type UserCreateWithoutDevice_commandsInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutUserInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   firmwares?: Prisma.FirmwareCreateNestedManyWithoutCreatorInput
   ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutCreatorInput
   audit_logs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
@@ -693,6 +929,8 @@ export type UserUncheckedCreateWithoutDevice_commandsInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutUserInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   firmwares?: Prisma.FirmwareUncheckedCreateNestedManyWithoutCreatorInput
   ota_tasks?: Prisma.OtaTaskUncheckedCreateNestedManyWithoutCreatorInput
   audit_logs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
@@ -725,6 +963,8 @@ export type UserUpdateWithoutDevice_commandsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutUserNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   firmwares?: Prisma.FirmwareUpdateManyWithoutCreatorNestedInput
   ota_tasks?: Prisma.OtaTaskUpdateManyWithoutCreatorNestedInput
   audit_logs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
@@ -741,6 +981,8 @@ export type UserUncheckedUpdateWithoutDevice_commandsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutUserNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   firmwares?: Prisma.FirmwareUncheckedUpdateManyWithoutCreatorNestedInput
   ota_tasks?: Prisma.OtaTaskUncheckedUpdateManyWithoutCreatorNestedInput
   audit_logs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
@@ -757,6 +999,8 @@ export type UserCreateWithoutFirmwaresInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutUserInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   device_commands?: Prisma.DeviceCommandCreateNestedManyWithoutCreatorInput
   ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutCreatorInput
   audit_logs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
@@ -773,6 +1017,8 @@ export type UserUncheckedCreateWithoutFirmwaresInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutUserInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   device_commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutCreatorInput
   ota_tasks?: Prisma.OtaTaskUncheckedCreateNestedManyWithoutCreatorInput
   audit_logs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
@@ -805,6 +1051,8 @@ export type UserUpdateWithoutFirmwaresInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutUserNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   device_commands?: Prisma.DeviceCommandUpdateManyWithoutCreatorNestedInput
   ota_tasks?: Prisma.OtaTaskUpdateManyWithoutCreatorNestedInput
   audit_logs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
@@ -821,6 +1069,8 @@ export type UserUncheckedUpdateWithoutFirmwaresInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutUserNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   device_commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutCreatorNestedInput
   ota_tasks?: Prisma.OtaTaskUncheckedUpdateManyWithoutCreatorNestedInput
   audit_logs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
@@ -837,6 +1087,8 @@ export type UserCreateWithoutOta_tasksInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutUserInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   device_commands?: Prisma.DeviceCommandCreateNestedManyWithoutCreatorInput
   firmwares?: Prisma.FirmwareCreateNestedManyWithoutCreatorInput
   audit_logs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
@@ -853,6 +1105,8 @@ export type UserUncheckedCreateWithoutOta_tasksInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutUserInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   device_commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutCreatorInput
   firmwares?: Prisma.FirmwareUncheckedCreateNestedManyWithoutCreatorInput
   audit_logs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
@@ -885,6 +1139,8 @@ export type UserUpdateWithoutOta_tasksInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutUserNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   device_commands?: Prisma.DeviceCommandUpdateManyWithoutCreatorNestedInput
   firmwares?: Prisma.FirmwareUpdateManyWithoutCreatorNestedInput
   audit_logs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
@@ -901,6 +1157,8 @@ export type UserUncheckedUpdateWithoutOta_tasksInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutUserNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   device_commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutCreatorNestedInput
   firmwares?: Prisma.FirmwareUncheckedUpdateManyWithoutCreatorNestedInput
   audit_logs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
@@ -917,6 +1175,8 @@ export type UserCreateWithoutAudit_logsInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutUserInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   device_commands?: Prisma.DeviceCommandCreateNestedManyWithoutCreatorInput
   firmwares?: Prisma.FirmwareCreateNestedManyWithoutCreatorInput
   ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutCreatorInput
@@ -933,6 +1193,8 @@ export type UserUncheckedCreateWithoutAudit_logsInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutUserInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutCreatorInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutUserInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   device_commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutCreatorInput
   firmwares?: Prisma.FirmwareUncheckedCreateNestedManyWithoutCreatorInput
   ota_tasks?: Prisma.OtaTaskUncheckedCreateNestedManyWithoutCreatorInput
@@ -965,6 +1227,8 @@ export type UserUpdateWithoutAudit_logsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutUserNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   device_commands?: Prisma.DeviceCommandUpdateManyWithoutCreatorNestedInput
   firmwares?: Prisma.FirmwareUpdateManyWithoutCreatorNestedInput
   ota_tasks?: Prisma.OtaTaskUpdateManyWithoutCreatorNestedInput
@@ -981,6 +1245,8 @@ export type UserUncheckedUpdateWithoutAudit_logsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutUserNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutCreatorNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutUserNestedInput
+  refresh_tokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   device_commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutCreatorNestedInput
   firmwares?: Prisma.FirmwareUncheckedUpdateManyWithoutCreatorNestedInput
   ota_tasks?: Prisma.OtaTaskUncheckedUpdateManyWithoutCreatorNestedInput
@@ -994,6 +1260,8 @@ export type UserUncheckedUpdateWithoutAudit_logsInput = {
 export type UserCountOutputType = {
   user_org_roles: number
   invitations: number
+  invitation_usages: number
+  refresh_tokens: number
   device_commands: number
   firmwares: number
   ota_tasks: number
@@ -1003,6 +1271,8 @@ export type UserCountOutputType = {
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user_org_roles?: boolean | UserCountOutputTypeCountUser_org_rolesArgs
   invitations?: boolean | UserCountOutputTypeCountInvitationsArgs
+  invitation_usages?: boolean | UserCountOutputTypeCountInvitation_usagesArgs
+  refresh_tokens?: boolean | UserCountOutputTypeCountRefresh_tokensArgs
   device_commands?: boolean | UserCountOutputTypeCountDevice_commandsArgs
   firmwares?: boolean | UserCountOutputTypeCountFirmwaresArgs
   ota_tasks?: boolean | UserCountOutputTypeCountOta_tasksArgs
@@ -1031,6 +1301,20 @@ export type UserCountOutputTypeCountUser_org_rolesArgs<ExtArgs extends runtime.T
  */
 export type UserCountOutputTypeCountInvitationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.InvitationWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountInvitation_usagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.InvitationUsageWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRefresh_tokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RefreshTokenWhereInput
 }
 
 /**
@@ -1073,6 +1357,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   updated_at?: boolean
   user_org_roles?: boolean | Prisma.User$user_org_rolesArgs<ExtArgs>
   invitations?: boolean | Prisma.User$invitationsArgs<ExtArgs>
+  invitation_usages?: boolean | Prisma.User$invitation_usagesArgs<ExtArgs>
+  refresh_tokens?: boolean | Prisma.User$refresh_tokensArgs<ExtArgs>
   device_commands?: boolean | Prisma.User$device_commandsArgs<ExtArgs>
   firmwares?: boolean | Prisma.User$firmwaresArgs<ExtArgs>
   ota_tasks?: boolean | Prisma.User$ota_tasksArgs<ExtArgs>
@@ -1117,6 +1403,8 @@ export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = run
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user_org_roles?: boolean | Prisma.User$user_org_rolesArgs<ExtArgs>
   invitations?: boolean | Prisma.User$invitationsArgs<ExtArgs>
+  invitation_usages?: boolean | Prisma.User$invitation_usagesArgs<ExtArgs>
+  refresh_tokens?: boolean | Prisma.User$refresh_tokensArgs<ExtArgs>
   device_commands?: boolean | Prisma.User$device_commandsArgs<ExtArgs>
   firmwares?: boolean | Prisma.User$firmwaresArgs<ExtArgs>
   ota_tasks?: boolean | Prisma.User$ota_tasksArgs<ExtArgs>
@@ -1131,6 +1419,8 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   objects: {
     user_org_roles: Prisma.$UserOrgRolePayload<ExtArgs>[]
     invitations: Prisma.$InvitationPayload<ExtArgs>[]
+    invitation_usages: Prisma.$InvitationUsagePayload<ExtArgs>[]
+    refresh_tokens: Prisma.$RefreshTokenPayload<ExtArgs>[]
     device_commands: Prisma.$DeviceCommandPayload<ExtArgs>[]
     firmwares: Prisma.$FirmwarePayload<ExtArgs>[]
     ota_tasks: Prisma.$OtaTaskPayload<ExtArgs>[]
@@ -1541,6 +1831,8 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   readonly [Symbol.toStringTag]: "PrismaPromise"
   user_org_roles<T extends Prisma.User$user_org_rolesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$user_org_rolesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserOrgRolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   invitations<T extends Prisma.User$invitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$invitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  invitation_usages<T extends Prisma.User$invitation_usagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$invitation_usagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationUsagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  refresh_tokens<T extends Prisma.User$refresh_tokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$refresh_tokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   device_commands<T extends Prisma.User$device_commandsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$device_commandsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeviceCommandPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   firmwares<T extends Prisma.User$firmwaresArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$firmwaresArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FirmwarePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   ota_tasks<T extends Prisma.User$ota_tasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$ota_tasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OtaTaskPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -2020,6 +2312,54 @@ export type User$invitationsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.InvitationScalarFieldEnum | Prisma.InvitationScalarFieldEnum[]
+}
+
+/**
+ * User.invitation_usages
+ */
+export type User$invitation_usagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the InvitationUsage
+   */
+  select?: Prisma.InvitationUsageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the InvitationUsage
+   */
+  omit?: Prisma.InvitationUsageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.InvitationUsageInclude<ExtArgs> | null
+  where?: Prisma.InvitationUsageWhereInput
+  orderBy?: Prisma.InvitationUsageOrderByWithRelationInput | Prisma.InvitationUsageOrderByWithRelationInput[]
+  cursor?: Prisma.InvitationUsageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.InvitationUsageScalarFieldEnum | Prisma.InvitationUsageScalarFieldEnum[]
+}
+
+/**
+ * User.refresh_tokens
+ */
+export type User$refresh_tokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RefreshToken
+   */
+  select?: Prisma.RefreshTokenSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RefreshToken
+   */
+  omit?: Prisma.RefreshTokenOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RefreshTokenInclude<ExtArgs> | null
+  where?: Prisma.RefreshTokenWhereInput
+  orderBy?: Prisma.RefreshTokenOrderByWithRelationInput | Prisma.RefreshTokenOrderByWithRelationInput[]
+  cursor?: Prisma.RefreshTokenWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RefreshTokenScalarFieldEnum | Prisma.RefreshTokenScalarFieldEnum[]
 }
 
 /**

@@ -76,6 +76,7 @@ model Organization {
   roles          Role[]
   user_org_roles UserOrgRole[]
   invitations    Invitation[]
+  invitation_usages InvitationUsage[]
   products       Product[]
   devices        Device[]
   device_groups  DeviceGroup[]
@@ -102,6 +103,8 @@ model User {
 
   user_org_roles UserOrgRole[]
   invitations    Invitation[] @relation("InvitationCreator")
+  invitation_usages InvitationUsage[]
+  refresh_tokens RefreshToken[]
   device_commands DeviceCommand[]
   firmwares      Firmware[]
   ota_tasks      OtaTask[]
@@ -123,6 +126,7 @@ model Role {
   role_permissions  RolePermission[]
   user_org_roles    UserOrgRole[]
   invitations       Invitation[]
+  invitation_usages InvitationUsage[]
 
   @@unique([org_id, code])
   @@map("roles")
@@ -186,9 +190,43 @@ model Invitation {
   organization Organization @relation(fields: [org_id], references: [id])
   role         Role         @relation(fields: [role_id], references: [id])
   creator      User         @relation("InvitationCreator", fields: [created_by], references: [id])
+  usages       InvitationUsage[]
 
   @@index([org_id, status, expires_at])
   @@map("invitations")
+}
+
+model InvitationUsage {
+  id            String   @id @db.VarChar(64)
+  invitation_id String   @db.VarChar(64)
+  user_id       String   @db.VarChar(64)
+  org_id        String   @db.VarChar(64)
+  role_id       String   @db.VarChar(64)
+  used_at       DateTime @default(now()) @db.Timestamptz
+
+  invitation  Invitation  @relation(fields: [invitation_id], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  role        Role        @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@index([invitation_id, used_at])
+  @@index([user_id, used_at])
+  @@map("invitation_usages")
+}
+
+model RefreshToken {
+  id         String    @id @db.VarChar(64)
+  user_id    String    @db.VarChar(64)
+  token_hash String    @unique @db.VarChar(128)
+  expires_at DateTime  @db.Timestamptz
+  revoked_at DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, revoked_at])
+  @@index([expires_at])
+  @@map("refresh_tokens")
 }
 
 model Product {

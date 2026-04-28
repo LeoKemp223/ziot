@@ -16,7 +16,8 @@ describe("console dashboard data", () => {
       "设备控制",
       "OTA 升级",
       "日志中心",
-      "用户与权限",
+      "用户管理",
+      "邀请码",
       "系统设置"
     ]);
     expect(navItems.filter((item) => item.active)).toHaveLength(1);

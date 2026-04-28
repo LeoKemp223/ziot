@@ -185,6 +185,7 @@ export type OrganizationWhereInput = {
   roles?: Prisma.RoleListRelationFilter
   user_org_roles?: Prisma.UserOrgRoleListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
+  invitation_usages?: Prisma.InvitationUsageListRelationFilter
   products?: Prisma.ProductListRelationFilter
   devices?: Prisma.DeviceListRelationFilter
   device_groups?: Prisma.DeviceGroupListRelationFilter
@@ -206,6 +207,7 @@ export type OrganizationOrderByWithRelationInput = {
   roles?: Prisma.RoleOrderByRelationAggregateInput
   user_org_roles?: Prisma.UserOrgRoleOrderByRelationAggregateInput
   invitations?: Prisma.InvitationOrderByRelationAggregateInput
+  invitation_usages?: Prisma.InvitationUsageOrderByRelationAggregateInput
   products?: Prisma.ProductOrderByRelationAggregateInput
   devices?: Prisma.DeviceOrderByRelationAggregateInput
   device_groups?: Prisma.DeviceGroupOrderByRelationAggregateInput
@@ -230,6 +232,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
   roles?: Prisma.RoleListRelationFilter
   user_org_roles?: Prisma.UserOrgRoleListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
+  invitation_usages?: Prisma.InvitationUsageListRelationFilter
   products?: Prisma.ProductListRelationFilter
   devices?: Prisma.DeviceListRelationFilter
   device_groups?: Prisma.DeviceGroupListRelationFilter
@@ -273,6 +276,7 @@ export type OrganizationCreateInput = {
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
@@ -294,6 +298,7 @@ export type OrganizationUncheckedCreateInput = {
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
@@ -315,6 +320,7 @@ export type OrganizationUpdateInput = {
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
@@ -336,6 +342,7 @@ export type OrganizationUncheckedUpdateInput = {
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -460,6 +467,20 @@ export type OrganizationUpdateOneRequiredWithoutInvitationsNestedInput = {
   upsert?: Prisma.OrganizationUpsertWithoutInvitationsInput
   connect?: Prisma.OrganizationWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutInvitationsInput, Prisma.OrganizationUpdateWithoutInvitationsInput>, Prisma.OrganizationUncheckedUpdateWithoutInvitationsInput>
+}
+
+export type OrganizationCreateNestedOneWithoutInvitation_usagesInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutInvitation_usagesInput, Prisma.OrganizationUncheckedCreateWithoutInvitation_usagesInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutInvitation_usagesInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+}
+
+export type OrganizationUpdateOneRequiredWithoutInvitation_usagesNestedInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutInvitation_usagesInput, Prisma.OrganizationUncheckedCreateWithoutInvitation_usagesInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutInvitation_usagesInput
+  upsert?: Prisma.OrganizationUpsertWithoutInvitation_usagesInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutInvitation_usagesInput, Prisma.OrganizationUpdateWithoutInvitation_usagesInput>, Prisma.OrganizationUncheckedUpdateWithoutInvitation_usagesInput>
 }
 
 export type OrganizationCreateNestedOneWithoutProductsInput = {
@@ -610,6 +631,7 @@ export type OrganizationCreateWithoutRolesInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
@@ -630,6 +652,7 @@ export type OrganizationUncheckedCreateWithoutRolesInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
@@ -666,6 +689,7 @@ export type OrganizationUpdateWithoutRolesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
@@ -686,6 +710,7 @@ export type OrganizationUncheckedUpdateWithoutRolesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -706,6 +731,7 @@ export type OrganizationCreateWithoutUser_org_rolesInput = {
   updated_at?: Date | string
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
@@ -726,6 +752,7 @@ export type OrganizationUncheckedCreateWithoutUser_org_rolesInput = {
   updated_at?: Date | string
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
@@ -762,6 +789,7 @@ export type OrganizationUpdateWithoutUser_org_rolesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
@@ -782,6 +810,7 @@ export type OrganizationUncheckedUpdateWithoutUser_org_rolesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -802,6 +831,7 @@ export type OrganizationCreateWithoutInvitationsInput = {
   updated_at?: Date | string
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
@@ -822,6 +852,7 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
   updated_at?: Date | string
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
@@ -858,6 +889,7 @@ export type OrganizationUpdateWithoutInvitationsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
@@ -878,6 +910,107 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
+  products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
+  devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
+  device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
+  device_shadows?: Prisma.DeviceShadowUncheckedUpdateManyWithoutOrganizationNestedInput
+  device_commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutOrganizationNestedInput
+  firmwares?: Prisma.FirmwareUncheckedUpdateManyWithoutOrganizationNestedInput
+  ota_tasks?: Prisma.OtaTaskUncheckedUpdateManyWithoutOrganizationNestedInput
+  ota_records?: Prisma.OtaRecordUncheckedUpdateManyWithoutOrganizationNestedInput
+  device_logs?: Prisma.DeviceLogUncheckedUpdateManyWithoutOrganizationNestedInput
+  audit_logs?: Prisma.AuditLogUncheckedUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationCreateWithoutInvitation_usagesInput = {
+  id: string
+  name: string
+  status?: $Enums.ResourceStatus
+  created_at?: Date | string
+  updated_at?: Date | string
+  roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
+  user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
+  devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
+  device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
+  device_shadows?: Prisma.DeviceShadowCreateNestedManyWithoutOrganizationInput
+  device_commands?: Prisma.DeviceCommandCreateNestedManyWithoutOrganizationInput
+  firmwares?: Prisma.FirmwareCreateNestedManyWithoutOrganizationInput
+  ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutOrganizationInput
+  ota_records?: Prisma.OtaRecordCreateNestedManyWithoutOrganizationInput
+  device_logs?: Prisma.DeviceLogCreateNestedManyWithoutOrganizationInput
+  audit_logs?: Prisma.AuditLogCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationUncheckedCreateWithoutInvitation_usagesInput = {
+  id: string
+  name: string
+  status?: $Enums.ResourceStatus
+  created_at?: Date | string
+  updated_at?: Date | string
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
+  user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
+  devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
+  device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
+  device_shadows?: Prisma.DeviceShadowUncheckedCreateNestedManyWithoutOrganizationInput
+  device_commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutOrganizationInput
+  firmwares?: Prisma.FirmwareUncheckedCreateNestedManyWithoutOrganizationInput
+  ota_tasks?: Prisma.OtaTaskUncheckedCreateNestedManyWithoutOrganizationInput
+  ota_records?: Prisma.OtaRecordUncheckedCreateNestedManyWithoutOrganizationInput
+  device_logs?: Prisma.DeviceLogUncheckedCreateNestedManyWithoutOrganizationInput
+  audit_logs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationCreateOrConnectWithoutInvitation_usagesInput = {
+  where: Prisma.OrganizationWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutInvitation_usagesInput, Prisma.OrganizationUncheckedCreateWithoutInvitation_usagesInput>
+}
+
+export type OrganizationUpsertWithoutInvitation_usagesInput = {
+  update: Prisma.XOR<Prisma.OrganizationUpdateWithoutInvitation_usagesInput, Prisma.OrganizationUncheckedUpdateWithoutInvitation_usagesInput>
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutInvitation_usagesInput, Prisma.OrganizationUncheckedCreateWithoutInvitation_usagesInput>
+  where?: Prisma.OrganizationWhereInput
+}
+
+export type OrganizationUpdateToOneWithWhereWithoutInvitation_usagesInput = {
+  where?: Prisma.OrganizationWhereInput
+  data: Prisma.XOR<Prisma.OrganizationUpdateWithoutInvitation_usagesInput, Prisma.OrganizationUncheckedUpdateWithoutInvitation_usagesInput>
+}
+
+export type OrganizationUpdateWithoutInvitation_usagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
+  user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
+  devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
+  device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
+  device_shadows?: Prisma.DeviceShadowUpdateManyWithoutOrganizationNestedInput
+  device_commands?: Prisma.DeviceCommandUpdateManyWithoutOrganizationNestedInput
+  firmwares?: Prisma.FirmwareUpdateManyWithoutOrganizationNestedInput
+  ota_tasks?: Prisma.OtaTaskUpdateManyWithoutOrganizationNestedInput
+  ota_records?: Prisma.OtaRecordUpdateManyWithoutOrganizationNestedInput
+  device_logs?: Prisma.DeviceLogUpdateManyWithoutOrganizationNestedInput
+  audit_logs?: Prisma.AuditLogUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationUncheckedUpdateWithoutInvitation_usagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
+  user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -899,6 +1032,7 @@ export type OrganizationCreateWithoutProductsInput = {
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
   device_shadows?: Prisma.DeviceShadowCreateNestedManyWithoutOrganizationInput
@@ -919,6 +1053,7 @@ export type OrganizationUncheckedCreateWithoutProductsInput = {
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
   device_shadows?: Prisma.DeviceShadowUncheckedCreateNestedManyWithoutOrganizationInput
@@ -955,6 +1090,7 @@ export type OrganizationUpdateWithoutProductsInput = {
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
   device_shadows?: Prisma.DeviceShadowUpdateManyWithoutOrganizationNestedInput
@@ -975,6 +1111,7 @@ export type OrganizationUncheckedUpdateWithoutProductsInput = {
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
   device_shadows?: Prisma.DeviceShadowUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -995,6 +1132,7 @@ export type OrganizationCreateWithoutDevicesInput = {
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
   device_shadows?: Prisma.DeviceShadowCreateNestedManyWithoutOrganizationInput
@@ -1015,6 +1153,7 @@ export type OrganizationUncheckedCreateWithoutDevicesInput = {
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
   device_shadows?: Prisma.DeviceShadowUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1051,6 +1190,7 @@ export type OrganizationUpdateWithoutDevicesInput = {
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
   device_shadows?: Prisma.DeviceShadowUpdateManyWithoutOrganizationNestedInput
@@ -1071,6 +1211,7 @@ export type OrganizationUncheckedUpdateWithoutDevicesInput = {
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
   device_shadows?: Prisma.DeviceShadowUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1091,6 +1232,7 @@ export type OrganizationCreateWithoutDevice_groupsInput = {
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_shadows?: Prisma.DeviceShadowCreateNestedManyWithoutOrganizationInput
@@ -1111,6 +1253,7 @@ export type OrganizationUncheckedCreateWithoutDevice_groupsInput = {
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_shadows?: Prisma.DeviceShadowUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1147,6 +1290,7 @@ export type OrganizationUpdateWithoutDevice_groupsInput = {
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_shadows?: Prisma.DeviceShadowUpdateManyWithoutOrganizationNestedInput
@@ -1167,6 +1311,7 @@ export type OrganizationUncheckedUpdateWithoutDevice_groupsInput = {
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_shadows?: Prisma.DeviceShadowUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1187,6 +1332,7 @@ export type OrganizationCreateWithoutDevice_shadowsInput = {
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
@@ -1207,6 +1353,7 @@ export type OrganizationUncheckedCreateWithoutDevice_shadowsInput = {
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1243,6 +1390,7 @@ export type OrganizationUpdateWithoutDevice_shadowsInput = {
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
@@ -1263,6 +1411,7 @@ export type OrganizationUncheckedUpdateWithoutDevice_shadowsInput = {
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1283,6 +1432,7 @@ export type OrganizationCreateWithoutDevice_commandsInput = {
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
@@ -1303,6 +1453,7 @@ export type OrganizationUncheckedCreateWithoutDevice_commandsInput = {
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1339,6 +1490,7 @@ export type OrganizationUpdateWithoutDevice_commandsInput = {
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
@@ -1359,6 +1511,7 @@ export type OrganizationUncheckedUpdateWithoutDevice_commandsInput = {
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1379,6 +1532,7 @@ export type OrganizationCreateWithoutFirmwaresInput = {
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
@@ -1399,6 +1553,7 @@ export type OrganizationUncheckedCreateWithoutFirmwaresInput = {
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1435,6 +1590,7 @@ export type OrganizationUpdateWithoutFirmwaresInput = {
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
@@ -1455,6 +1611,7 @@ export type OrganizationUncheckedUpdateWithoutFirmwaresInput = {
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1475,6 +1632,7 @@ export type OrganizationCreateWithoutOta_tasksInput = {
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
@@ -1495,6 +1653,7 @@ export type OrganizationUncheckedCreateWithoutOta_tasksInput = {
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1531,6 +1690,7 @@ export type OrganizationUpdateWithoutOta_tasksInput = {
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
@@ -1551,6 +1711,7 @@ export type OrganizationUncheckedUpdateWithoutOta_tasksInput = {
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1571,6 +1732,7 @@ export type OrganizationCreateWithoutOta_recordsInput = {
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
@@ -1591,6 +1753,7 @@ export type OrganizationUncheckedCreateWithoutOta_recordsInput = {
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1627,6 +1790,7 @@ export type OrganizationUpdateWithoutOta_recordsInput = {
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
@@ -1647,6 +1811,7 @@ export type OrganizationUncheckedUpdateWithoutOta_recordsInput = {
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1667,6 +1832,7 @@ export type OrganizationCreateWithoutDevice_logsInput = {
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
@@ -1687,6 +1853,7 @@ export type OrganizationUncheckedCreateWithoutDevice_logsInput = {
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1723,6 +1890,7 @@ export type OrganizationUpdateWithoutDevice_logsInput = {
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
@@ -1743,6 +1911,7 @@ export type OrganizationUncheckedUpdateWithoutDevice_logsInput = {
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1763,6 +1932,7 @@ export type OrganizationCreateWithoutAudit_logsInput = {
   roles?: Prisma.RoleCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutOrganizationInput
@@ -1783,6 +1953,7 @@ export type OrganizationUncheckedCreateWithoutAudit_logsInput = {
   roles?: Prisma.RoleUncheckedCreateNestedManyWithoutOrganizationInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutOrganizationInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutOrganizationInput
   devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutOrganizationInput
   device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1819,6 +1990,7 @@ export type OrganizationUpdateWithoutAudit_logsInput = {
   roles?: Prisma.RoleUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutOrganizationNestedInput
@@ -1839,6 +2011,7 @@ export type OrganizationUncheckedUpdateWithoutAudit_logsInput = {
   roles?: Prisma.RoleUncheckedUpdateManyWithoutOrganizationNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutOrganizationNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutOrganizationNestedInput
   devices?: Prisma.DeviceUncheckedUpdateManyWithoutOrganizationNestedInput
   device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1859,6 +2032,7 @@ export type OrganizationCountOutputType = {
   roles: number
   user_org_roles: number
   invitations: number
+  invitation_usages: number
   products: number
   devices: number
   device_groups: number
@@ -1875,6 +2049,7 @@ export type OrganizationCountOutputTypeSelect<ExtArgs extends runtime.Types.Exte
   roles?: boolean | OrganizationCountOutputTypeCountRolesArgs
   user_org_roles?: boolean | OrganizationCountOutputTypeCountUser_org_rolesArgs
   invitations?: boolean | OrganizationCountOutputTypeCountInvitationsArgs
+  invitation_usages?: boolean | OrganizationCountOutputTypeCountInvitation_usagesArgs
   products?: boolean | OrganizationCountOutputTypeCountProductsArgs
   devices?: boolean | OrganizationCountOutputTypeCountDevicesArgs
   device_groups?: boolean | OrganizationCountOutputTypeCountDevice_groupsArgs
@@ -1916,6 +2091,13 @@ export type OrganizationCountOutputTypeCountUser_org_rolesArgs<ExtArgs extends r
  */
 export type OrganizationCountOutputTypeCountInvitationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.InvitationWhereInput
+}
+
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountInvitation_usagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.InvitationUsageWhereInput
 }
 
 /**
@@ -1998,6 +2180,7 @@ export type OrganizationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   roles?: boolean | Prisma.Organization$rolesArgs<ExtArgs>
   user_org_roles?: boolean | Prisma.Organization$user_org_rolesArgs<ExtArgs>
   invitations?: boolean | Prisma.Organization$invitationsArgs<ExtArgs>
+  invitation_usages?: boolean | Prisma.Organization$invitation_usagesArgs<ExtArgs>
   products?: boolean | Prisma.Organization$productsArgs<ExtArgs>
   devices?: boolean | Prisma.Organization$devicesArgs<ExtArgs>
   device_groups?: boolean | Prisma.Organization$device_groupsArgs<ExtArgs>
@@ -2040,6 +2223,7 @@ export type OrganizationInclude<ExtArgs extends runtime.Types.Extensions.Interna
   roles?: boolean | Prisma.Organization$rolesArgs<ExtArgs>
   user_org_roles?: boolean | Prisma.Organization$user_org_rolesArgs<ExtArgs>
   invitations?: boolean | Prisma.Organization$invitationsArgs<ExtArgs>
+  invitation_usages?: boolean | Prisma.Organization$invitation_usagesArgs<ExtArgs>
   products?: boolean | Prisma.Organization$productsArgs<ExtArgs>
   devices?: boolean | Prisma.Organization$devicesArgs<ExtArgs>
   device_groups?: boolean | Prisma.Organization$device_groupsArgs<ExtArgs>
@@ -2061,6 +2245,7 @@ export type $OrganizationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     roles: Prisma.$RolePayload<ExtArgs>[]
     user_org_roles: Prisma.$UserOrgRolePayload<ExtArgs>[]
     invitations: Prisma.$InvitationPayload<ExtArgs>[]
+    invitation_usages: Prisma.$InvitationUsagePayload<ExtArgs>[]
     products: Prisma.$ProductPayload<ExtArgs>[]
     devices: Prisma.$DevicePayload<ExtArgs>[]
     device_groups: Prisma.$DeviceGroupPayload<ExtArgs>[]
@@ -2475,6 +2660,7 @@ export interface Prisma__OrganizationClient<T, Null = never, ExtArgs extends run
   roles<T extends Prisma.Organization$rolesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$rolesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   user_org_roles<T extends Prisma.Organization$user_org_rolesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$user_org_rolesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserOrgRolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   invitations<T extends Prisma.Organization$invitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$invitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  invitation_usages<T extends Prisma.Organization$invitation_usagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$invitation_usagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationUsagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   products<T extends Prisma.Organization$productsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$productsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProductPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   devices<T extends Prisma.Organization$devicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$devicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   device_groups<T extends Prisma.Organization$device_groupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$device_groupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeviceGroupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -2981,6 +3167,30 @@ export type Organization$invitationsArgs<ExtArgs extends runtime.Types.Extension
   take?: number
   skip?: number
   distinct?: Prisma.InvitationScalarFieldEnum | Prisma.InvitationScalarFieldEnum[]
+}
+
+/**
+ * Organization.invitation_usages
+ */
+export type Organization$invitation_usagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the InvitationUsage
+   */
+  select?: Prisma.InvitationUsageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the InvitationUsage
+   */
+  omit?: Prisma.InvitationUsageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.InvitationUsageInclude<ExtArgs> | null
+  where?: Prisma.InvitationUsageWhereInput
+  orderBy?: Prisma.InvitationUsageOrderByWithRelationInput | Prisma.InvitationUsageOrderByWithRelationInput[]
+  cursor?: Prisma.InvitationUsageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.InvitationUsageScalarFieldEnum | Prisma.InvitationUsageScalarFieldEnum[]
 }
 
 /**

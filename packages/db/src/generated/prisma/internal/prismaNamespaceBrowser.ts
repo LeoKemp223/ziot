@@ -58,6 +58,8 @@ export const ModelName = {
   RolePermission: 'RolePermission',
   UserOrgRole: 'UserOrgRole',
   Invitation: 'Invitation',
+  InvitationUsage: 'InvitationUsage',
+  RefreshToken: 'RefreshToken',
   Product: 'Product',
   Device: 'Device',
   DeviceGroup: 'DeviceGroup',
@@ -172,6 +174,30 @@ export const InvitationScalarFieldEnum = {
 } as const
 
 export type InvitationScalarFieldEnum = (typeof InvitationScalarFieldEnum)[keyof typeof InvitationScalarFieldEnum]
+
+
+export const InvitationUsageScalarFieldEnum = {
+  id: 'id',
+  invitation_id: 'invitation_id',
+  user_id: 'user_id',
+  org_id: 'org_id',
+  role_id: 'role_id',
+  used_at: 'used_at'
+} as const
+
+export type InvitationUsageScalarFieldEnum = (typeof InvitationUsageScalarFieldEnum)[keyof typeof InvitationUsageScalarFieldEnum]
+
+
+export const RefreshTokenScalarFieldEnum = {
+  id: 'id',
+  user_id: 'user_id',
+  token_hash: 'token_hash',
+  expires_at: 'expires_at',
+  revoked_at: 'revoked_at',
+  created_at: 'created_at'
+} as const
+
+export type RefreshTokenScalarFieldEnum = (typeof RefreshTokenScalarFieldEnum)[keyof typeof RefreshTokenScalarFieldEnum]
 
 
 export const ProductScalarFieldEnum = {

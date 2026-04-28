@@ -202,6 +202,7 @@ export type RoleWhereInput = {
   role_permissions?: Prisma.RolePermissionListRelationFilter
   user_org_roles?: Prisma.UserOrgRoleListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
+  invitation_usages?: Prisma.InvitationUsageListRelationFilter
 }
 
 export type RoleOrderByWithRelationInput = {
@@ -216,6 +217,7 @@ export type RoleOrderByWithRelationInput = {
   role_permissions?: Prisma.RolePermissionOrderByRelationAggregateInput
   user_org_roles?: Prisma.UserOrgRoleOrderByRelationAggregateInput
   invitations?: Prisma.InvitationOrderByRelationAggregateInput
+  invitation_usages?: Prisma.InvitationUsageOrderByRelationAggregateInput
 }
 
 export type RoleWhereUniqueInput = Prisma.AtLeast<{
@@ -234,6 +236,7 @@ export type RoleWhereUniqueInput = Prisma.AtLeast<{
   role_permissions?: Prisma.RolePermissionListRelationFilter
   user_org_roles?: Prisma.UserOrgRoleListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
+  invitation_usages?: Prisma.InvitationUsageListRelationFilter
 }, "id" | "org_id_code">
 
 export type RoleOrderByWithAggregationInput = {
@@ -273,6 +276,7 @@ export type RoleCreateInput = {
   role_permissions?: Prisma.RolePermissionCreateNestedManyWithoutRoleInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutRoleInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUncheckedCreateInput = {
@@ -286,6 +290,7 @@ export type RoleUncheckedCreateInput = {
   role_permissions?: Prisma.RolePermissionUncheckedCreateNestedManyWithoutRoleInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutRoleInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUpdateInput = {
@@ -299,6 +304,7 @@ export type RoleUpdateInput = {
   role_permissions?: Prisma.RolePermissionUpdateManyWithoutRoleNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutRoleNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleUncheckedUpdateInput = {
@@ -312,6 +318,7 @@ export type RoleUncheckedUpdateInput = {
   role_permissions?: Prisma.RolePermissionUncheckedUpdateManyWithoutRoleNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutRoleNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleCreateManyInput = {
@@ -481,6 +488,20 @@ export type RoleUpdateOneRequiredWithoutInvitationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.RoleUpdateToOneWithWhereWithoutInvitationsInput, Prisma.RoleUpdateWithoutInvitationsInput>, Prisma.RoleUncheckedUpdateWithoutInvitationsInput>
 }
 
+export type RoleCreateNestedOneWithoutInvitation_usagesInput = {
+  create?: Prisma.XOR<Prisma.RoleCreateWithoutInvitation_usagesInput, Prisma.RoleUncheckedCreateWithoutInvitation_usagesInput>
+  connectOrCreate?: Prisma.RoleCreateOrConnectWithoutInvitation_usagesInput
+  connect?: Prisma.RoleWhereUniqueInput
+}
+
+export type RoleUpdateOneRequiredWithoutInvitation_usagesNestedInput = {
+  create?: Prisma.XOR<Prisma.RoleCreateWithoutInvitation_usagesInput, Prisma.RoleUncheckedCreateWithoutInvitation_usagesInput>
+  connectOrCreate?: Prisma.RoleCreateOrConnectWithoutInvitation_usagesInput
+  upsert?: Prisma.RoleUpsertWithoutInvitation_usagesInput
+  connect?: Prisma.RoleWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.RoleUpdateToOneWithWhereWithoutInvitation_usagesInput, Prisma.RoleUpdateWithoutInvitation_usagesInput>, Prisma.RoleUncheckedUpdateWithoutInvitation_usagesInput>
+}
+
 export type RoleCreateWithoutOrganizationInput = {
   id: string
   code: string
@@ -491,6 +512,7 @@ export type RoleCreateWithoutOrganizationInput = {
   role_permissions?: Prisma.RolePermissionCreateNestedManyWithoutRoleInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutRoleInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUncheckedCreateWithoutOrganizationInput = {
@@ -503,6 +525,7 @@ export type RoleUncheckedCreateWithoutOrganizationInput = {
   role_permissions?: Prisma.RolePermissionUncheckedCreateNestedManyWithoutRoleInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutRoleInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutRoleInput
 }
 
 export type RoleCreateOrConnectWithoutOrganizationInput = {
@@ -554,6 +577,7 @@ export type RoleCreateWithoutRole_permissionsInput = {
   organization?: Prisma.OrganizationCreateNestedOneWithoutRolesInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutRoleInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUncheckedCreateWithoutRole_permissionsInput = {
@@ -566,6 +590,7 @@ export type RoleUncheckedCreateWithoutRole_permissionsInput = {
   updated_at?: Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutRoleInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutRoleInput
 }
 
 export type RoleCreateOrConnectWithoutRole_permissionsInput = {
@@ -594,6 +619,7 @@ export type RoleUpdateWithoutRole_permissionsInput = {
   organization?: Prisma.OrganizationUpdateOneWithoutRolesNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutRoleNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleUncheckedUpdateWithoutRole_permissionsInput = {
@@ -606,6 +632,7 @@ export type RoleUncheckedUpdateWithoutRole_permissionsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutRoleNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleCreateWithoutUser_org_rolesInput = {
@@ -618,6 +645,7 @@ export type RoleCreateWithoutUser_org_rolesInput = {
   organization?: Prisma.OrganizationCreateNestedOneWithoutRolesInput
   role_permissions?: Prisma.RolePermissionCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutRoleInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUncheckedCreateWithoutUser_org_rolesInput = {
@@ -630,6 +658,7 @@ export type RoleUncheckedCreateWithoutUser_org_rolesInput = {
   updated_at?: Date | string
   role_permissions?: Prisma.RolePermissionUncheckedCreateNestedManyWithoutRoleInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutRoleInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutRoleInput
 }
 
 export type RoleCreateOrConnectWithoutUser_org_rolesInput = {
@@ -658,6 +687,7 @@ export type RoleUpdateWithoutUser_org_rolesInput = {
   organization?: Prisma.OrganizationUpdateOneWithoutRolesNestedInput
   role_permissions?: Prisma.RolePermissionUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutRoleNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleUncheckedUpdateWithoutUser_org_rolesInput = {
@@ -670,6 +700,7 @@ export type RoleUncheckedUpdateWithoutUser_org_rolesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role_permissions?: Prisma.RolePermissionUncheckedUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutRoleNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleCreateWithoutInvitationsInput = {
@@ -682,6 +713,7 @@ export type RoleCreateWithoutInvitationsInput = {
   organization?: Prisma.OrganizationCreateNestedOneWithoutRolesInput
   role_permissions?: Prisma.RolePermissionCreateNestedManyWithoutRoleInput
   user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutRoleInput
+  invitation_usages?: Prisma.InvitationUsageCreateNestedManyWithoutRoleInput
 }
 
 export type RoleUncheckedCreateWithoutInvitationsInput = {
@@ -694,6 +726,7 @@ export type RoleUncheckedCreateWithoutInvitationsInput = {
   updated_at?: Date | string
   role_permissions?: Prisma.RolePermissionUncheckedCreateNestedManyWithoutRoleInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutRoleInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedCreateNestedManyWithoutRoleInput
 }
 
 export type RoleCreateOrConnectWithoutInvitationsInput = {
@@ -722,6 +755,7 @@ export type RoleUpdateWithoutInvitationsInput = {
   organization?: Prisma.OrganizationUpdateOneWithoutRolesNestedInput
   role_permissions?: Prisma.RolePermissionUpdateManyWithoutRoleNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutRoleNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleUncheckedUpdateWithoutInvitationsInput = {
@@ -734,6 +768,75 @@ export type RoleUncheckedUpdateWithoutInvitationsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role_permissions?: Prisma.RolePermissionUncheckedUpdateManyWithoutRoleNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutRoleNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutRoleNestedInput
+}
+
+export type RoleCreateWithoutInvitation_usagesInput = {
+  id: string
+  code: string
+  name: string
+  description?: string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  organization?: Prisma.OrganizationCreateNestedOneWithoutRolesInput
+  role_permissions?: Prisma.RolePermissionCreateNestedManyWithoutRoleInput
+  user_org_roles?: Prisma.UserOrgRoleCreateNestedManyWithoutRoleInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutRoleInput
+}
+
+export type RoleUncheckedCreateWithoutInvitation_usagesInput = {
+  id: string
+  org_id?: string | null
+  code: string
+  name: string
+  description?: string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  role_permissions?: Prisma.RolePermissionUncheckedCreateNestedManyWithoutRoleInput
+  user_org_roles?: Prisma.UserOrgRoleUncheckedCreateNestedManyWithoutRoleInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutRoleInput
+}
+
+export type RoleCreateOrConnectWithoutInvitation_usagesInput = {
+  where: Prisma.RoleWhereUniqueInput
+  create: Prisma.XOR<Prisma.RoleCreateWithoutInvitation_usagesInput, Prisma.RoleUncheckedCreateWithoutInvitation_usagesInput>
+}
+
+export type RoleUpsertWithoutInvitation_usagesInput = {
+  update: Prisma.XOR<Prisma.RoleUpdateWithoutInvitation_usagesInput, Prisma.RoleUncheckedUpdateWithoutInvitation_usagesInput>
+  create: Prisma.XOR<Prisma.RoleCreateWithoutInvitation_usagesInput, Prisma.RoleUncheckedCreateWithoutInvitation_usagesInput>
+  where?: Prisma.RoleWhereInput
+}
+
+export type RoleUpdateToOneWithWhereWithoutInvitation_usagesInput = {
+  where?: Prisma.RoleWhereInput
+  data: Prisma.XOR<Prisma.RoleUpdateWithoutInvitation_usagesInput, Prisma.RoleUncheckedUpdateWithoutInvitation_usagesInput>
+}
+
+export type RoleUpdateWithoutInvitation_usagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organization?: Prisma.OrganizationUpdateOneWithoutRolesNestedInput
+  role_permissions?: Prisma.RolePermissionUpdateManyWithoutRoleNestedInput
+  user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutRoleNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutRoleNestedInput
+}
+
+export type RoleUncheckedUpdateWithoutInvitation_usagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  org_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  role_permissions?: Prisma.RolePermissionUncheckedUpdateManyWithoutRoleNestedInput
+  user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutRoleNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleCreateManyOrganizationInput = {
@@ -755,6 +858,7 @@ export type RoleUpdateWithoutOrganizationInput = {
   role_permissions?: Prisma.RolePermissionUpdateManyWithoutRoleNestedInput
   user_org_roles?: Prisma.UserOrgRoleUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutRoleNestedInput
+  invitation_usages?: Prisma.InvitationUsageUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleUncheckedUpdateWithoutOrganizationInput = {
@@ -767,6 +871,7 @@ export type RoleUncheckedUpdateWithoutOrganizationInput = {
   role_permissions?: Prisma.RolePermissionUncheckedUpdateManyWithoutRoleNestedInput
   user_org_roles?: Prisma.UserOrgRoleUncheckedUpdateManyWithoutRoleNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutRoleNestedInput
+  invitation_usages?: Prisma.InvitationUsageUncheckedUpdateManyWithoutRoleNestedInput
 }
 
 export type RoleUncheckedUpdateManyWithoutOrganizationInput = {
@@ -787,12 +892,14 @@ export type RoleCountOutputType = {
   role_permissions: number
   user_org_roles: number
   invitations: number
+  invitation_usages: number
 }
 
 export type RoleCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   role_permissions?: boolean | RoleCountOutputTypeCountRole_permissionsArgs
   user_org_roles?: boolean | RoleCountOutputTypeCountUser_org_rolesArgs
   invitations?: boolean | RoleCountOutputTypeCountInvitationsArgs
+  invitation_usages?: boolean | RoleCountOutputTypeCountInvitation_usagesArgs
 }
 
 /**
@@ -826,6 +933,13 @@ export type RoleCountOutputTypeCountInvitationsArgs<ExtArgs extends runtime.Type
   where?: Prisma.InvitationWhereInput
 }
 
+/**
+ * RoleCountOutputType without action
+ */
+export type RoleCountOutputTypeCountInvitation_usagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.InvitationUsageWhereInput
+}
+
 
 export type RoleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -839,6 +953,7 @@ export type RoleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   role_permissions?: boolean | Prisma.Role$role_permissionsArgs<ExtArgs>
   user_org_roles?: boolean | Prisma.Role$user_org_rolesArgs<ExtArgs>
   invitations?: boolean | Prisma.Role$invitationsArgs<ExtArgs>
+  invitation_usages?: boolean | Prisma.Role$invitation_usagesArgs<ExtArgs>
   _count?: boolean | Prisma.RoleCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["role"]>
 
@@ -880,6 +995,7 @@ export type RoleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   role_permissions?: boolean | Prisma.Role$role_permissionsArgs<ExtArgs>
   user_org_roles?: boolean | Prisma.Role$user_org_rolesArgs<ExtArgs>
   invitations?: boolean | Prisma.Role$invitationsArgs<ExtArgs>
+  invitation_usages?: boolean | Prisma.Role$invitation_usagesArgs<ExtArgs>
   _count?: boolean | Prisma.RoleCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type RoleIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -896,6 +1012,7 @@ export type $RolePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     role_permissions: Prisma.$RolePermissionPayload<ExtArgs>[]
     user_org_roles: Prisma.$UserOrgRolePayload<ExtArgs>[]
     invitations: Prisma.$InvitationPayload<ExtArgs>[]
+    invitation_usages: Prisma.$InvitationUsagePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1303,6 +1420,7 @@ export interface Prisma__RoleClient<T, Null = never, ExtArgs extends runtime.Typ
   role_permissions<T extends Prisma.Role$role_permissionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Role$role_permissionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RolePermissionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   user_org_roles<T extends Prisma.Role$user_org_rolesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Role$user_org_rolesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserOrgRolePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   invitations<T extends Prisma.Role$invitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Role$invitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  invitation_usages<T extends Prisma.Role$invitation_usagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Role$invitation_usagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationUsagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1828,6 +1946,30 @@ export type Role$invitationsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.InvitationScalarFieldEnum | Prisma.InvitationScalarFieldEnum[]
+}
+
+/**
+ * Role.invitation_usages
+ */
+export type Role$invitation_usagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the InvitationUsage
+   */
+  select?: Prisma.InvitationUsageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the InvitationUsage
+   */
+  omit?: Prisma.InvitationUsageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.InvitationUsageInclude<ExtArgs> | null
+  where?: Prisma.InvitationUsageWhereInput
+  orderBy?: Prisma.InvitationUsageOrderByWithRelationInput | Prisma.InvitationUsageOrderByWithRelationInput[]
+  cursor?: Prisma.InvitationUsageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.InvitationUsageScalarFieldEnum | Prisma.InvitationUsageScalarFieldEnum[]
 }
 
 /**

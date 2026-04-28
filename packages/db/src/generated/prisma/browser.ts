@@ -53,6 +53,16 @@ export type UserOrgRole = Prisma.UserOrgRoleModel
  */
 export type Invitation = Prisma.InvitationModel
 /**
+ * Model InvitationUsage
+ * 
+ */
+export type InvitationUsage = Prisma.InvitationUsageModel
+/**
+ * Model RefreshToken
+ * 
+ */
+export type RefreshToken = Prisma.RefreshTokenModel
+/**
  * Model Product
  * 
  */

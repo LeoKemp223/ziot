@@ -397,23 +397,23 @@ Verification status on 2026-04-28:
 - Modify: `packages/db/prisma/schema.prisma`
 - Modify: `packages/db/prisma/seed.ts`
 
-- [ ] Implement password hashing with Argon2id or bcrypt.
-- [ ] Implement JWT access token and refresh token signing with jose.
-- [ ] Implement invitation creation, disable, list, detail, and usage records.
-- [ ] Store invitation code hashes only; return plain invitation code only at creation time.
-- [ ] Implement registration with invitation validation.
-- [ ] Implement login, refresh token, logout, current user, and token revocation.
-- [ ] Implement organization membership and user organization role binding.
-- [ ] Implement current organization context with `current_org_id`.
-- [ ] Implement organization switch API and UI selector.
-- [ ] Implement multi-role permission union within the current organization.
-- [ ] Implement permission helpers that check `org_id` for tenant-owned resources.
-- [ ] Seed platform admin, default organization, default roles, and default permissions.
-- [ ] Implement login and invitation registration pages with shadcn/ui forms.
-- [ ] Implement user list, role list, and invitation management pages.
-- [ ] Add API tests for successful registration, expired invitation, overused invitation, disabled user, refresh token, and cross-organization access.
-- [ ] Run: `pnpm test -- --run identity`.
-- [ ] Commit: `feat: add identity invitation and rbac`.
+- [x] Implement password hashing with Argon2id or bcrypt.
+- [x] Implement JWT access token and refresh token signing with jose.
+- [x] Implement invitation creation, disable, list, detail, and usage records.
+- [x] Store invitation code hashes only; return plain invitation code only at creation time.
+- [x] Implement registration with invitation validation.
+- [x] Implement login, refresh token, logout, current user, and token revocation.
+- [x] Implement organization membership and user organization role binding.
+- [x] Implement current organization context with `current_org_id`.
+- [x] Implement organization switch API and UI selector.
+- [x] Implement multi-role permission union within the current organization.
+- [x] Implement permission helpers that check `org_id` for tenant-owned resources.
+- [x] Seed platform admin, default organization, default roles, and default permissions.
+- [x] Implement login and invitation registration pages with shadcn/ui forms.
+- [x] Implement user list, role list, and invitation management pages.
+- [x] Add API tests for successful registration, expired invitation, overused invitation, disabled user, refresh token, and cross-organization access.
+- [x] Run: `pnpm test -- --run identity`.
+- [x] Commit: `feat: add identity invitation and rbac`.
 
 Acceptance:
 
@@ -424,6 +424,14 @@ Acceptance:
 - Web login persists session and loads current user profile.
 - User can switch between organizations they belong to.
 - Multiple roles in the same organization combine permissions by union.
+
+Verification status on 2026-04-28:
+
+- `POST /api/v1/auth/login` logs in the seeded admin and sets access, refresh, and current organization cookies.
+- `GET /api/v1/me`, `GET /api/v1/users`, `GET /api/v1/roles`, `POST /api/v1/invitations`, `GET /api/v1/invitations/{id}`, `PATCH /api/v1/invitations/{id}`, and `POST /api/v1/auth/register` were verified against local PostgreSQL.
+- Unauthenticated `GET /products` redirects to `/login`.
+- `pnpm test`, `pnpm typecheck`, and `pnpm --filter @ziot/web build` pass.
+- `prisma migrate deploy` applies both foundation and identity migrations from an empty database, and seed succeeds.
 
 ### Task 3A: Product Management And Thing Model
 
