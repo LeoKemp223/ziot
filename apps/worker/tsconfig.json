@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@ziot/config": ["../../packages/config/src"],
+      "@ziot/domain": ["../../packages/domain/src"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

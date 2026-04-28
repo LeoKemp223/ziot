@@ -1,0 +1,114 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ziot
+      POSTGRES_USER: ziot
+      POSTGRES_PASSWORD: ziot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ziot -d ziot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  emqx:
+    image: emqx/emqx:5.10
+    environment:
+      EMQX_NAME: ziot-emqx
+      EMQX_HOST: emqx
+      EMQX_DASHBOARD__DEFAULT_USERNAME: admin
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: public123
+      ZIOT_EMQX_AUTH_URL: http://web:3000/api/internal/emqx/auth
+      ZIOT_EMQX_ACL_URL: http://web:3000/api/internal/emqx/acl
+      ZIOT_EMQX_WEBHOOK_URL: http://web:3000/api/internal/emqx/webhook
+    ports:
+      - "1883:1883"
+      - "18083:18083"
+    volumes:
+      - ./emqx/dev.conf:/opt/ziot/emqx-dev.conf:ro
+    depends_on:
+      - web
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ziot
+      MINIO_ROOT_PASSWORD: ziot-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "corepack enable && pnpm --filter @ziot/web dev"
+    environment:
+      DATABASE_URL: postgresql://ziot:ziot@postgres:5432/ziot
+      REDIS_URL: redis://redis:6379
+      EMQX_API_URL: http://emqx:18083
+      MINIO_ENDPOINT: minio
+      MINIO_ACCESS_KEY: ziot
+      MINIO_SECRET_KEY: ziot-secret
+      JWT_SECRET: local-development-secret-change-before-production
+      PUBLIC_APP_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ..:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "corepack enable && pnpm --filter @ziot/worker dev"
+    environment:
+      DATABASE_URL: postgresql://ziot:ziot@postgres:5432/ziot
+      REDIS_URL: redis://redis:6379
+      EMQX_API_URL: http://emqx:18083
+      MINIO_ENDPOINT: minio
+      MINIO_ACCESS_KEY: ziot
+      MINIO_SECRET_KEY: ziot-secret
+      JWT_SECRET: local-development-secret-change-before-production
+      PUBLIC_APP_URL: http://localhost:3000
+    volumes:
+      - ..:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  minio-data:

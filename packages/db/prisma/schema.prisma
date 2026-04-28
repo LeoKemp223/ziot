@@ -1,0 +1,431 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ResourceStatus {
+  active
+  disabled
+}
+
+enum InvitationStatus {
+  active
+  disabled
+  expired
+}
+
+enum OnlineStatus {
+  online
+  offline
+  unknown
+}
+
+enum CommandStatus {
+  pending
+  sent
+  delivered
+  success
+  failed
+  timeout
+  cancelled
+}
+
+enum FirmwareStatus {
+  draft
+  released
+  deprecated
+}
+
+enum OtaTaskStatus {
+  created
+  scheduled
+  running
+  finished
+  cancelled
+}
+
+enum OtaRecordStatus {
+  created
+  scheduled
+  notified
+  downloading
+  installing
+  success
+  failed
+  cancelled
+}
+
+enum LogLevel {
+  debug
+  info
+  warn
+  error
+}
+
+model Organization {
+  id         String         @id @db.VarChar(64)
+  name       String         @db.VarChar(128)
+  status     ResourceStatus @default(active)
+  created_at DateTime       @default(now()) @db.Timestamptz
+  updated_at DateTime       @updatedAt @db.Timestamptz
+
+  roles          Role[]
+  user_org_roles UserOrgRole[]
+  invitations    Invitation[]
+  products       Product[]
+  devices        Device[]
+  device_groups  DeviceGroup[]
+  device_shadows DeviceShadow[]
+  device_commands DeviceCommand[]
+  firmwares      Firmware[]
+  ota_tasks      OtaTask[]
+  ota_records    OtaRecord[]
+  device_logs    DeviceLog[]
+  audit_logs     AuditLog[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String         @id @db.VarChar(64)
+  account        String         @unique @db.VarChar(128)
+  password_hash  String         @db.VarChar(255)
+  display_name   String         @db.VarChar(128)
+  status         ResourceStatus @default(active)
+  last_login_at  DateTime?      @db.Timestamptz
+  created_at     DateTime       @default(now()) @db.Timestamptz
+  updated_at     DateTime       @updatedAt @db.Timestamptz
+
+  user_org_roles UserOrgRole[]
+  invitations    Invitation[] @relation("InvitationCreator")
+  device_commands DeviceCommand[]
+  firmwares      Firmware[]
+  ota_tasks      OtaTask[]
+  audit_logs     AuditLog[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @db.VarChar(64)
+  org_id      String?  @db.VarChar(64)
+  code        String   @db.VarChar(64)
+  name        String   @db.VarChar(128)
+  description String?
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @updatedAt @db.Timestamptz
+
+  organization      Organization?    @relation(fields: [org_id], references: [id])
+  role_permissions  RolePermission[]
+  user_org_roles    UserOrgRole[]
+  invitations       Invitation[]
+
+  @@unique([org_id, code])
+  @@map("roles")
+}
+
+model Permission {
+  id         String   @id @db.VarChar(64)
+  code       String   @unique @db.VarChar(128)
+  name       String   @db.VarChar(128)
+  module     String   @db.VarChar(64)
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  role_permissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  role_id       String   @db.VarChar(64)
+  permission_id String   @db.VarChar(64)
+  created_at    DateTime @default(now()) @db.Timestamptz
+
+  role       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+  @@id([role_id, permission_id])
+  @@map("role_permissions")
+}
+
+model UserOrgRole {
+  id         String         @id @db.VarChar(64)
+  user_id    String         @db.VarChar(64)
+  org_id     String         @db.VarChar(64)
+  role_id    String         @db.VarChar(64)
+  status     ResourceStatus @default(active)
+  created_at DateTime       @default(now()) @db.Timestamptz
+  updated_at DateTime       @updatedAt @db.Timestamptz
+
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  role         Role         @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, org_id, role_id])
+  @@index([user_id, status])
+  @@index([org_id, role_id])
+  @@map("user_org_roles")
+}
+
+model Invitation {
+  id         String           @id @db.VarChar(64)
+  code_hash  String           @unique @db.VarChar(255)
+  org_id     String           @db.VarChar(64)
+  role_id    String           @db.VarChar(64)
+  max_uses   Int
+  used_count Int              @default(0)
+  expires_at DateTime         @db.Timestamptz
+  status     InvitationStatus @default(active)
+  created_by String           @db.VarChar(64)
+  created_at DateTime         @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [org_id], references: [id])
+  role         Role         @relation(fields: [role_id], references: [id])
+  creator      User         @relation("InvitationCreator", fields: [created_by], references: [id])
+
+  @@index([org_id, status, expires_at])
+  @@map("invitations")
+}
+
+model Product {
+  id          String         @id @db.VarChar(64)
+  org_id      String         @db.VarChar(64)
+  product_key String         @unique @db.VarChar(64)
+  name        String         @db.VarChar(128)
+  protocols   Json
+  auth_type   String         @db.VarChar(32)
+  data_format String         @db.VarChar(32)
+  thing_model Json
+  status      ResourceStatus @default(active)
+  created_at  DateTime       @default(now()) @db.Timestamptz
+  updated_at  DateTime       @updatedAt @db.Timestamptz
+  deleted_at  DateTime?      @db.Timestamptz
+
+  organization  Organization @relation(fields: [org_id], references: [id])
+  devices       Device[]
+  device_groups DeviceGroup[]
+  firmwares     Firmware[]
+  ota_tasks     OtaTask[]
+  device_logs   DeviceLog[]
+
+  @@index([org_id, deleted_at])
+  @@map("products")
+}
+
+model Device {
+  id                 String         @id @db.VarChar(64)
+  org_id             String         @db.VarChar(64)
+  product_id         String         @db.VarChar(64)
+  device_key         String         @db.VarChar(128)
+  device_secret_hash String         @db.VarChar(255)
+  name               String         @db.VarChar(128)
+  status             ResourceStatus @default(active)
+  online_status      OnlineStatus   @default(unknown)
+  firmware_version   String?        @db.VarChar(64)
+  tags               Json
+  last_online_at     DateTime?      @db.Timestamptz
+  last_offline_at    DateTime?      @db.Timestamptz
+  last_heartbeat_at  DateTime?      @db.Timestamptz
+  created_at         DateTime       @default(now()) @db.Timestamptz
+  updated_at         DateTime       @updatedAt @db.Timestamptz
+  deleted_at         DateTime?      @db.Timestamptz
+
+  organization         Organization @relation(fields: [org_id], references: [id])
+  product              Product      @relation(fields: [product_id], references: [id])
+  shadow               DeviceShadow?
+  device_group_members DeviceGroupMember[]
+  commands             DeviceCommand[]
+  ota_records          OtaRecord[]
+  device_logs          DeviceLog[]
+
+  @@unique([product_id, device_key])
+  @@index([org_id, product_id])
+  @@index([org_id, online_status])
+  @@index([org_id, product_id, deleted_at])
+  @@map("devices")
+}
+
+model DeviceGroup {
+  id          String    @id @db.VarChar(64)
+  org_id      String    @db.VarChar(64)
+  product_id  String    @db.VarChar(64)
+  name        String    @db.VarChar(128)
+  description String?
+  created_at  DateTime  @default(now()) @db.Timestamptz
+  updated_at  DateTime  @updatedAt @db.Timestamptz
+  deleted_at  DateTime? @db.Timestamptz
+
+  organization Organization @relation(fields: [org_id], references: [id])
+  product      Product      @relation(fields: [product_id], references: [id])
+  members      DeviceGroupMember[]
+
+  @@index([org_id, product_id])
+  @@map("device_groups")
+}
+
+model DeviceGroupMember {
+  group_id   String   @db.VarChar(64)
+  device_id  String   @db.VarChar(64)
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  group  DeviceGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  device Device      @relation(fields: [device_id], references: [id], onDelete: Cascade)
+
+  @@id([group_id, device_id])
+  @@map("device_group_members")
+}
+
+model DeviceShadow {
+  device_id  String   @id @db.VarChar(64)
+  org_id     String   @db.VarChar(64)
+  reported   Json
+  desired    Json
+  version    BigInt   @default(1)
+  updated_at DateTime @updatedAt @db.Timestamptz
+
+  device       Device       @relation(fields: [device_id], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [org_id], references: [id])
+
+  @@map("device_shadows")
+}
+
+model DeviceCommand {
+  id            String        @id @db.VarChar(64)
+  org_id        String        @db.VarChar(64)
+  device_id     String        @db.VarChar(64)
+  identifier    String        @db.VarChar(128)
+  params        Json
+  status        CommandStatus @default(pending)
+  request_id    String        @unique @db.VarChar(128)
+  result        Json?
+  error_code    String?       @db.VarChar(64)
+  error_message String?
+  timeout_at    DateTime      @db.Timestamptz
+  sent_at       DateTime?     @db.Timestamptz
+  replied_at    DateTime?     @db.Timestamptz
+  created_by    String        @db.VarChar(64)
+  created_at    DateTime      @default(now()) @db.Timestamptz
+  updated_at    DateTime      @updatedAt @db.Timestamptz
+
+  organization Organization @relation(fields: [org_id], references: [id])
+  device       Device       @relation(fields: [device_id], references: [id])
+  creator      User         @relation(fields: [created_by], references: [id])
+
+  @@index([org_id, device_id, created_at])
+  @@index([status, timeout_at])
+  @@map("device_commands")
+}
+
+model Firmware {
+  id           String         @id @db.VarChar(64)
+  org_id       String         @db.VarChar(64)
+  product_id   String         @db.VarChar(64)
+  version      String         @db.VarChar(64)
+  file_url     String
+  file_size    BigInt
+  sha256       String         @db.VarChar(128)
+  release_note String?
+  status       FirmwareStatus @default(draft)
+  created_by   String         @db.VarChar(64)
+  created_at   DateTime       @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [org_id], references: [id])
+  product      Product      @relation(fields: [product_id], references: [id])
+  creator      User         @relation(fields: [created_by], references: [id])
+  ota_tasks    OtaTask[]
+
+  @@unique([product_id, version])
+  @@index([org_id, product_id, status])
+  @@map("firmwares")
+}
+
+model OtaTask {
+  id           String        @id @db.VarChar(64)
+  org_id       String        @db.VarChar(64)
+  product_id   String        @db.VarChar(64)
+  firmware_id  String        @db.VarChar(64)
+  name         String        @db.VarChar(128)
+  strategy     Json
+  status       OtaTaskStatus @default(created)
+  scheduled_at DateTime?     @db.Timestamptz
+  started_at   DateTime?     @db.Timestamptz
+  finished_at  DateTime?     @db.Timestamptz
+  created_by   String        @db.VarChar(64)
+  created_at   DateTime      @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [org_id], references: [id])
+  product      Product      @relation(fields: [product_id], references: [id])
+  firmware     Firmware     @relation(fields: [firmware_id], references: [id])
+  creator      User         @relation(fields: [created_by], references: [id])
+  records      OtaRecord[]
+
+  @@index([org_id, product_id, status])
+  @@map("ota_tasks")
+}
+
+model OtaRecord {
+  id            String          @id @db.VarChar(64)
+  org_id        String          @db.VarChar(64)
+  task_id       String          @db.VarChar(64)
+  device_id     String          @db.VarChar(64)
+  status        OtaRecordStatus @default(created)
+  progress      Int             @default(0)
+  error_message String?
+  started_at    DateTime?       @db.Timestamptz
+  finished_at   DateTime?       @db.Timestamptz
+  updated_at    DateTime        @updatedAt @db.Timestamptz
+
+  organization Organization @relation(fields: [org_id], references: [id])
+  task         OtaTask      @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  device       Device       @relation(fields: [device_id], references: [id])
+
+  @@unique([task_id, device_id])
+  @@index([org_id, device_id, updated_at])
+  @@index([task_id, status])
+  @@map("ota_records")
+}
+
+model DeviceLog {
+  id          String   @id @db.VarChar(64)
+  org_id      String   @db.VarChar(64)
+  product_id  String   @db.VarChar(64)
+  device_id   String   @db.VarChar(64)
+  type        String   @db.VarChar(32)
+  level       LogLevel @default(info)
+  content     Json
+  occurred_at DateTime @db.Timestamptz
+  created_at  DateTime @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [org_id], references: [id])
+  product      Product      @relation(fields: [product_id], references: [id])
+  device       Device       @relation(fields: [device_id], references: [id])
+
+  @@index([org_id, device_id, occurred_at])
+  @@index([org_id, type, occurred_at])
+  @@map("device_logs")
+}
+
+model AuditLog {
+  id            String   @id @db.VarChar(64)
+  org_id        String   @db.VarChar(64)
+  user_id       String   @db.VarChar(64)
+  action        String   @db.VarChar(128)
+  resource_type String   @db.VarChar(64)
+  resource_id   String   @db.VarChar(64)
+  ip            String   @db.Inet
+  user_agent    String?
+  detail        Json
+  created_at    DateTime @default(now()) @db.Timestamptz
+
+  organization Organization @relation(fields: [org_id], references: [id])
+  user         User         @relation(fields: [user_id], references: [id])
+
+  @@index([org_id, created_at])
+  @@index([user_id, created_at])
+  @@index([resource_type, resource_id])
+  @@map("audit_logs")
+}
