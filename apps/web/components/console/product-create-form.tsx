@@ -80,7 +80,7 @@ export function ProductCreateForm() {
           role="dialog"
         >
           <form
-            className="w-full max-w-2xl rounded-lg bg-white shadow-xl"
+            className="w-full max-w-xl rounded-lg bg-white shadow-xl"
             onSubmit={handleSubmit}
             ref={formRef}
           >
@@ -89,9 +89,6 @@ export function ProductCreateForm() {
                 <h2 className="text-base font-semibold text-slate-950">
                   创建产品
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  当前阶段默认使用 MQTT、设备密钥认证和 JSON 数据格式。
-                </p>
               </div>
               <button
                 aria-label="关闭"
@@ -131,25 +128,6 @@ export function ProductCreateForm() {
                   required
                 />
               </label>
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                <div className="text-sm font-medium text-slate-700">协议</div>
-                <div className="mt-2 inline-flex rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
-                  MQTT
-                </div>
-              </div>
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                <div className="text-sm font-medium text-slate-700">
-                  认证与格式
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                  <span className="rounded-md bg-white px-2 py-1 text-slate-600 ring-1 ring-slate-200">
-                    device_secret
-                  </span>
-                  <span className="rounded-md bg-white px-2 py-1 text-slate-600 ring-1 ring-slate-200">
-                    json
-                  </span>
-                </div>
-              </div>
             </div>
 
             <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-5 py-4">
