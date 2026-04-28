@@ -302,21 +302,21 @@ Do not start the next batch until the previous batch's tests and acceptance chec
 - Create: `scripts/dev-up.sh`
 - Create: `scripts/dev-down.sh`
 
-- [ ] Create pnpm workspace with `apps/*` and `packages/*`.
-- [ ] Create Next.js 16+ App Router project in `apps/web`.
-- [ ] Add TypeScript, Tailwind CSS, shadcn/ui, ESLint, Prettier, Vitest, Playwright, Prisma, Redis, BullMQ, MinIO SDK, MQTT.js, Zod, bcrypt or Argon2, and jose.
-- [ ] Add PostgreSQL, Redis, EMQX, MinIO, web, and worker services to Docker Compose.
-- [ ] Configure Docker Compose networking so EMQX can call the web container by service name, for example `http://web:3000/api/internal/emqx/auth`.
-- [ ] Add separate EMQX development config for Auth, ACL, and WebHook callback URLs.
-- [ ] Add shared response helper returning `code`, `message`, `request_id`, and `data`.
-- [ ] Add error codes from the PRD to `packages/domain/src/errors.ts`.
-- [ ] Add environment validation for database, Redis, EMQX, MinIO, JWT, and public app URL.
-- [ ] Add `GET /api/v1/health`.
-- [ ] Add basic app shell with shadcn/ui theme and empty console layout.
-- [ ] Run: `pnpm install`.
-- [ ] Run: `pnpm test`.
-- [ ] Run: `pnpm --filter @ziot/web build`.
-- [ ] Commit: `chore: scaffold nextjs iot platform`.
+- [x] Create pnpm workspace with `apps/*` and `packages/*`.
+- [x] Create Next.js 16+ App Router project in `apps/web`.
+- [x] Add TypeScript, Tailwind CSS, shadcn/ui, ESLint, Prettier, Vitest, Playwright, Prisma, Redis, BullMQ, MinIO SDK, MQTT.js, Zod, bcrypt or Argon2, and jose.
+- [x] Add PostgreSQL, Redis, EMQX, MinIO, web, and worker services to Docker Compose.
+- [x] Configure Docker Compose networking so EMQX can call the web container by service name, for example `http://web:3000/api/internal/emqx/auth`.
+- [x] Add separate EMQX development config for Auth, ACL, and WebHook callback URLs.
+- [x] Add shared response helper returning `code`, `message`, `request_id`, and `data`.
+- [x] Add error codes from the PRD to `packages/domain/src/errors.ts`.
+- [x] Add environment validation for database, Redis, EMQX, MinIO, JWT, and public app URL.
+- [x] Add `GET /api/v1/health`.
+- [x] Add basic app shell with shadcn/ui theme and empty console layout.
+- [x] Run: `pnpm install`.
+- [x] Run: `pnpm test`.
+- [x] Run: `pnpm --filter @ziot/web build`.
+- [x] Commit: `chore: scaffold nextjs iot platform`.
 
 Acceptance:
 
@@ -324,6 +324,13 @@ Acceptance:
 - `GET /api/v1/health` returns `code = 0`.
 - Admin shell renders without runtime errors.
 - EMQX development config points callbacks to the web service inside Docker Compose.
+
+Verification status on 2026-04-28:
+
+- `docker compose -f deploy/docker-compose.yml config` passes.
+- `GET /api/v1/health` returns `code = 0` in local dev.
+- `GET /` and `GET /products` render without runtime errors in local dev.
+- `pnpm test`, `pnpm typecheck`, and `pnpm --filter @ziot/web build` pass.
 
 ### Task 1B: Data Foundation And Domain Contracts
 
@@ -344,17 +351,17 @@ Acceptance:
 - Modify: `apps/web/package.json`
 - Modify: `apps/worker/package.json`
 
-- [ ] Define Prisma models for organizations, users, roles, permissions, invitations, products, devices, device groups, device shadows, device commands, firmwares, OTA tasks, OTA records, device logs, and audit logs.
-- [ ] Make `DeviceGroup.product_id` required for MVP.
-- [ ] Add enums for resource status, online status, command status, firmware status, OTA task status, OTA record status, and log level.
-- [ ] Add indexes listed in the PRD recommended index section.
-- [ ] Add seed data for platform admin, default organization, default roles, default permissions, one product, and two demo devices.
-- [ ] Define domain contracts for permission decisions, thing model validation, shadow merge, Topic parsing, HTTP/MQTT signature validation, command state transitions, and OTA state transitions.
-- [ ] Add unit tests for all domain contracts.
-- [ ] Enforce 80%+ coverage for `packages/domain`.
-- [ ] Run: `pnpm prisma migrate dev --schema packages/db/prisma/schema.prisma --name init_core_schema`.
-- [ ] Run: `pnpm test -- --run domain`.
-- [ ] Commit: `chore: add prisma schema and domain contracts`.
+- [x] Define Prisma models for organizations, users, roles, permissions, invitations, products, devices, device groups, device shadows, device commands, firmwares, OTA tasks, OTA records, device logs, and audit logs.
+- [x] Make `DeviceGroup.product_id` required for MVP.
+- [x] Add enums for resource status, online status, command status, firmware status, OTA task status, OTA record status, and log level.
+- [x] Add indexes listed in the PRD recommended index section.
+- [x] Add seed data for platform admin, default organization, default roles, default permissions, one product, and two demo devices.
+- [x] Define domain contracts for permission decisions, thing model validation, shadow merge, Topic parsing, HTTP/MQTT signature validation, command state transitions, and OTA state transitions.
+- [x] Add unit tests for all domain contracts.
+- [x] Enforce 80%+ coverage for `packages/domain`.
+- [x] Generate initial Prisma migration and verify it with `prisma migrate deploy` against an empty database.
+- [x] Run: `pnpm exec vitest run packages/domain --coverage`.
+- [x] Commit: `chore: add prisma schema and domain contracts`.
 
 Acceptance:
 
@@ -362,6 +369,14 @@ Acceptance:
 - Seed creates admin, organization, roles, permissions, product, MQTT device, and HTTP device.
 - `packages/domain` has no import from `apps/web`, `apps/worker`, or `packages/db`.
 - Domain tests cover Topic parsing, signatures, thing model validation, command state machine, OTA state machine, and permission decisions.
+
+Verification status on 2026-04-28:
+
+- Initial migration exists at `packages/db/prisma/migrations/20260428000000_init_core_schema/migration.sql`.
+- `prisma migrate deploy` succeeds against a temporary empty PostgreSQL database.
+- Seed succeeds after migration and creates `organizations/products/devices/users = 1/1/2/1`.
+- `pnpm exec vitest run packages/domain --coverage` passes with 100% statements, 81.17% branches, 100% functions, and 100% lines.
+- Domain dependency boundary check found no imports from `apps/web`, `apps/worker`, or `packages/db`.
 
 ### Task 2: Identity, Invitation, Organization, And RBAC
 
