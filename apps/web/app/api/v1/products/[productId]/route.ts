@@ -3,11 +3,14 @@ import { prisma } from "@ziot/db";
 import { apiOk } from "@/lib/api-response";
 import { apiErrorResponse } from "@/lib/api-errors";
 import { createRequestId } from "@/lib/request-id";
-import { deleteProduct, updateProduct } from "@/lib/products/product-service";
+import {
+  deleteProduct,
+  getProduct,
+  updateProduct
+} from "@/lib/products/product-service";
+import { getCurrentUser } from "@/lib/identity/session";
 
 export const runtime = "nodejs";
-
-const DEFAULT_ORG_ID = "org_default";
 
 type ProductRouteContext = {
   params: Promise<{
@@ -15,8 +18,29 @@ type ProductRouteContext = {
   }>;
 };
 
-function getOrgId(request: NextRequest): string {
-  return request.headers.get("x-org-id")?.trim() || DEFAULT_ORG_ID;
+export async function GET(
+  request: NextRequest,
+  { params }: ProductRouteContext
+) {
+  const requestId = createRequestId();
+
+  try {
+    const user = await getCurrentUser(request);
+
+    if (!user.permissions.includes("product:read")) {
+      throw Object.assign(new Error("permission denied"), { code: 403001 });
+    }
+
+    const { productId } = await params;
+    const product = await getProduct(prisma, {
+      orgId: user.current_org_id,
+      productId
+    });
+
+    return NextResponse.json(apiOk(product, requestId));
+  } catch (error) {
+    return apiErrorResponse(error, requestId);
+  }
 }
 
 export async function PATCH(
@@ -26,10 +50,16 @@ export async function PATCH(
   const requestId = createRequestId();
 
   try {
+    const user = await getCurrentUser(request);
+
+    if (!user.permissions.includes("product:write")) {
+      throw Object.assign(new Error("permission denied"), { code: 403001 });
+    }
+
     const { productId } = await params;
     const body = (await request.json()) as Record<string, unknown>;
     const product = await updateProduct(prisma, {
-      orgId: getOrgId(request),
+      orgId: user.current_org_id,
       productId,
       ...(typeof body.name === "string" ? { name: body.name } : {}),
       ...(Array.isArray(body.protocols)
@@ -63,9 +93,15 @@ export async function DELETE(
   const requestId = createRequestId();
 
   try {
+    const user = await getCurrentUser(request);
+
+    if (!user.permissions.includes("product:write")) {
+      throw Object.assign(new Error("permission denied"), { code: 403001 });
+    }
+
     const { productId } = await params;
     const product = await deleteProduct(prisma, {
-      orgId: getOrgId(request),
+      orgId: user.current_org_id,
       productId
     });
 

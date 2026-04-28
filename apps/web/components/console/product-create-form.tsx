@@ -25,7 +25,6 @@ export function ProductCreateForm() {
 
     const form = new FormData(formElement);
     const payload = {
-      product_key: String(form.get("product_key") ?? ""),
       name: String(form.get("name") ?? ""),
       protocols: ["mqtt"],
       auth_type: "device_secret",
@@ -100,22 +99,7 @@ export function ProductCreateForm() {
               </button>
             </div>
 
-            <div className="grid gap-4 px-5 py-5 md:grid-cols-2">
-              <label className="block">
-                <span className="text-sm font-medium text-slate-700">
-                  Product Key
-                </span>
-                <input
-                  className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-                  name="product_key"
-                  pattern="[A-Za-z0-9_-]{3,64}"
-                  placeholder="pk_sensor"
-                  required
-                />
-                <span className="mt-1 block text-xs text-slate-400">
-                  3-64 位，字母、数字、下划线或中划线
-                </span>
-              </label>
+            <div className="px-5 py-5">
               <label className="block">
                 <span className="text-sm font-medium text-slate-700">
                   产品名称

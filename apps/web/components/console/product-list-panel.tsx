@@ -257,9 +257,12 @@ export function ProductListPanel() {
                           value={editingProduct.name}
                         />
                       ) : (
-                        <div className="font-medium text-slate-950">
+                        <a
+                          className="font-medium text-slate-950 hover:text-blue-700"
+                          href={`/products/${product.id}`}
+                        >
                           {product.name}
-                        </div>
+                        </a>
                       )}
                       <div className="mt-1 max-w-[260px] truncate font-mono text-xs text-slate-400">
                         {product.id}

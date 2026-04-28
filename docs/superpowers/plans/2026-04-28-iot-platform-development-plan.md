@@ -445,14 +445,14 @@ Verification status on 2026-04-28:
 - Create: `apps/web/app/api/v1/products/[productId]/thing-model/route.ts`
 - Modify: `packages/domain/src/devices/thing-model.ts`
 
-- [ ] Implement product create, update, delete, list, and detail.
-- [ ] Generate unique `product_key`.
-- [ ] Implement product thing model read and update using the PRD minimal thing model structure.
-- [ ] Validate thing model `properties`, `events`, and `services`.
-- [ ] Implement product list, product detail, thing model editor, and access guide.
-- [ ] Add API tests for product creation, product key uniqueness, thing model validation, product deletion with existing devices, and cross-organization access.
-- [ ] Run: `pnpm test -- --run products thing-model`.
-- [ ] Commit: `feat: add product management and thing model`.
+- [x] Implement product create, update, delete, list, and detail.
+- [x] Generate unique `product_key`.
+- [x] Implement product thing model read and update using the PRD minimal thing model structure.
+- [x] Validate thing model `properties`, `events`, and `services`.
+- [x] Implement product list, product detail, thing model editor, and access guide.
+- [x] Add API tests for product creation, product key uniqueness, thing model validation, product deletion with existing devices, and cross-organization access.
+- [x] Run: `pnpm test -- --run products thing-model`.
+- [x] Commit: `feat: add product management and thing model`.
 
 Acceptance:
 
@@ -460,6 +460,15 @@ Acceptance:
 - Product thing model validates identifiers, data types, service input, and service output.
 - Invalid thing models return structured validation errors.
 - Product with existing devices cannot be deleted.
+
+Verification status on 2026-04-28:
+
+- `POST /api/v1/products` creates a product without client-provided `product_key`; server generated `pk_20080a7e7551` in local verification.
+- `GET /api/v1/products/{product_id}` returns product detail.
+- `PUT /api/v1/products/{product_id}/thing-model` updates a valid thing model.
+- `DELETE /api/v1/products/{product_id}` soft-deletes a product with no devices.
+- `DELETE /api/v1/products/prd_demo` returns `409001` because the seed product has active devices.
+- `pnpm test apps/web/lib/products/product-service.test.ts` and `pnpm --filter @ziot/web typecheck` pass.
 
 ### Task 3B: Device Management, Groups, And Shadow
 

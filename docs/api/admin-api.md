@@ -402,7 +402,7 @@ content-type: application/json
 
 | 字段 | 类型 | 必填 | 规则 |
 | --- | --- | --- | --- |
-| `product_key` | string | 是 | 3-64 位，只允许字母、数字、下划线和中划线 |
+| `product_key` | string | 否 | 3-64 位，只允许字母、数字、下划线和中划线；不传时服务端生成 |
 | `name` | string | 是 | 1-128 位 |
 | `protocols` | string[] | 否 | 默认 `["mqtt"]` |
 | `auth_type` | string | 否 | 默认 `device_secret` |
@@ -483,6 +483,12 @@ HTTP 状态码：`201`
 }
 ```
 
+### `GET /api/v1/products/{product_id}`
+
+查询产品详情。
+
+成功响应 HTTP 状态码：`200`，响应体为产品对象。
+
 ### `PATCH /api/v1/products/{product_id}`
 
 更新产品基础信息。当前后台页面使用该接口修改产品名称，`product_key` 创建后不可修改。
@@ -561,7 +567,7 @@ HTTP 状态码：`200`
 
 ### `DELETE /api/v1/products/{product_id}`
 
-软删除产品。当前实现写入 `deleted_at`，列表接口默认不再返回已删除产品。
+软删除产品。当前实现写入 `deleted_at`，列表接口默认不再返回已删除产品。存在未删除设备的产品不能删除。
 
 成功响应：
 
@@ -592,6 +598,46 @@ HTTP 状态码：`200`
 }
 ```
 
+产品下仍存在未删除设备：
+
+```json
+{
+  "code": 409001,
+  "message": "product has active devices",
+  "request_id": "req_xxx",
+  "data": null
+}
+```
+
+### `GET /api/v1/products/{product_id}/thing-model`
+
+查询产品物模型。
+
+### `PUT /api/v1/products/{product_id}/thing-model`
+
+更新产品物模型。请求体可直接提交物模型对象，也可以放在 `thing_model` 字段中。
+
+请求体：
+
+```json
+{
+  "thing_model": {
+    "version": "1.0",
+    "properties": [
+      {
+        "identifier": "temperature",
+        "name": "温度",
+        "dataType": "number"
+      }
+    ],
+    "events": [],
+    "services": []
+  }
+}
+```
+
+物模型校验失败返回 `400001`，`message` 中包含结构化校验错误。
+
 ## 7. 已验证用例
 
 2026-04-28 本地验证过以下用例：
@@ -611,6 +657,9 @@ HTTP 状态码：`200`
 | `POST /api/v1/products` | 返回 HTTP `201`，产品成功写入 PostgreSQL |
 | `PATCH /api/v1/products/{product_id}` | 返回 HTTP `200`，产品名称成功更新 |
 | `DELETE /api/v1/products/{product_id}` | 返回 HTTP `200`，产品成功软删除 |
+| `GET /api/v1/products/{product_id}` | 返回产品详情和接入参数所需字段 |
+| `GET /api/v1/products/{product_id}/thing-model` | 返回产品物模型 |
+| `PUT /api/v1/products/{product_id}/thing-model` | 返回 HTTP `200`，物模型成功更新 |
 | `GET /products` | 产品列表展示编辑、删除操作按钮 |
 | 数据库直查 | `products` 表可查到新建产品 |
 
@@ -626,9 +675,6 @@ docs/dev-logs/2026-04-28-local-db-and-product-api.md
 
 | 接口 | 状态 |
 | --- | --- |
-| `GET /api/v1/products/{product_id}` | 未实现 |
-| `GET /api/v1/products/{product_id}/thing-model` | 未实现 |
-| `PUT /api/v1/products/{product_id}/thing-model` | 未实现 |
 | 设备 API | 未实现 |
 | 控制 API | 未实现 |
 | OTA API | 未实现 |

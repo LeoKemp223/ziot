@@ -4,22 +4,23 @@ import { apiOk } from "@/lib/api-response";
 import { apiErrorResponse } from "@/lib/api-errors";
 import { createRequestId } from "@/lib/request-id";
 import { createProduct, listProducts } from "@/lib/products/product-service";
+import { getCurrentUser } from "@/lib/identity/session";
 
 export const runtime = "nodejs";
-
-const DEFAULT_ORG_ID = "org_default";
-
-function getOrgId(request: NextRequest): string {
-  return request.headers.get("x-org-id")?.trim() || DEFAULT_ORG_ID;
-}
 
 export async function GET(request: NextRequest) {
   const requestId = createRequestId();
   const { searchParams } = request.nextUrl;
 
   try {
+    const user = await getCurrentUser(request);
+
+    if (!user.permissions.includes("product:read")) {
+      throw Object.assign(new Error("permission denied"), { code: 403001 });
+    }
+
     const products = await listProducts(prisma, {
-      orgId: getOrgId(request),
+      orgId: user.current_org_id,
       page: Number(searchParams.get("page") ?? "1"),
       pageSize: Number(searchParams.get("page_size") ?? "20"),
       ...(searchParams.has("keyword")
@@ -37,15 +38,23 @@ export async function POST(request: NextRequest) {
   const requestId = createRequestId();
 
   try {
+    const user = await getCurrentUser(request);
+
+    if (!user.permissions.includes("product:write")) {
+      throw Object.assign(new Error("permission denied"), { code: 403001 });
+    }
+
     const body = (await request.json()) as Record<string, unknown>;
     const input = {
-      orgId: getOrgId(request),
-      product_key: String(body.product_key ?? ""),
+      orgId: user.current_org_id,
       name: String(body.name ?? ""),
       thing_model: body.thing_model
     };
     const product = await createProduct(prisma, {
       ...input,
+      ...(typeof body.product_key === "string"
+        ? { product_key: body.product_key }
+        : {}),
       ...(Array.isArray(body.protocols)
         ? {
             protocols: body.protocols.filter(

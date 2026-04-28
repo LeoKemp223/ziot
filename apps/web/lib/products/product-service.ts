@@ -37,6 +37,10 @@ type ProductMutationDelegate = {
   update(args: unknown): Promise<ProductRecord>;
 };
 
+type DeviceCountDelegate = {
+  count(args: unknown): Promise<number>;
+};
+
 export type ProductListDb = {
   product: ProductListDelegate;
 };
@@ -47,6 +51,7 @@ export type ProductCreateDb = {
 
 export type ProductMutationDb = {
   product: ProductMutationDelegate;
+  device?: DeviceCountDelegate;
 };
 
 export type ListProductsInput = {
@@ -58,7 +63,7 @@ export type ListProductsInput = {
 
 export type CreateProductInput = {
   orgId: string;
-  product_key: string;
+  product_key?: string;
   name: string;
   protocols?: string[];
   auth_type?: string;
@@ -79,6 +84,12 @@ export type UpdateProductInput = {
 export type DeleteProductInput = {
   orgId: string;
   productId: string;
+};
+
+export type ProductThingModelInput = {
+  orgId: string;
+  productId: string;
+  thing_model: unknown;
 };
 
 export type ProductDto = {
@@ -183,6 +194,10 @@ async function findActiveProduct(
   return product;
 }
 
+function generatedProductKey(): string {
+  return `pk_${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
+}
+
 export async function listProducts(db: ProductListDb, input: ListProductsInput) {
   const page = clampPage(input.page);
   const pageSize = clampPageSize(input.pageSize);
@@ -221,7 +236,7 @@ export async function createProduct(
   db: ProductCreateDb,
   input: CreateProductInput
 ) {
-  const productKey = input.product_key.trim();
+  const productKey = input.product_key?.trim() || generatedProductKey();
   const name = input.name.trim();
 
   if (!productKey || !/^[A-Za-z0-9_-]{3,64}$/.test(productKey)) {
@@ -303,11 +318,46 @@ export async function updateProduct(
   return mapProduct(product);
 }
 
+export async function getProduct(
+  db: ProductMutationDb,
+  input: DeleteProductInput
+) {
+  return mapProduct(await findActiveProduct(db, input));
+}
+
+export async function updateProductThingModel(
+  db: ProductMutationDb,
+  input: ProductThingModelInput
+) {
+  await findActiveProduct(db, input);
+
+  const product = await db.product.update({
+    where: { id: input.productId },
+    data: { thing_model: normalizeThingModel(input.thing_model) },
+    include: { _count: { select: { devices: true } } }
+  });
+
+  return mapProduct(product).thing_model;
+}
+
 export async function deleteProduct(
   db: ProductMutationDb,
   input: DeleteProductInput
 ) {
   await findActiveProduct(db, input);
+
+  if (db.device) {
+    const deviceCount = await db.device.count({
+      where: {
+        product_id: input.productId,
+        deleted_at: null
+      }
+    });
+
+    if (deviceCount > 0) {
+      throw serviceError(409001, "product has active devices");
+    }
+  }
 
   const product = await db.product.update({
     where: { id: input.productId },

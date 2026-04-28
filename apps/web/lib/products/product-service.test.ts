@@ -2,8 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createProduct,
   deleteProduct,
+  getProduct,
   listProducts,
-  updateProduct
+  updateProduct,
+  updateProductThingModel
 } from "./product-service";
 
 const now = new Date("2026-04-28T08:00:00.000Z");
@@ -116,6 +118,27 @@ describe("product service", () => {
     expect(result.id).toBe("prd_new");
   });
 
+  it("generates product key when product_key is omitted", async () => {
+    const db = {
+      product: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(product({ id: "prd_new" }))
+      }
+    };
+
+    await createProduct(db, {
+      orgId: "org_default",
+      name: "自动 Key 产品"
+    });
+
+    expect(db.product.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        product_key: expect.stringMatching(/^pk_[a-f0-9]{12}$/)
+      }),
+      include: { _count: { select: { devices: true } } }
+    });
+  });
+
   it("rejects duplicated product keys", async () => {
     const db = {
       product: {
@@ -173,6 +196,56 @@ describe("product service", () => {
     expect(result.name).toBe("更新后的产品");
   });
 
+  it("gets an active product by id", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product()),
+        update: vi.fn()
+      }
+    };
+
+    const result = await getProduct(db, {
+      orgId: "org_default",
+      productId: "prd_demo"
+    });
+
+    expect(result.id).toBe("prd_demo");
+  });
+
+  it("updates a product thing model", async () => {
+    const thingModel = {
+      version: "1.0",
+      properties: [
+        {
+          identifier: "temperature",
+          name: "温度",
+          dataType: "number"
+        }
+      ],
+      events: [],
+      services: []
+    };
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product()),
+        update: vi.fn().mockResolvedValue(product({ thing_model: thingModel }))
+      }
+    };
+
+    const result = await updateProductThingModel(db, {
+      orgId: "org_default",
+      productId: "prd_demo",
+      thing_model: thingModel
+    });
+
+    expect(db.product.update).toHaveBeenCalledWith({
+      where: { id: "prd_demo" },
+      data: { thing_model: thingModel },
+      include: { _count: { select: { devices: true } } }
+    });
+    expect(result.properties[0]?.identifier).toBe("temperature");
+  });
+
   it("rejects updates for missing products", async () => {
     const db = {
       product: {
@@ -221,5 +294,28 @@ describe("product service", () => {
       id: "prd_demo",
       deleted_at: "2026-04-28T08:30:00.000Z"
     });
+  });
+
+  it("rejects deleting a product with active devices", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product()),
+        update: vi.fn()
+      },
+      device: {
+        count: vi.fn().mockResolvedValue(2)
+      }
+    };
+
+    await expect(
+      deleteProduct(db, {
+        orgId: "org_default",
+        productId: "prd_demo"
+      })
+    ).rejects.toMatchObject({
+      code: 409001,
+      message: "product has active devices"
+    });
+    expect(db.product.update).not.toHaveBeenCalled();
   });
 });
