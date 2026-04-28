@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import bcrypt from "bcryptjs";
 import {
   createInvitation,
+  ensureDefaultOrgRoles,
+  listRoles,
   loginUser,
   refreshSession,
   registerWithInvitation
@@ -128,6 +130,94 @@ describe("auth service", () => {
         })
       })
     );
+  });
+
+  it("ensures the ordinary user role with read-only permissions", async () => {
+    const db = {
+      role: {
+        upsert: vi.fn().mockResolvedValue({
+          id: "role_org_member",
+          code: "org_member",
+          name: "普通用户"
+        })
+      },
+      permission: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: "perm_product_read" },
+          { id: "perm_device_read" }
+        ])
+      },
+      rolePermission: {
+        upsert: vi.fn().mockResolvedValue({})
+      }
+    };
+
+    const role = await ensureDefaultOrgRoles(db, "org_default");
+
+    expect(role).toMatchObject({
+      id: "role_org_member",
+      code: "org_member",
+      name: "普通用户"
+    });
+    expect(db.role.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          org_id_code: {
+            org_id: "org_default",
+            code: "org_member"
+          }
+        }
+      })
+    );
+    expect(db.permission.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          code: {
+            in: ["product:read", "device:read", "ota:read", "log:read"]
+          }
+        }
+      })
+    );
+    expect(db.rolePermission.upsert).toHaveBeenCalledTimes(2);
+  });
+
+  it("lists roles after ensuring the ordinary user role exists", async () => {
+    const db = {
+      role: {
+        upsert: vi.fn().mockResolvedValue({
+          id: "role_org_member",
+          code: "org_member",
+          name: "普通用户"
+        }),
+        findMany: vi.fn().mockResolvedValue([
+          { id: "role_org_admin", code: "org_admin", name: "组织管理员" },
+          { id: "role_org_member", code: "org_member", name: "普通用户" }
+        ])
+      },
+      permission: {
+        findMany: vi.fn().mockResolvedValue([])
+      },
+      rolePermission: {
+        upsert: vi.fn()
+      }
+    };
+
+    const roles = await listRoles(db, "org_default");
+
+    expect(roles.map((role: { code: string }) => role.code)).toEqual([
+      "org_admin",
+      "org_member"
+    ]);
+    expect(db.role.findMany).toHaveBeenCalledWith({
+      where: { org_id: "org_default" },
+      orderBy: { created_at: "asc" },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        description: true
+      }
+    });
   });
 
   it("registers a user with a valid invitation", async () => {

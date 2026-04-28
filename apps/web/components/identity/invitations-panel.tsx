@@ -74,11 +74,12 @@ export function InvitationsPanel() {
 
   async function createInvitation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setPending(true);
     setError("");
     setCreatedCode("");
 
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formElement);
 
     try {
       const response = await fetch("/api/v1/invitations", {
@@ -97,7 +98,7 @@ export function InvitationsPanel() {
       }
 
       setCreatedCode(body.data.code ?? "");
-      event.currentTarget.reset();
+      formElement.reset();
       await loadData();
     } catch {
       setError("创建邀请码失败，请稍后重试。");

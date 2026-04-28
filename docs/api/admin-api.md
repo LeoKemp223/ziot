@@ -155,6 +155,7 @@ curl http://localhost:3000/api/v1/health
 ### `POST /api/v1/auth/register`
 
 使用邀请码注册并登录。邀请码只存储 hash，明文邀请码只在创建时返回一次。
+注册请求不提交角色字段，服务端会使用邀请码绑定的角色。
 
 请求体：
 
@@ -162,7 +163,7 @@ curl http://localhost:3000/api/v1/health
 {
   "account": "user@example.com",
   "password": "Password123",
-  "display_name": "设备管理员",
+  "display_name": "张三",
   "invitation_code": "inv_xxx"
 }
 ```
@@ -199,7 +200,16 @@ curl http://localhost:3000/api/v1/health
 
 ### `GET /api/v1/roles`
 
-查询当前组织角色列表。
+查询当前组织角色列表。需要 `user:read` 或 `invite:write` 权限。接口会确保当前组织至少存在 `org_admin` 和 `org_member` 中的普通用户角色，其中 `org_member` 只包含产品、设备、OTA 和日志的查看权限，不包含用户管理和邀请码权限。
+
+角色示例：
+
+```json
+[
+  { "id": "role_org_admin", "code": "org_admin", "name": "组织管理员" },
+  { "id": "role_org_member", "code": "org_member", "name": "普通用户" }
+]
+```
 
 ### `GET /api/v1/invitations`
 
@@ -213,7 +223,7 @@ curl http://localhost:3000/api/v1/health
 
 ```json
 {
-  "role_id": "role_org_admin",
+  "role_id": "role_org_member",
   "max_uses": 1
 }
 ```
@@ -227,8 +237,8 @@ curl http://localhost:3000/api/v1/health
   "request_id": "req_xxx",
   "data": {
     "id": "inv_xxx",
-    "role_id": "role_org_admin",
-    "role_name": "组织管理员",
+    "role_id": "role_org_member",
+    "role_name": "普通用户",
     "max_uses": 1,
     "used_count": 0,
     "status": "active",

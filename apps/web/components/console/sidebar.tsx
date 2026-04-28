@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import {
   Boxes,
   ChevronRight,
@@ -9,7 +12,7 @@ import {
   ShieldCheck,
   UploadCloud
 } from "lucide-react";
-import type { NavItem } from "./dashboard-data";
+import { filterNavItemsForPermissions, type NavItem } from "./dashboard-data";
 
 const navIcons = {
   home: Home,
@@ -26,7 +29,33 @@ type ConsoleSidebarProps = {
   items: NavItem[];
 };
 
+type MeResponse = {
+  code: number;
+  data?: {
+    permissions: string[];
+  };
+};
+
 export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
+  const [permissions, setPermissions] = useState<string[] | null>(null);
+  const visibleItems = useMemo(
+    () => filterNavItemsForPermissions(items, permissions ?? []),
+    [items, permissions]
+  );
+
+  useEffect(() => {
+    void fetch("/api/v1/me")
+      .then((response) => response.json() as Promise<MeResponse>)
+      .then((body) => {
+        if (body.code === 0 && body.data) {
+          setPermissions(body.data.permissions);
+        }
+      })
+      .catch(() => {
+        setPermissions([]);
+      });
+  }, []);
+
   return (
     <aside className="hidden w-64 shrink-0 flex-col bg-[#141414] text-zinc-300 lg:flex">
       <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
@@ -39,7 +68,7 @@ export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
         </div>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-5">
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = navIcons[item.icon];
 
           return (

@@ -72,13 +72,13 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       {mode === "register" ? (
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">显示名称</span>
+          <span className="text-sm font-medium text-slate-700">姓名/昵称</span>
           <input
             autoComplete="name"
             className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
             maxLength={128}
             name="display_name"
-            placeholder="设备管理员"
+            placeholder="张三"
             required
           />
         </label>

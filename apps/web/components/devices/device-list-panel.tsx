@@ -85,11 +85,12 @@ export function DeviceListPanel() {
 
   async function createDevice(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setPending(true);
     setError("");
     setCreatedSecret("");
 
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formElement);
 
     try {
       const response = await fetch("/api/v1/devices", {
@@ -108,7 +109,7 @@ export function DeviceListPanel() {
       }
 
       setCreatedSecret(body.data.device_secret ?? "");
-      event.currentTarget.reset();
+      formElement.reset();
       await loadData();
     } catch {
       setError("创建设备失败，请稍后重试。");
@@ -119,10 +120,11 @@ export function DeviceListPanel() {
 
   async function createGroup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setPending(true);
     setError("");
 
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formElement);
 
     try {
       const response = await fetch("/api/v1/device-groups", {
@@ -141,7 +143,7 @@ export function DeviceListPanel() {
         return;
       }
 
-      event.currentTarget.reset();
+      formElement.reset();
       await loadData();
     } catch {
       setError("创建设备分组失败，请稍后重试。");
@@ -220,10 +222,11 @@ export function DeviceListPanel() {
 
   async function addDeviceToGroup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setPending(true);
     setError("");
 
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formElement);
 
     try {
       const response = await fetch("/api/v1/device-groups", {
@@ -244,7 +247,7 @@ export function DeviceListPanel() {
         return;
       }
 
-      event.currentTarget.reset();
+      formElement.reset();
       await loadData();
     } catch {
       setError("添加设备到分组失败，请确认产品一致。");

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   alertSummaries,
+  filterNavItemsForPermissions,
   dashboardStats,
   navItems,
   recentLogs,
@@ -21,6 +22,23 @@ describe("console dashboard data", () => {
       "系统设置"
     ]);
     expect(navItems.filter((item) => item.active)).toHaveLength(1);
+  });
+
+  it("filters privileged navigation for ordinary users", () => {
+    const items = filterNavItemsForPermissions(navItems, [
+      "product:read",
+      "device:read",
+      "ota:read",
+      "log:read"
+    ]);
+
+    expect(items.map((item) => item.label)).toEqual([
+      "首页概览",
+      "产品管理",
+      "设备管理",
+      "OTA 升级",
+      "日志中心"
+    ]);
   });
 
   it("provides dashboard summaries for the overview page", () => {

@@ -409,8 +409,10 @@ Verification status on 2026-04-28:
 - [x] Implement multi-role permission union within the current organization.
 - [x] Implement permission helpers that check `org_id` for tenant-owned resources.
 - [x] Seed platform admin, default organization, default roles, and default permissions.
+- [x] Seed and auto-ensure `org_member` ordinary-user role with read-only product, device, OTA, and log permissions.
 - [x] Implement login and invitation registration pages with shadcn/ui forms.
 - [x] Implement user list, role list, and invitation management pages.
+- [x] Filter console navigation by current-user permissions so ordinary users cannot see user management or invitation menus.
 - [x] Add API tests for successful registration, expired invitation, overused invitation, disabled user, refresh token, and cross-organization access.
 - [x] Run: `pnpm test -- --run identity`.
 - [x] Commit: `feat: add identity invitation and rbac`.
@@ -424,11 +426,15 @@ Acceptance:
 - Web login persists session and loads current user profile.
 - User can switch between organizations they belong to.
 - Multiple roles in the same organization combine permissions by union.
+- Ordinary users can view only permitted console menus and cannot see user management or invitation menus.
 
 Verification status on 2026-04-28:
 
 - `POST /api/v1/auth/login` logs in the seeded admin and sets access, refresh, and current organization cookies.
 - `GET /api/v1/me`, `GET /api/v1/users`, `GET /api/v1/roles`, `POST /api/v1/invitations`, `GET /api/v1/invitations/{id}`, `PATCH /api/v1/invitations/{id}`, and `POST /api/v1/auth/register` were verified against local PostgreSQL.
+- `GET /api/v1/roles` returns both `组织管理员` and `普通用户`; invitations can target `普通用户`.
+- Registration uses the invitation's role automatically and does not accept or require a role field.
+- Console sidebar hides `用户管理` and `邀请码` when current permissions do not include `user:read` or `invite:read`.
 - Unauthenticated `GET /products` redirects to `/login`.
 - `pnpm test`, `pnpm typecheck`, and `pnpm --filter @ziot/web build` pass.
 - `prisma migrate deploy` applies both foundation and identity migrations from an empty database, and seed succeeds.

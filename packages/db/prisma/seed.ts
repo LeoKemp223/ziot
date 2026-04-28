@@ -26,6 +26,13 @@ const permissions = [
   ["perm_audit_read", "audit:read", "审计查看", "audit"]
 ] as const;
 
+const memberPermissionCodes = new Set([
+  "product:read",
+  "device:read",
+  "ota:read",
+  "log:read"
+]);
+
 async function main() {
   const password_hash = await bcrypt.hash("Admin123456", 10);
   const device_secret_hash = await bcrypt.hash("DeviceSecret123", 10);
@@ -58,7 +65,7 @@ async function main() {
     });
   }
 
-  await prisma.role.upsert({
+  const adminRole = await prisma.role.upsert({
     where: { org_id_code: { org_id: "org_default", code: "org_admin" } },
     update: {},
     create: {
@@ -69,12 +76,26 @@ async function main() {
     }
   });
 
+  const memberRole = await prisma.role.upsert({
+    where: { org_id_code: { org_id: "org_default", code: "org_member" } },
+    update: {
+      name: "普通用户"
+    },
+    create: {
+      id: "role_org_member",
+      org_id: "org_default",
+      code: "org_member",
+      name: "普通用户",
+      description: "可查看产品、设备、OTA 和日志的普通成员"
+    }
+  });
+
   await prisma.userOrgRole.upsert({
     where: {
       user_id_org_id_role_id: {
         user_id: "usr_admin",
         org_id: "org_default",
-        role_id: "role_org_admin"
+        role_id: adminRole.id
       }
     },
     update: {},
@@ -82,24 +103,40 @@ async function main() {
       id: "uor_admin_default",
       user_id: "usr_admin",
       org_id: "org_default",
-      role_id: "role_org_admin"
+      role_id: adminRole.id
     }
   });
 
-  for (const [permission_id] of permissions) {
+  for (const [permission_id, code] of permissions) {
     await prisma.rolePermission.upsert({
       where: {
         role_id_permission_id: {
-          role_id: "role_org_admin",
+          role_id: adminRole.id,
           permission_id
         }
       },
       update: {},
       create: {
-        role_id: "role_org_admin",
+        role_id: adminRole.id,
         permission_id
       }
     });
+
+    if (memberPermissionCodes.has(code)) {
+      await prisma.rolePermission.upsert({
+        where: {
+          role_id_permission_id: {
+            role_id: memberRole.id,
+            permission_id
+          }
+        },
+        update: {},
+        create: {
+          role_id: memberRole.id,
+          permission_id
+        }
+      });
+    }
   }
 
   await prisma.product.upsert({

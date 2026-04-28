@@ -58,6 +58,9 @@ export type AuthSession = {
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 const DEFAULT_JWT_SECRET = "local-development-secret-change-before-production";
+const MEMBER_ROLE_CODE = "org_member";
+const MEMBER_ROLE_NAME = "普通用户";
+const MEMBER_PERMISSION_CODES = ["product:read", "device:read", "ota:read", "log:read"];
 
 function serviceError(
   code: IdentityError["code"],
@@ -575,6 +578,73 @@ export async function disableInvitation(
   });
 
   return mapInvitation(invitation);
+}
+
+export async function ensureDefaultOrgRoles(db: Db, orgId: string) {
+  const role = await db.role.upsert({
+    where: {
+      org_id_code: {
+        org_id: orgId,
+        code: MEMBER_ROLE_CODE
+      }
+    },
+    update: {
+      name: MEMBER_ROLE_NAME
+    },
+    create: {
+      id: id("rol"),
+      org_id: orgId,
+      code: MEMBER_ROLE_CODE,
+      name: MEMBER_ROLE_NAME,
+      description: "可查看产品、设备、OTA 和日志的普通成员"
+    }
+  });
+
+  const permissions = await db.permission.findMany({
+    where: {
+      code: {
+        in: MEMBER_PERMISSION_CODES
+      }
+    },
+    select: {
+      id: true
+    }
+  });
+
+  await Promise.all(
+    permissions.map((permission: { id: string }) =>
+      db.rolePermission.upsert({
+        where: {
+          role_id_permission_id: {
+            role_id: role.id,
+            permission_id: permission.id
+          }
+        },
+        update: {},
+        create: {
+          role_id: role.id,
+          permission_id: permission.id
+        }
+      })
+    )
+  );
+
+  return role;
+}
+
+export async function listRoles(db: Db, orgId: string) {
+  await ensureDefaultOrgRoles(db, orgId);
+
+  return db.role.findMany({
+    where: { org_id: orgId },
+    orderBy: { created_at: "asc" },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      description: true
+    }
+  });
 }
 
 export async function listUsers(db: Db, orgId: string) {

@@ -1,7 +1,16 @@
 export type NavItem = {
   label: string;
   href: string;
-  icon: "home" | "box" | "cpu" | "radio" | "upload" | "logs" | "users" | "settings";
+  icon:
+    | "home"
+    | "box"
+    | "cpu"
+    | "radio"
+    | "upload"
+    | "logs"
+    | "users"
+    | "settings";
+  requiredPermissions?: string[];
   active?: boolean;
 };
 
@@ -29,15 +38,72 @@ export type AlertSummary = {
 
 export const navItems: NavItem[] = [
   { label: "首页概览", href: "/", icon: "home", active: true },
-  { label: "产品管理", href: "/products", icon: "box" },
-  { label: "设备管理", href: "/devices", icon: "cpu" },
-  { label: "设备控制", href: "/controls", icon: "radio" },
-  { label: "OTA 升级", href: "/ota", icon: "upload" },
-  { label: "日志中心", href: "/logs", icon: "logs" },
-  { label: "用户管理", href: "/users", icon: "users" },
-  { label: "邀请码", href: "/invitations", icon: "users" },
-  { label: "系统设置", href: "/settings", icon: "settings" }
+  {
+    label: "产品管理",
+    href: "/products",
+    icon: "box",
+    requiredPermissions: ["product:read"]
+  },
+  {
+    label: "设备管理",
+    href: "/devices",
+    icon: "cpu",
+    requiredPermissions: ["device:read"]
+  },
+  {
+    label: "设备控制",
+    href: "/controls",
+    icon: "radio",
+    requiredPermissions: ["device:control"]
+  },
+  {
+    label: "OTA 升级",
+    href: "/ota",
+    icon: "upload",
+    requiredPermissions: ["ota:read"]
+  },
+  {
+    label: "日志中心",
+    href: "/logs",
+    icon: "logs",
+    requiredPermissions: ["log:read"]
+  },
+  {
+    label: "用户管理",
+    href: "/users",
+    icon: "users",
+    requiredPermissions: ["user:read"]
+  },
+  {
+    label: "邀请码",
+    href: "/invitations",
+    icon: "users",
+    requiredPermissions: ["invite:read"]
+  },
+  {
+    label: "系统设置",
+    href: "/settings",
+    icon: "settings",
+    requiredPermissions: ["user:write"]
+  }
 ];
+
+export function filterNavItemsForPermissions(
+  items: NavItem[],
+  permissions: string[]
+): NavItem[] {
+  const permissionSet = new Set(permissions);
+
+  return items.filter((item) => {
+    if (!item.requiredPermissions || item.requiredPermissions.length === 0) {
+      return true;
+    }
+
+    return item.requiredPermissions.some((permission) =>
+      permissionSet.has(permission)
+    );
+  });
+}
 
 export const dashboardStats: DashboardStat[] = [
   {
