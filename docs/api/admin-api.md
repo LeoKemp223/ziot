@@ -56,6 +56,7 @@ apps/web/.env.local
 | --- | --- | --- |
 | `0` | 200 / 201 | 成功 |
 | `400001` | 400 | 参数错误 |
+| `404001` | 404 | 资源不存在，例如产品不存在或已删除 |
 | `409001` | 409 | 资源冲突，例如 `product_key` 重复 |
 | `500001` | 500 | 系统错误，未知异常统一返回 `internal server error` |
 
@@ -352,6 +353,16 @@ HTTP 状态码：`201`
 }
 ```
 
+字段规则：
+
+| 字段 | 类型 | 必填 | 规则 |
+| --- | --- | --- | --- |
+| `name` | string | 否 | 1-128 位；当前产品列表编辑入口只提交该字段 |
+| `protocols` | string[] | 否 | 为空数组时回退为 `["mqtt"]` |
+| `auth_type` | string | 否 | 当前默认 `device_secret` |
+| `data_format` | string | 否 | 当前默认 `json` |
+| `thing_model` | object | 否 | 必须通过物模型结构校验 |
+
 成功响应：
 
 HTTP 状态码：`200`
@@ -384,10 +395,23 @@ HTTP 状态码：`200`
 
 常见错误：
 
+`product_id` 不存在、不是当前组织产品，或产品已软删除：
+
 ```json
 {
   "code": 404001,
   "message": "product not found",
+  "request_id": "req_xxx",
+  "data": null
+}
+```
+
+`name` 格式不合法：
+
+```json
+{
+  "code": 400001,
+  "message": "name must be 1-128 characters",
   "request_id": "req_xxx",
   "data": null
 }
@@ -413,6 +437,19 @@ HTTP 状态码：`200`
 }
 ```
 
+常见错误：
+
+`product_id` 不存在、不是当前组织产品，或产品已软删除：
+
+```json
+{
+  "code": 404001,
+  "message": "product not found",
+  "request_id": "req_xxx",
+  "data": null
+}
+```
+
 ## 6. 已验证用例
 
 2026-04-28 本地验证过以下用例：
@@ -424,6 +461,7 @@ HTTP 状态码：`200`
 | `POST /api/v1/products` | 返回 HTTP `201`，产品成功写入 PostgreSQL |
 | `PATCH /api/v1/products/{product_id}` | 返回 HTTP `200`，产品名称成功更新 |
 | `DELETE /api/v1/products/{product_id}` | 返回 HTTP `200`，产品成功软删除 |
+| `GET /products` | 产品列表展示编辑、删除操作按钮 |
 | 数据库直查 | `products` 表可查到新建产品 |
 
 验证日志：

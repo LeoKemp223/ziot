@@ -82,7 +82,7 @@ http://localhost:3000
 http://localhost:3000/products
 ```
 
-## 产品创建接口验证
+## 产品接口验证
 
 调用产品创建接口：
 
@@ -130,6 +130,52 @@ test: test
 pk_demo: 演示产品
 ```
 
+产品更新接口验证：
+
+```bash
+curl -s -w '\n%{http_code}\n' \
+  -H 'content-type: application/json' \
+  -X PATCH http://localhost:3000/api/v1/products/prd_808c0b9eb4bc4194 \
+  -d '{"name":"操作测试产品已修改"}'
+```
+
+结果：
+
+```text
+HTTP 200
+code: 0
+name: 操作测试产品已修改
+```
+
+产品删除接口验证：
+
+```bash
+curl -s -w '\n%{http_code}\n' \
+  -X DELETE http://localhost:3000/api/v1/products/prd_808c0b9eb4bc4194
+```
+
+结果：
+
+```text
+HTTP 200
+code: 0
+deleted_at: 2026-04-28T09:39:48.218Z
+```
+
+当前删除为软删除：服务端写入 `products.deleted_at`，`GET /api/v1/products` 默认只返回 `deleted_at is null` 的产品。
+
+产品管理页面验证：
+
+```text
+http://localhost:3000/products
+```
+
+已确认列表每行展示编辑和删除按钮：
+
+- 编辑按钮进入行内编辑态，可修改产品名称并保存。
+- 删除按钮弹出浏览器确认框，确认后调用软删除接口并从当前列表移除。
+- Playwright 冒烟验证结果：页面存在编辑按钮和删除按钮，点击编辑后可切换到保存/取消状态。
+
 ## 当前状态
 
 本地 PostgreSQL：
@@ -143,12 +189,14 @@ localhost:55432 - accepting connections
 ```text
 GET /api/v1/products: 可读取数据库产品列表
 POST /api/v1/products: 可创建产品并落库
+PATCH /api/v1/products/{product_id}: 可更新产品名称
+DELETE /api/v1/products/{product_id}: 可软删除产品
 ```
 
 产品管理页面：
 
 ```text
-http://localhost:3000/products
+http://localhost:3000/products: 支持产品列表、创建、编辑名称、软删除
 ```
 
 ## 注意事项
