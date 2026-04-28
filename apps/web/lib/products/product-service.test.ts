@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { createProduct, listProducts } from "./product-service";
+import {
+  createProduct,
+  deleteProduct,
+  listProducts,
+  updateProduct
+} from "./product-service";
 
 const now = new Date("2026-04-28T08:00:00.000Z");
 
@@ -131,6 +136,90 @@ describe("product service", () => {
     ).rejects.toMatchObject({
       code: 409001,
       message: "product_key already exists"
+    });
+  });
+
+  it("updates an active product name", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product()),
+        update: vi.fn().mockResolvedValue(
+          product({
+            name: "更新后的产品"
+          })
+        )
+      }
+    };
+
+    const result = await updateProduct(db, {
+      orgId: "org_default",
+      productId: "prd_demo",
+      name: " 更新后的产品 "
+    });
+
+    expect(db.product.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: "prd_demo",
+        org_id: "org_default",
+        deleted_at: null
+      },
+      include: { _count: { select: { devices: true } } }
+    });
+    expect(db.product.update).toHaveBeenCalledWith({
+      where: { id: "prd_demo" },
+      data: { name: "更新后的产品" },
+      include: { _count: { select: { devices: true } } }
+    });
+    expect(result.name).toBe("更新后的产品");
+  });
+
+  it("rejects updates for missing products", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn()
+      }
+    };
+
+    await expect(
+      updateProduct(db, {
+        orgId: "org_default",
+        productId: "prd_missing",
+        name: "不存在"
+      })
+    ).rejects.toMatchObject({
+      code: 404001,
+      message: "product not found"
+    });
+    expect(db.product.update).not.toHaveBeenCalled();
+  });
+
+  it("soft deletes an active product", async () => {
+    const deletedAt = new Date("2026-04-28T08:30:00.000Z");
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product()),
+        update: vi.fn().mockResolvedValue(
+          product({
+            deleted_at: deletedAt
+          })
+        )
+      }
+    };
+
+    const result = await deleteProduct(db, {
+      orgId: "org_default",
+      productId: "prd_demo"
+    });
+
+    expect(db.product.update).toHaveBeenCalledWith({
+      where: { id: "prd_demo" },
+      data: { deleted_at: expect.any(Date) },
+      include: { _count: { select: { devices: true } } }
+    });
+    expect(result).toEqual({
+      id: "prd_demo",
+      deleted_at: "2026-04-28T08:30:00.000Z"
     });
   });
 });

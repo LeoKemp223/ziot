@@ -1,7 +1,7 @@
 import { validateThingModel, type ThingModel } from "@ziot/domain";
 
 export type ProductServiceError = Error & {
-  code: 400001 | 409001 | 500001;
+  code: 400001 | 404001 | 409001 | 500001;
 };
 
 export type ProductRecord = {
@@ -32,12 +32,21 @@ type ProductCreateDelegate = {
   create(args: unknown): Promise<ProductRecord>;
 };
 
+type ProductMutationDelegate = {
+  findFirst(args: unknown): Promise<ProductRecord | null>;
+  update(args: unknown): Promise<ProductRecord>;
+};
+
 export type ProductListDb = {
   product: ProductListDelegate;
 };
 
 export type ProductCreateDb = {
   product: ProductCreateDelegate;
+};
+
+export type ProductMutationDb = {
+  product: ProductMutationDelegate;
 };
 
 export type ListProductsInput = {
@@ -55,6 +64,21 @@ export type CreateProductInput = {
   auth_type?: string;
   data_format?: string;
   thing_model?: unknown;
+};
+
+export type UpdateProductInput = {
+  orgId: string;
+  productId: string;
+  name?: string;
+  protocols?: string[];
+  auth_type?: string;
+  data_format?: string;
+  thing_model?: unknown;
+};
+
+export type DeleteProductInput = {
+  orgId: string;
+  productId: string;
 };
 
 export type ProductDto = {
@@ -139,6 +163,26 @@ function mapProduct(product: ProductRecord): ProductDto {
   };
 }
 
+async function findActiveProduct(
+  db: ProductMutationDb,
+  input: DeleteProductInput
+): Promise<ProductRecord> {
+  const product = await db.product.findFirst({
+    where: {
+      id: input.productId,
+      org_id: input.orgId,
+      deleted_at: null
+    },
+    include: { _count: { select: { devices: true } } }
+  });
+
+  if (!product) {
+    throw serviceError(404001, "product not found");
+  }
+
+  return product;
+}
+
 export async function listProducts(db: ProductListDb, input: ListProductsInput) {
   const page = clampPage(input.page);
   const pageSize = clampPageSize(input.pageSize);
@@ -214,4 +258,65 @@ export async function createProduct(
   });
 
   return mapProduct(product);
+}
+
+export async function updateProduct(
+  db: ProductMutationDb,
+  input: UpdateProductInput
+) {
+  await findActiveProduct(db, input);
+
+  const data: Record<string, unknown> = {};
+
+  if (input.name !== undefined) {
+    const name = input.name.trim();
+
+    if (!name || name.length > 128) {
+      throw serviceError(400001, "name must be 1-128 characters");
+    }
+
+    data.name = name;
+  }
+
+  if (input.protocols !== undefined) {
+    data.protocols = input.protocols.length ? input.protocols : ["mqtt"];
+  }
+
+  if (input.auth_type !== undefined) {
+    data.auth_type = input.auth_type;
+  }
+
+  if (input.data_format !== undefined) {
+    data.data_format = input.data_format;
+  }
+
+  if (input.thing_model !== undefined) {
+    data.thing_model = normalizeThingModel(input.thing_model);
+  }
+
+  const product = await db.product.update({
+    where: { id: input.productId },
+    data,
+    include: { _count: { select: { devices: true } } }
+  });
+
+  return mapProduct(product);
+}
+
+export async function deleteProduct(
+  db: ProductMutationDb,
+  input: DeleteProductInput
+) {
+  await findActiveProduct(db, input);
+
+  const product = await db.product.update({
+    where: { id: input.productId },
+    data: { deleted_at: new Date() },
+    include: { _count: { select: { devices: true } } }
+  });
+
+  return {
+    id: product.id,
+    deleted_at: product.deleted_at?.toISOString() ?? null
+  };
 }

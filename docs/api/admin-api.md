@@ -340,6 +340,79 @@ HTTP 状态码：`201`
 }
 ```
 
+### `PATCH /api/v1/products/{product_id}`
+
+更新产品基础信息。当前后台页面使用该接口修改产品名称，`product_key` 创建后不可修改。
+
+请求体示例：
+
+```json
+{
+  "name": "更新后的产品名称"
+}
+```
+
+成功响应：
+
+HTTP 状态码：`200`
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "request_id": "req_xxx",
+  "data": {
+    "id": "prd_xxx",
+    "product_key": "pk_sensor",
+    "name": "更新后的产品名称",
+    "protocols": ["mqtt"],
+    "auth_type": "device_secret",
+    "data_format": "json",
+    "thing_model": {
+      "version": "1.0",
+      "properties": [],
+      "events": [],
+      "services": []
+    },
+    "status": "active",
+    "device_count": 0,
+    "created_at": "2026-04-28T09:10:33.579Z",
+    "updated_at": "2026-04-28T09:30:33.579Z"
+  }
+}
+```
+
+常见错误：
+
+```json
+{
+  "code": 404001,
+  "message": "product not found",
+  "request_id": "req_xxx",
+  "data": null
+}
+```
+
+### `DELETE /api/v1/products/{product_id}`
+
+软删除产品。当前实现写入 `deleted_at`，列表接口默认不再返回已删除产品。
+
+成功响应：
+
+HTTP 状态码：`200`
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "request_id": "req_xxx",
+  "data": {
+    "id": "prd_xxx",
+    "deleted_at": "2026-04-28T09:30:33.579Z"
+  }
+}
+```
+
 ## 6. 已验证用例
 
 2026-04-28 本地验证过以下用例：
@@ -349,6 +422,8 @@ HTTP 状态码：`201`
 | `GET /api/v1/health` | 返回 `code=0` |
 | `GET /api/v1/products` | 返回 seed 产品和接口创建产品 |
 | `POST /api/v1/products` | 返回 HTTP `201`，产品成功写入 PostgreSQL |
+| `PATCH /api/v1/products/{product_id}` | 返回 HTTP `200`，产品名称成功更新 |
+| `DELETE /api/v1/products/{product_id}` | 返回 HTTP `200`，产品成功软删除 |
 | 数据库直查 | `products` 表可查到新建产品 |
 
 验证日志：
@@ -364,8 +439,6 @@ docs/dev-logs/2026-04-28-local-db-and-product-api.md
 | 接口 | 状态 |
 | --- | --- |
 | `GET /api/v1/products/{product_id}` | 未实现 |
-| `PATCH /api/v1/products/{product_id}` | 未实现 |
-| `DELETE /api/v1/products/{product_id}` | 未实现 |
 | `GET /api/v1/products/{product_id}/thing-model` | 未实现 |
 | `PUT /api/v1/products/{product_id}/thing-model` | 未实现 |
 | 账号与登录 API | 未实现 |

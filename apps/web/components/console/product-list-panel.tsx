@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Pencil, RefreshCw, Save, Trash2, X } from "lucide-react";
 import type { ProductDto } from "@/lib/products/product-service";
 
 type ProductListState =
@@ -17,12 +17,33 @@ type ProductsResponse = {
   };
 };
 
+type ProductMutationResponse = {
+  code: number;
+  message: string;
+  data?: ProductDto;
+};
+
+type ProductDeleteResponse = {
+  code: number;
+  message: string;
+  data?: {
+    id: string;
+    deleted_at: string | null;
+  };
+};
+
 export function ProductListPanel() {
   const [state, setState] = useState<ProductListState>({
     status: "loading",
     products: [],
     error: null
   });
+  const [editingProduct, setEditingProduct] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [actionError, setActionError] = useState("");
 
   async function loadProducts() {
     setState((current) => ({
@@ -54,12 +75,92 @@ export function ProductListPanel() {
         products: body.data.items,
         error: null
       });
+      setActionError("");
     } catch {
       setState({
         status: "error",
         products: [],
         error: "请求失败，请确认 Web 服务和数据库状态。"
       });
+    }
+  }
+
+  async function saveProduct(product: ProductDto) {
+    if (!editingProduct || editingProduct.id !== product.id) {
+      return;
+    }
+
+    const name = editingProduct.name.trim();
+
+    if (!name) {
+      setActionError("产品名称不能为空。");
+      return;
+    }
+
+    setPendingAction(`update:${product.id}`);
+    setActionError("");
+
+    try {
+      const response = await fetch(`/api/v1/products/${product.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name })
+      });
+      const body = (await response.json()) as ProductMutationResponse;
+
+      if (!response.ok || body.code !== 0 || !body.data) {
+        throw new Error(body.message || "更新产品失败。");
+      }
+
+      setState((current) => ({
+        ...current,
+        products: current.products.map((item) =>
+          item.id === body.data?.id ? body.data : item
+        )
+      }));
+      setEditingProduct(null);
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : "更新产品失败，请稍后重试。"
+      );
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function deleteProduct(product: ProductDto) {
+    if (!window.confirm(`确定删除产品「${product.name}」？`)) {
+      return;
+    }
+
+    setPendingAction(`delete:${product.id}`);
+    setActionError("");
+
+    try {
+      const response = await fetch(`/api/v1/products/${product.id}`, {
+        method: "DELETE",
+        headers: { accept: "application/json" }
+      });
+      const body = (await response.json()) as ProductDeleteResponse;
+
+      if (!response.ok || body.code !== 0 || !body.data) {
+        throw new Error(body.message || "删除产品失败。");
+      }
+
+      setState((current) => ({
+        ...current,
+        products: current.products.filter((item) => item.id !== body.data?.id)
+      }));
+
+      if (editingProduct?.id === product.id) {
+        setEditingProduct(null);
+      }
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : "删除产品失败，请稍后重试。"
+      );
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -102,6 +203,11 @@ export function ProductListPanel() {
           </div>
         </div>
       </div>
+      {actionError ? (
+        <div className="border-b border-amber-100 bg-amber-50 px-5 py-3 text-sm text-amber-700">
+          {actionError}
+        </div>
+      ) : null}
       {state.status === "error" ? (
         <div className="p-8 text-sm text-amber-700">{state.error}</div>
       ) : state.products.length === 0 ? (
@@ -112,7 +218,7 @@ export function ProductListPanel() {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1200px] border-collapse text-left text-sm">
             <thead className="bg-slate-50 text-xs font-medium text-slate-500">
               <tr>
                 <th className="px-5 py-3">产品</th>
@@ -123,20 +229,38 @@ export function ProductListPanel() {
                 <th className="px-4 py-3">设备数</th>
                 <th className="px-4 py-3">状态</th>
                 <th className="px-4 py-3">创建时间</th>
-                <th className="px-5 py-3">更新时间</th>
+                <th className="px-4 py-3">更新时间</th>
+                <th className="px-5 py-3 text-right">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {state.products.map((product) => {
                 const model = product.thing_model;
                 const modelSummary = `${model.properties.length} 属性 / ${model.events.length} 事件 / ${model.services.length} 服务`;
+                const isEditing = editingProduct?.id === product.id;
+                const isUpdating = pendingAction === `update:${product.id}`;
+                const isDeleting = pendingAction === `delete:${product.id}`;
 
                 return (
                   <tr className="align-top hover:bg-slate-50" key={product.id}>
                     <td className="px-5 py-4">
-                      <div className="font-medium text-slate-950">
-                        {product.name}
-                      </div>
+                      {isEditing ? (
+                        <input
+                          className="h-9 w-full max-w-[260px] rounded-md border border-slate-200 px-3 text-sm font-medium text-slate-950 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                          maxLength={128}
+                          onChange={(event) =>
+                            setEditingProduct({
+                              id: product.id,
+                              name: event.currentTarget.value
+                            })
+                          }
+                          value={editingProduct.name}
+                        />
+                      ) : (
+                        <div className="font-medium text-slate-950">
+                          {product.name}
+                        </div>
+                      )}
                       <div className="mt-1 max-w-[260px] truncate font-mono text-xs text-slate-400">
                         {product.id}
                       </div>
@@ -185,8 +309,73 @@ export function ProductListPanel() {
                     <td className="px-4 py-4 whitespace-nowrap text-slate-500">
                       {formatDateTime(product.created_at)}
                     </td>
-                    <td className="px-5 py-4 whitespace-nowrap text-slate-500">
+                    <td className="px-4 py-4 whitespace-nowrap text-slate-500">
                       {formatDateTime(product.updated_at)}
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex justify-end gap-2">
+                        {isEditing ? (
+                          <>
+                            <button
+                              aria-label="保存产品"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={pendingAction !== null}
+                              onClick={() => void saveProduct(product)}
+                              title="保存"
+                              type="button"
+                            >
+                              {isUpdating ? (
+                                <RefreshCw className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Save className="h-4 w-4" />
+                              )}
+                            </button>
+                            <button
+                              aria-label="取消编辑"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={pendingAction !== null}
+                              onClick={() => setEditingProduct(null)}
+                              title="取消"
+                              type="button"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              aria-label="编辑产品"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={pendingAction !== null}
+                              onClick={() => {
+                                setActionError("");
+                                setEditingProduct({
+                                  id: product.id,
+                                  name: product.name
+                                });
+                              }}
+                              title="编辑"
+                              type="button"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              aria-label="删除产品"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={pendingAction !== null}
+                              onClick={() => void deleteProduct(product)}
+                              title="删除"
+                              type="button"
+                            >
+                              {isDeleting ? (
+                                <RefreshCw className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
