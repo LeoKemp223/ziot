@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Pencil, RefreshCw, Save, Trash2, X } from "lucide-react";
 import type { ProductDto } from "@/lib/products/product-service";
+import { usePermissions } from "./use-permissions";
 
 type ProductListState =
   | { status: "loading"; products: ProductDto[]; error: null }
@@ -33,6 +34,8 @@ type ProductDeleteResponse = {
 };
 
 export function ProductListPanel() {
+  const { isLoaded, hasPermission } = usePermissions();
+  const canWriteProducts = isLoaded && hasPermission("product:write");
   const [state, setState] = useState<ProductListState>({
     status: "loading",
     products: [],
@@ -230,7 +233,9 @@ export function ProductListPanel() {
                 <th className="px-4 py-3">状态</th>
                 <th className="px-4 py-3">创建时间</th>
                 <th className="px-4 py-3">更新时间</th>
-                <th className="px-5 py-3 text-right">操作</th>
+                {canWriteProducts ? (
+                  <th className="px-5 py-3 text-right">操作</th>
+                ) : null}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -315,71 +320,73 @@ export function ProductListPanel() {
                     <td className="px-4 py-4 whitespace-nowrap text-slate-500">
                       {formatDateTime(product.updated_at)}
                     </td>
-                    <td className="px-5 py-4">
-                      <div className="flex justify-end gap-2">
-                        {isEditing ? (
-                          <>
-                            <button
-                              aria-label="保存产品"
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-                              disabled={pendingAction !== null}
-                              onClick={() => void saveProduct(product)}
-                              title="保存"
-                              type="button"
-                            >
-                              {isUpdating ? (
-                                <RefreshCw className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Save className="h-4 w-4" />
-                              )}
-                            </button>
-                            <button
-                              aria-label="取消编辑"
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                              disabled={pendingAction !== null}
-                              onClick={() => setEditingProduct(null)}
-                              title="取消"
-                              type="button"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              aria-label="编辑产品"
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                              disabled={pendingAction !== null}
-                              onClick={() => {
-                                setActionError("");
-                                setEditingProduct({
-                                  id: product.id,
-                                  name: product.name
-                                });
-                              }}
-                              title="编辑"
-                              type="button"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button
-                              aria-label="删除产品"
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                              disabled={pendingAction !== null}
-                              onClick={() => void deleteProduct(product)}
-                              title="删除"
-                              type="button"
-                            >
-                              {isDeleting ? (
-                                <RefreshCw className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
+                    {canWriteProducts ? (
+                      <td className="px-5 py-4">
+                        <div className="flex justify-end gap-2">
+                          {isEditing ? (
+                            <>
+                              <button
+                                aria-label="保存产品"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={pendingAction !== null}
+                                onClick={() => void saveProduct(product)}
+                                title="保存"
+                                type="button"
+                              >
+                                {isUpdating ? (
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Save className="h-4 w-4" />
+                                )}
+                              </button>
+                              <button
+                                aria-label="取消编辑"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={pendingAction !== null}
+                                onClick={() => setEditingProduct(null)}
+                                title="取消"
+                                type="button"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                aria-label="编辑产品"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={pendingAction !== null}
+                                onClick={() => {
+                                  setActionError("");
+                                  setEditingProduct({
+                                    id: product.id,
+                                    name: product.name
+                                  });
+                                }}
+                                title="编辑"
+                                type="button"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                aria-label="删除产品"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={pendingAction !== null}
+                                onClick={() => void deleteProduct(product)}
+                                title="删除"
+                                type="button"
+                              >
+                                {isDeleting ? (
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    ) : null}
                   </tr>
                 );
               })}

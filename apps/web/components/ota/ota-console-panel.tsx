@@ -8,6 +8,7 @@ import {
   type ReactNode
 } from "react";
 import { Play, Plus, RefreshCw } from "lucide-react";
+import { usePermissions } from "@/components/console/use-permissions";
 
 type Product = {
   id: string;
@@ -47,6 +48,9 @@ type ApiResponse<T> = {
 };
 
 export function OtaConsolePanel() {
+  const { isLoaded, hasPermission } = usePermissions();
+  const canWriteOta = isLoaded && hasPermission("ota:write");
+  const canExecuteOta = isLoaded && hasPermission("ota:execute");
   const [products, setProducts] = useState<Product[]>([]);
   const [firmwares, setFirmwares] = useState<Firmware[]>([]);
   const [tasks, setTasks] = useState<OtaTask[]>([]);
@@ -213,6 +217,7 @@ export function OtaConsolePanel() {
         {error ? <span className="text-sm text-rose-600">{error}</span> : null}
       </div>
 
+      {canWriteOta ? (
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
           <h2 className="text-base font-semibold text-slate-950">创建固件</h2>
@@ -241,6 +246,7 @@ export function OtaConsolePanel() {
           </div>
         </form>
       </section>
+      ) : null}
 
       {lastUploadedFirmware ? (
         <section className="rounded-lg border border-emerald-200 bg-emerald-50 shadow-sm">
@@ -293,26 +299,31 @@ export function OtaConsolePanel() {
             >
               {firmware.file_url}
             </a>,
-            <div className="flex gap-2" key={firmware.id}>
-              <button
-                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700"
-                onClick={() => void updateFirmwareStatus(firmware.id, "released")}
-                type="button"
-              >
-                发布
-              </button>
-              <button
-                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700"
-                onClick={() => void updateFirmwareStatus(firmware.id, "deprecated")}
-                type="button"
-              >
-                废弃
-              </button>
-            </div>
+            canWriteOta ? (
+              <div className="flex gap-2" key={firmware.id}>
+                <button
+                  className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700"
+                  onClick={() => void updateFirmwareStatus(firmware.id, "released")}
+                  type="button"
+                >
+                  发布
+                </button>
+                <button
+                  className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700"
+                  onClick={() => void updateFirmwareStatus(firmware.id, "deprecated")}
+                  type="button"
+                >
+                  废弃
+                </button>
+              </div>
+            ) : (
+              "-"
+            )
           ])}
         />
       </section>
 
+      {canWriteOta ? (
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
           <h2 className="text-base font-semibold text-slate-950">创建 OTA 任务</h2>
@@ -332,6 +343,7 @@ export function OtaConsolePanel() {
           </button>
         </form>
       </section>
+      ) : null}
 
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
@@ -348,15 +360,19 @@ export function OtaConsolePanel() {
             task.firmware_version,
             task.status,
             `${task.record_counts.success}/${task.record_counts.total} 成功`,
-            <button
-              className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700"
-              key={task.id}
-              onClick={() => void startTask(task.id)}
-              type="button"
-            >
-              <Play className="h-3 w-3" />
-              启动
-            </button>
+            canExecuteOta ? (
+              <button
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700"
+                key={task.id}
+                onClick={() => void startTask(task.id)}
+                type="button"
+              >
+                <Play className="h-3 w-3" />
+                启动
+              </button>
+            ) : (
+              "-"
+            )
           ])}
         />
       </section>

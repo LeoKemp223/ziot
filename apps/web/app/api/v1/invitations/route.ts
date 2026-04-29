@@ -8,6 +8,7 @@ import {
   listInvitations
 } from "@/lib/identity/auth-service";
 import { getCurrentUser } from "@/lib/identity/session";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -49,6 +50,18 @@ export async function POST(request: NextRequest) {
       createdBy: user.id,
       maxUses: Number(body.max_uses ?? "1"),
       ...(body.expires_at ? { expiresAt: new Date(String(body.expires_at)) } : {})
+    });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "invitation.create",
+      resourceType: "invitation",
+      resourceId: invitation.id,
+      request,
+      detail: {
+        role_id: invitation.role_id,
+        max_uses: invitation.max_uses,
+        expires_at: invitation.expires_at
+      }
     });
 
     return NextResponse.json(apiOk(invitation, requestId), { status: 201 });

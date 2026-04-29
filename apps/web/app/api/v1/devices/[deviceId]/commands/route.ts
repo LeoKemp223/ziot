@@ -8,6 +8,7 @@ import {
   listDeviceCommands
 } from "@/features/control/control-service";
 import { getCurrentUser } from "@/lib/identity/session";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -65,28 +66,38 @@ export async function POST(
     requirePermission(user.permissions, "device:control");
     const { deviceId } = await params;
     const body = (await request.json()) as Record<string, unknown>;
+    const command = await createDeviceCommand(prisma, {
+      orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
+      deviceId,
+      kind:
+        body.kind === "property_set" || body.kind === "service"
+          ? body.kind
+          : "service",
+      ...(typeof body.identifier === "string"
+        ? { identifier: body.identifier }
+        : {}),
+      params: body.params,
+      ...(typeof body.timeout_ms === "number"
+        ? { timeoutMs: body.timeout_ms }
+        : {})
+    });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "device.control",
+      resourceType: "device",
+      resourceId: deviceId,
+      request,
+      detail: {
+        command_id: command.id,
+        request_id: command.request_id,
+        identifier: command.identifier
+      }
+    });
 
     return NextResponse.json(
-      apiOk(
-        await createDeviceCommand(prisma, {
-          orgId: user.current_org_id,
-          userId: user.id,
-          canAccessAll: canAccessAllResources(user.permissions),
-          deviceId,
-          kind:
-            body.kind === "property_set" || body.kind === "service"
-              ? body.kind
-              : "service",
-          ...(typeof body.identifier === "string"
-            ? { identifier: body.identifier }
-            : {}),
-          params: body.params,
-          ...(typeof body.timeout_ms === "number"
-            ? { timeoutMs: body.timeout_ms }
-            : {})
-        }),
-        requestId
-      ),
+      apiOk(command, requestId),
       { status: 201 }
     );
   } catch (error) {

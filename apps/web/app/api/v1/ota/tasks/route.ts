@@ -5,6 +5,7 @@ import { apiOk } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/identity/session";
 import { createRequestId } from "@/lib/request-id";
 import { createOtaTask, listOtaTasks } from "@/features/ota/ota-service";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -50,23 +51,33 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser(request);
     requirePermission(user.permissions, "ota:write");
     const body = (await request.json()) as Record<string, unknown>;
+    const task = await createOtaTask(prisma, {
+      orgId: user.current_org_id,
+      createdBy: user.id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
+      firmwareId: String(body.firmware_id ?? ""),
+      name: String(body.name ?? ""),
+      strategy:
+        typeof body.strategy === "object" && body.strategy !== null
+          ? (body.strategy as any)
+          : { target_type: "all" }
+    });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "ota.create",
+      resourceType: "ota_task",
+      resourceId: task.id,
+      request,
+      detail: {
+        product_id: task.product_id,
+        firmware_id: task.firmware_id,
+        strategy: task.strategy
+      }
+    });
 
     return NextResponse.json(
-      apiOk(
-        await createOtaTask(prisma, {
-          orgId: user.current_org_id,
-          createdBy: user.id,
-          userId: user.id,
-          canAccessAll: canAccessAllResources(user.permissions),
-          firmwareId: String(body.firmware_id ?? ""),
-          name: String(body.name ?? ""),
-          strategy:
-            typeof body.strategy === "object" && body.strategy !== null
-              ? (body.strategy as any)
-              : { target_type: "all" }
-        }),
-        requestId
-      ),
+      apiOk(task, requestId),
       { status: 201 }
     );
   } catch (error) {

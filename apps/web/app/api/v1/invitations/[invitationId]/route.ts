@@ -8,6 +8,7 @@ import {
   getInvitation
 } from "@/lib/identity/auth-service";
 import { getCurrentUser } from "@/lib/identity/session";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -64,12 +65,21 @@ export async function PATCH(
     }
 
     const { invitationId } = await params;
-    return NextResponse.json(
-      apiOk(
-        await disableInvitation(prisma, user.current_org_id, invitationId),
-        requestId
-      )
+    const invitation = await disableInvitation(
+      prisma,
+      user.current_org_id,
+      invitationId
     );
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "invitation.disable",
+      resourceType: "invitation",
+      resourceId: invitation.id,
+      request,
+      detail: { status: invitation.status }
+    });
+
+    return NextResponse.json(apiOk(invitation, requestId));
   } catch (error) {
     return apiErrorResponse(error, requestId);
   }

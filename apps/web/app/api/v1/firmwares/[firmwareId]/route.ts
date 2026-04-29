@@ -5,6 +5,7 @@ import { apiOk } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/identity/session";
 import { createRequestId } from "@/lib/request-id";
 import { getFirmware, updateFirmwareStatus } from "@/features/ota/ota-service";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -61,18 +62,23 @@ export async function PATCH(request: NextRequest, { params }: FirmwareRouteConte
       });
     }
 
-    return NextResponse.json(
-      apiOk(
-        await updateFirmwareStatus(prisma, {
-          orgId: user.current_org_id,
-          userId: user.id,
-          canAccessAll: canAccessAllResources(user.permissions),
-          firmwareId,
-          status: body.status
-        }),
-        requestId
-      )
-    );
+    const firmware = await updateFirmwareStatus(prisma, {
+      orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
+      firmwareId,
+      status: body.status
+    });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "firmware.status.update",
+      resourceType: "firmware",
+      resourceId: firmware.id,
+      request,
+      detail: { status: firmware.status, version: firmware.version }
+    });
+
+    return NextResponse.json(apiOk(firmware, requestId));
   } catch (error) {
     return apiErrorResponse(error, requestId);
   }

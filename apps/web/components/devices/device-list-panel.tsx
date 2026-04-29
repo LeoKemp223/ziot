@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Eye, Pencil, Plus, Power, RefreshCw, Trash2, X } from "lucide-react";
 import type { ProductDto } from "@/lib/products/product-service";
+import { usePermissions } from "@/components/console/use-permissions";
 
 type DeviceItem = {
   id: string;
@@ -29,6 +30,7 @@ type ProductsResponse = ApiResponse<{
 }>;
 
 export function DeviceCreateForm() {
+  const { isLoaded, hasPermission } = usePermissions();
   const [open, setOpen] = useState(false);
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -105,18 +107,20 @@ export function DeviceCreateForm() {
 
   return (
     <>
-      <button
-        className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800"
-        onClick={() => {
-          setError("");
-          setCreatedSecret("");
-          setOpen(true);
-        }}
-        type="button"
-      >
-        <Plus className="h-4 w-4" />
-        创建设备
-      </button>
+      {isLoaded && hasPermission("device:write") ? (
+        <button
+          className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800"
+          onClick={() => {
+            setError("");
+            setCreatedSecret("");
+            setOpen(true);
+          }}
+          type="button"
+        >
+          <Plus className="h-4 w-4" />
+          创建设备
+        </button>
+      ) : null}
 
       {open ? (
         <div
@@ -218,6 +222,8 @@ export function DeviceCreateForm() {
 }
 
 export function DeviceListPanel() {
+  const { isLoaded, hasPermission } = usePermissions();
+  const canWriteDevices = isLoaded && hasPermission("device:write");
   const [devices, setDevices] = useState<DeviceItem[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
@@ -450,33 +456,37 @@ export function DeviceListPanel() {
                       >
                         <Eye className="h-4 w-4" />
                       </a>
-                      <button
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
-                        disabled={pending}
-                        onClick={() => void updateDeviceName(device)}
-                        title="修改"
-                        type="button"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-200 text-amber-700 hover:bg-amber-50 disabled:opacity-60"
-                        disabled={pending}
-                        onClick={() => void toggleDeviceStatus(device)}
-                        title={device.status === "active" ? "禁用" : "启用"}
-                        type="button"
-                      >
-                        <Power className="h-4 w-4" />
-                      </button>
-                      <button
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 text-rose-700 hover:bg-rose-50 disabled:opacity-60"
-                        disabled={pending}
-                        onClick={() => void deleteDevice(device)}
-                        title="删除"
-                        type="button"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {canWriteDevices ? (
+                        <>
+                          <button
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                            disabled={pending}
+                            onClick={() => void updateDeviceName(device)}
+                            title="修改"
+                            type="button"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-200 text-amber-700 hover:bg-amber-50 disabled:opacity-60"
+                            disabled={pending}
+                            onClick={() => void toggleDeviceStatus(device)}
+                            title={device.status === "active" ? "禁用" : "启用"}
+                            type="button"
+                          >
+                            <Power className="h-4 w-4" />
+                          </button>
+                          <button
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                            disabled={pending}
+                            onClick={() => void deleteDevice(device)}
+                            title="删除"
+                            type="button"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </>
+                      ) : null}
                     </div>
                   </td>
                 </tr>

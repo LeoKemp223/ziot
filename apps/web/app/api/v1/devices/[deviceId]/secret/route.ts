@@ -5,6 +5,7 @@ import { apiOk } from "@/lib/api-response";
 import { createRequestId } from "@/lib/request-id";
 import { resetDeviceSecret } from "@/lib/devices/device-service";
 import { getCurrentUser } from "@/lib/identity/session";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -32,16 +33,23 @@ export async function POST(
     }
 
     const { deviceId } = await params;
+    const device = await resetDeviceSecret(prisma, {
+      orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
+      deviceId
+    });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "device.secret.reset",
+      resourceType: "device",
+      resourceId: device.id,
+      request,
+      detail: { device_key: device.device_key }
+    });
+
     return NextResponse.json(
-      apiOk(
-        await resetDeviceSecret(prisma, {
-          orgId: user.current_org_id,
-          userId: user.id,
-          canAccessAll: canAccessAllResources(user.permissions),
-          deviceId
-        }),
-        requestId
-      )
+      apiOk(device, requestId)
     );
   } catch (error) {
     return apiErrorResponse(error, requestId);

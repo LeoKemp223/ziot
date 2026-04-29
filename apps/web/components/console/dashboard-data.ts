@@ -63,10 +63,10 @@ export const navItems: NavItem[] = [
     requiredPermissions: ["ota:read"]
   },
   {
-    label: "日志中心",
+    label: "审计日志",
     href: "/logs",
     icon: "logs",
-    requiredPermissions: ["log:read"]
+    requiredPermissions: ["audit:read"]
   },
   {
     label: "用户管理",

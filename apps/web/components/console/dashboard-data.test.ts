@@ -16,7 +16,7 @@ describe("console dashboard data", () => {
       "设备管理",
       "设备控制",
       "OTA 升级",
-      "日志中心",
+      "审计日志",
       "用户管理",
       "邀请码",
       "系统设置"
@@ -36,8 +36,7 @@ describe("console dashboard data", () => {
       "首页概览",
       "产品管理",
       "设备管理",
-      "OTA 升级",
-      "日志中心"
+      "OTA 升级"
     ]);
   });
 

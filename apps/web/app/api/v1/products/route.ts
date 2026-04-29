@@ -5,6 +5,7 @@ import { apiErrorResponse } from "@/lib/api-errors";
 import { createRequestId } from "@/lib/request-id";
 import { createProduct, listProducts } from "@/lib/products/product-service";
 import { getCurrentUser } from "@/lib/identity/session";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -75,6 +76,14 @@ export async function POST(request: NextRequest) {
       ...(typeof body.data_format === "string"
         ? { data_format: body.data_format }
         : {})
+    });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "product.create",
+      resourceType: "product",
+      resourceId: product.id,
+      request,
+      detail: { name: product.name, product_key: product.product_key }
     });
 
     return NextResponse.json(apiOk(product, requestId), { status: 201 });

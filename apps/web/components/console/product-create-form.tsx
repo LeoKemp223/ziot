@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { Plus, RefreshCw, X } from "lucide-react";
+import { usePermissions } from "./use-permissions";
 
 type SubmitState =
   | { status: "idle"; message: "" }
@@ -9,6 +10,7 @@ type SubmitState =
   | { status: "error"; message: string };
 
 export function ProductCreateForm() {
+  const { isLoaded, hasPermission } = usePermissions();
   const formRef = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<SubmitState>({
@@ -60,17 +62,19 @@ export function ProductCreateForm() {
 
   return (
     <>
-      <button
-        className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800"
-        onClick={() => {
-          setState({ status: "idle", message: "" });
-          setOpen(true);
-        }}
-        type="button"
-      >
-        <Plus className="h-4 w-4" />
-        创建产品
-      </button>
+      {isLoaded && hasPermission("product:write") ? (
+        <button
+          className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800"
+          onClick={() => {
+            setState({ status: "idle", message: "" });
+            setOpen(true);
+          }}
+          type="button"
+        >
+          <Plus className="h-4 w-4" />
+          创建产品
+        </button>
+      ) : null}
 
       {open ? (
         <div

@@ -5,6 +5,7 @@ import { apiOk } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/identity/session";
 import { createRequestId } from "@/lib/request-id";
 import { startOtaTask } from "@/features/ota/ota-service";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -30,17 +31,22 @@ export async function POST(
     }
 
     const { taskId } = await params;
-    return NextResponse.json(
-      apiOk(
-        await startOtaTask(prisma, {
-          orgId: user.current_org_id,
-          userId: user.id,
-          canAccessAll: canAccessAllResources(user.permissions),
-          taskId
-        }),
-        requestId
-      )
-    );
+    const task = await startOtaTask(prisma, {
+      orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
+      taskId
+    });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "ota.start",
+      resourceType: "ota_task",
+      resourceId: task.id,
+      request,
+      detail: { status: task.status, record_counts: task.record_counts }
+    });
+
+    return NextResponse.json(apiOk(task, requestId));
   } catch (error) {
     return apiErrorResponse(error, requestId);
   }

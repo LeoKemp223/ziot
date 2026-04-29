@@ -8,6 +8,7 @@ import { apiOk } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/identity/session";
 import { createRequestId } from "@/lib/request-id";
 import { createFirmware } from "@/features/ota/ota-service";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -103,6 +104,20 @@ export async function POST(request: NextRequest) {
       fileSize: fileValue.size,
       sha256,
       ...(typeof releaseNoteValue === "string" ? { releaseNote: releaseNoteValue } : {})
+    });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "firmware.upload",
+      resourceType: "firmware",
+      resourceId: firmware.id,
+      request,
+      detail: {
+        product_id: firmware.product_id,
+        version: firmware.version,
+        file_url: firmware.file_url,
+        file_size: firmware.file_size,
+        sha256: firmware.sha256
+      }
     });
 
     savedPath = null;

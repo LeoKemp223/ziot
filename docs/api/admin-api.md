@@ -1264,7 +1264,29 @@ MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web
 /ota/{product_key}/{device_key}/upgrade/result
 ```
 
-## 11. 已验证用例
+## 11. 审计日志 API
+
+### `GET /api/v1/audit-logs`
+
+查询当前组织审计日志。需要 `audit:read` 权限。
+
+支持筛选参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `user_id` | 按操作用户过滤 |
+| `action` | 按动作关键字过滤，例如 `product.create`、`device.control`、`ota.start` |
+| `resource_type` | 按资源类型过滤，例如 `product`、`device`、`firmware`、`ota_task` |
+| `resource_id` | 按资源 ID 精确过滤 |
+| `ip` | 按客户端 IP 过滤 |
+| `start_time` | 起始时间，ISO 8601 格式 |
+| `end_time` | 结束时间，ISO 8601 格式 |
+| `page` | 页码，默认 `1` |
+| `page_size` | 每页数量，默认 `20`，最大 `100` |
+
+审计记录覆盖登录、产品创建/更新/删除、设备创建/更新/删除、设备密钥重置、设备控制、固件创建/上传/发布/废弃、OTA 创建/启动/取消和邀请码创建/禁用。
+
+## 12. 已验证用例
 
 2026-04-28 本地验证过以下用例：
 
@@ -1308,6 +1330,7 @@ MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web
 | `POST /device-api/v1/properties` | HTTP 设备属性上报更新 reported 影子并写入上报记录 |
 | `GET /device-api/v1/commands/pending` | HTTP 设备可拉取待处理命令 |
 | `POST /device-api/v1/commands/{request_id}/reply` | HTTP 设备可回复命令结果 |
+| `GET /api/v1/audit-logs` | 可按用户、动作、资源、IP 和时间范围查询审计日志 |
 | 数据库直查 | `products`、`devices`、`device_groups`、`device_shadows` 表可查到对应数据 |
 
 验证日志：
@@ -1324,4 +1347,4 @@ docs/dev-logs/2026-04-28-local-db-and-product-api.md
 | --- | --- |
 | 控制 API | 已实现 |
 | OTA API | 已实现 |
-| 日志 API | 未实现 |
+| 日志 API | 审计日志已实现，设备日志页待补充 |

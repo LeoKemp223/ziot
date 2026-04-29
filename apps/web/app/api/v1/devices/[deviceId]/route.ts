@@ -9,6 +9,7 @@ import {
   updateDevice
 } from "@/lib/devices/device-service";
 import { getCurrentUser } from "@/lib/identity/session";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -77,6 +78,18 @@ export async function PATCH(
         : {}),
       ...(Object.hasOwn(body, "tags") ? { tags: body.tags } : {})
     });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "device.update",
+      resourceType: "device",
+      resourceId: device.id,
+      request,
+      detail: {
+        name: device.name,
+        status: device.status,
+        firmware_version: device.firmware_version
+      }
+    });
 
     return NextResponse.json(apiOk(device, requestId));
   } catch (error) {
@@ -95,17 +108,22 @@ export async function DELETE(
     requirePermission(user.permissions, "device:write");
     const { deviceId } = await params;
 
-    return NextResponse.json(
-      apiOk(
-        await deleteDevice(prisma, {
-          orgId: user.current_org_id,
-          userId: user.id,
-          canAccessAll: canAccessAllResources(user.permissions),
-          deviceId
-        }),
-        requestId
-      )
-    );
+    const device = await deleteDevice(prisma, {
+      orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
+      deviceId
+    });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "device.delete",
+      resourceType: "device",
+      resourceId: device.id,
+      request,
+      detail: { deleted_at: device.deleted_at }
+    });
+
+    return NextResponse.json(apiOk(device, requestId));
   } catch (error) {
     return apiErrorResponse(error, requestId);
   }

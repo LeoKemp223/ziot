@@ -755,13 +755,13 @@ Acceptance:
 - Modify: `apps/web/features/identity/`
 - Modify: `apps/web/features/notifications/`
 
-- [ ] Implement audit helper for create, update, delete, login, control, OTA, and secret reset operations.
-- [ ] Implement audit log list API with filters for user, action, resource, IP, and time range.
-- [ ] Implement audit log page.
-- [ ] Implement global route permission guard and per-button permission checks.
-- [ ] Add tests for audit creation, audit filters, current organization behavior, multi-role permission union, and route permission behavior.
-- [ ] Run: `pnpm test -- --run audit permissions`.
-- [ ] Commit: `feat: add audit logs and permission completion`.
+- [x] Implement audit helper for create, update, delete, login, control, OTA, and secret reset operations.
+- [x] Implement audit log list API with filters for user, action, resource, IP, and time range.
+- [x] Implement audit log page.
+- [x] Implement global route permission guard and per-button permission checks.
+- [x] Add tests for audit creation, audit filters, current organization behavior, multi-role permission union, and route permission behavior.
+- [x] Run: `pnpm test -- --run audit permissions`.
+- [x] Commit: `feat: add audit logs and permission completion`.
 
 Acceptance:
 

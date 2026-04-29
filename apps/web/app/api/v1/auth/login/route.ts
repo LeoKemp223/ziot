@@ -5,6 +5,7 @@ import { apiOk } from "@/lib/api-response";
 import { createRequestId } from "@/lib/request-id";
 import { loginUser } from "@/lib/identity/auth-service";
 import { setSessionCookies } from "@/lib/identity/session";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,14 @@ export async function POST(request: NextRequest) {
     });
     const response = NextResponse.json(apiOk(session.user, requestId));
     setSessionCookies(response, session);
+    await safeWriteAuditLog(prisma, {
+      user: { id: session.user.id, current_org_id: session.user.current_org_id },
+      action: "auth.login",
+      resourceType: "user",
+      resourceId: session.user.id,
+      request,
+      detail: { account: session.user.account }
+    });
 
     return response;
   } catch (error) {

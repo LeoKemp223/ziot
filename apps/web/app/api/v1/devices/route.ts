@@ -5,6 +5,7 @@ import { apiOk } from "@/lib/api-response";
 import { createRequestId } from "@/lib/request-id";
 import { createDevice, listDevices } from "@/lib/devices/device-service";
 import { getCurrentUser } from "@/lib/identity/session";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -64,6 +65,18 @@ export async function POST(request: NextRequest) {
         ? { firmwareVersion: body.firmware_version }
         : {}),
       ...(Object.hasOwn(body, "tags") ? { tags: body.tags } : {})
+    });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "device.create",
+      resourceType: "device",
+      resourceId: device.id,
+      request,
+      detail: {
+        product_id: device.product_id,
+        device_key: device.device_key,
+        name: device.name
+      }
     });
 
     return NextResponse.json(apiOk(device, requestId), { status: 201 });

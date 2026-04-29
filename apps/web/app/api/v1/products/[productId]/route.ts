@@ -9,6 +9,7 @@ import {
   updateProduct
 } from "@/lib/products/product-service";
 import { getCurrentUser } from "@/lib/identity/session";
+import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
@@ -87,6 +88,14 @@ export async function PATCH(
         ? { thing_model: body.thing_model }
         : {})
     });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "product.update",
+      resourceType: "product",
+      resourceId: product.id,
+      request,
+      detail: { name: product.name }
+    });
 
     return NextResponse.json(apiOk(product, requestId));
   } catch (error) {
@@ -113,6 +122,14 @@ export async function DELETE(
       userId: user.id,
       canAccessAll: canAccessAllResources(user.permissions),
       productId
+    });
+    await safeWriteAuditLog(prisma, {
+      user,
+      action: "product.delete",
+      resourceType: "product",
+      resourceId: product.id,
+      request,
+      detail: { deleted_at: product.deleted_at }
     });
 
     return NextResponse.json(apiOk(product, requestId));

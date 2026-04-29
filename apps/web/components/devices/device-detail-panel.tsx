@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { KeyRound, RefreshCw, Save } from "lucide-react";
+import { usePermissions } from "@/components/console/use-permissions";
 
 type DeviceItem = {
   id: string;
@@ -72,6 +73,9 @@ type DeviceDetailPanelProps = {
 };
 
 export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
+  const { isLoaded, hasPermission } = usePermissions();
+  const canWriteDevices = isLoaded && hasPermission("device:write");
+  const canControlDevices = isLoaded && hasPermission("device:control");
   const [device, setDevice] = useState<DeviceItem | null>(null);
   const [shadow, setShadow] = useState<DeviceShadow | null>(null);
   const [topics, setTopics] = useState<DeviceTopic[]>([]);
@@ -331,15 +335,17 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
               {device.product_name} / {device.device_key}
             </p>
           </div>
-          <button
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-amber-200 px-3 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-60"
-            disabled={saving}
-            onClick={() => void resetSecret()}
-            type="button"
-          >
-            <KeyRound className="h-4 w-4" />
-            重置密钥
-          </button>
+          {canWriteDevices ? (
+            <button
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-amber-200 px-3 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-60"
+              disabled={saving}
+              onClick={() => void resetSecret()}
+              type="button"
+            >
+              <KeyRound className="h-4 w-4" />
+              重置密钥
+            </button>
+          ) : null}
         </div>
         <form className="grid gap-4 px-5 py-5 md:grid-cols-2" onSubmit={saveDevice}>
           <Field label="设备名称">
@@ -404,18 +410,20 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
               </div>
             ) : null}
             <div className="flex items-center gap-3">
-              <button
-                className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
-                disabled={saving}
-                type="submit"
-              >
-                {saving ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                保存
-              </button>
+              {canWriteDevices ? (
+                <button
+                  className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+                  disabled={saving}
+                  type="submit"
+                >
+                  {saving ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  保存
+                </button>
+              ) : null}
               {message ? <span className="text-sm text-emerald-600">{message}</span> : null}
               {error ? <span className="text-sm text-rose-600">{error}</span> : null}
             </div>
@@ -423,6 +431,7 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
         </form>
       </section>
 
+      {canControlDevices ? (
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <form onSubmit={sendCommand}>
           <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 md:flex-row md:items-center md:justify-between">
@@ -489,6 +498,7 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
           </div>
         </form>
       </section>
+      ) : null}
 
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
@@ -651,18 +661,20 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
                 {shadow ? formatDateTime(shadow.updated_at) : "-"}
               </p>
             </div>
-            <button
-              className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
-              disabled={saving}
-              type="submit"
-            >
-              {saving ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              保存期望状态
-            </button>
+            {canWriteDevices ? (
+              <button
+                className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+                disabled={saving}
+                type="submit"
+              >
+                {saving ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                保存期望状态
+              </button>
+            ) : null}
           </div>
           <div className="grid gap-4 p-5 lg:grid-cols-2">
             <div>
