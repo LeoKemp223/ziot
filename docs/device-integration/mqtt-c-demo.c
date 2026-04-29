@@ -22,12 +22,26 @@ struct demo_config {
     const char *product_key;
     const char *device_key;
     const char *device_secret;
+    int report_interval_seconds;
 };
 
 static const char *env_or_default(const char *name, const char *fallback)
 {
     const char *value = getenv(name);
     return value && value[0] ? value : fallback;
+}
+
+static int env_int_or_default(const char *name, int fallback)
+{
+    const char *value = getenv(name);
+    int parsed;
+
+    if (!value || !value[0]) {
+        return fallback;
+    }
+
+    parsed = atoi(value);
+    return parsed > 0 ? parsed : fallback;
 }
 
 static void handle_signal(int signum)
@@ -174,6 +188,7 @@ static int send_connect(int sock, const struct demo_config *config)
     }
 
     printf("connected username=%s\n", username);
+    printf("periodic property report interval=%ds\n", config->report_interval_seconds);
     return 0;
 }
 
@@ -494,9 +509,11 @@ int main(void)
         .product_key = env_or_default("PRODUCT_KEY", "pk_demo"),
         .device_key = env_or_default("DEVICE_KEY", "dk_mqtt_demo"),
         .device_secret = env_or_default("DEVICE_SECRET", "DeviceSecret123"),
+        .report_interval_seconds = env_int_or_default("REPORT_INTERVAL_SECONDS", 10),
     };
     unsigned char buffer[MQTT_BUFFER_SIZE];
     time_t last_ping = time(NULL);
+    time_t last_report = 0;
 
     signal(SIGINT, handle_signal);
     signal(SIGTERM, handle_signal);
@@ -513,22 +530,33 @@ int main(void)
         close(active_socket);
         return 1;
     }
+    last_report = time(NULL);
 
     while (running) {
         int packet_type = MQTTPacket_read(buffer, sizeof(buffer), mqtt_read_data);
+        time_t now = time(NULL);
 
         if (packet_type == PUBLISH) {
             if (handle_publish(active_socket, &config, buffer) != 0) {
                 break;
             }
         } else if (packet_type == PINGRESP) {
-            last_ping = time(NULL);
-        } else if (time(NULL) - last_ping >= 30) {
+            last_ping = now;
+        }
+
+        if (now - last_report >= config.report_interval_seconds) {
+            if (publish_property(active_socket, &config) != 0) {
+                break;
+            }
+            last_report = now;
+        }
+
+        if (now - last_ping >= 30) {
             int len = MQTTSerialize_pingreq(buffer, sizeof(buffer));
             if (len <= 0 || send_all(active_socket, buffer, len) != len) {
                 break;
             }
-            last_ping = time(NULL);
+            last_ping = now;
         }
     }
 

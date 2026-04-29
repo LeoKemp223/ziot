@@ -21,6 +21,18 @@ PROPERTY_SET_TOPIC = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/property/set"
 PROPERTY_POST_TOPIC = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/property/post"
 
 
+def report_interval_seconds():
+    try:
+        value = int(os.getenv("REPORT_INTERVAL_SECONDS", "10"))
+    except ValueError:
+        return 10
+
+    return value if value > 0 else 10
+
+
+REPORT_INTERVAL_SECONDS = report_interval_seconds()
+
+
 def create_client():
     try:
         return mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=CLIENT_ID)
@@ -58,6 +70,7 @@ def on_connect(client, userdata, flags, reason_code, properties=None):
     print(f"subscribed topic={SERVICE_INVOKE_TOPIC}")
     client.subscribe(PROPERTY_SET_TOPIC, qos=1)
     print(f"subscribed topic={PROPERTY_SET_TOPIC}")
+    print(f"periodic property report interval={REPORT_INTERVAL_SECONDS}s")
 
     publish_property(client)
 
@@ -109,7 +122,16 @@ def main():
         print("本地可执行: docker compose -f deploy/docker-compose.yml up emqx web")
         raise SystemExit(1) from error
 
-    client.loop_forever()
+    client.loop_start()
+    try:
+        while True:
+            time.sleep(REPORT_INTERVAL_SECONDS)
+            publish_property(client)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        client.loop_stop()
+        client.disconnect()
 
 
 if __name__ == "__main__":

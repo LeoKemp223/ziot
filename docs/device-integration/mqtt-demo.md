@@ -117,6 +117,12 @@ python3 docs/device-integration/mqtt-python-demo.py
 MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/mqtt-python-demo.py
 ```
 
+调整定时属性上报间隔，单位秒，默认 `10`：
+
+```bash
+REPORT_INTERVAL_SECONDS=5 MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/mqtt-python-demo.py
+```
+
 ## C Demo
 
 该 demo 使用 Eclipse Paho Embedded C 的 `MQTTPacket`，网络层使用 POSIX socket。先获取 Paho Embedded C 源码：
@@ -151,7 +157,13 @@ gcc docs/device-integration/mqtt-c-demo.c \
 MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-mqtt-c-demo
 ```
 
-两个 demo 都会在连接成功后订阅属性设置和服务调用 Topic，并上报一条属性数据。收到属性设置后，会再次上报属性；收到服务调用后，会自动向对应的 reply Topic 回复 `code=0`。
+调整定时属性上报间隔，单位秒，默认 `10`：
+
+```bash
+REPORT_INTERVAL_SECONDS=5 MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-mqtt-c-demo
+```
+
+两个 demo 都会在连接成功后订阅属性设置和服务调用 Topic，立即上报一条属性数据，并按 `REPORT_INTERVAL_SECONDS` 定时上报属性。收到属性设置后，会再次上报属性；收到服务调用后，会自动向对应的 reply Topic 回复 `code=0`。
 
 ## 控制下发测试
 
