@@ -237,14 +237,14 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
               required
             />
           </Field>
-          <Field label="状态">
+          <Field label="启用状态">
             <select
               className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
               defaultValue={device.status}
               name="status"
             >
-              <option value="active">active</option>
-              <option value="disabled">disabled</option>
+              <option value="active">启用</option>
+              <option value="disabled">禁用</option>
             </select>
           </Field>
           <Info label="Product Key" value={device.product_key} mono />

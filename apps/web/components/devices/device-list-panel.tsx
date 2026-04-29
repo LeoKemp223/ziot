@@ -351,13 +351,12 @@ export function DeviceListPanel() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
+            <table className="w-full min-w-[980px] border-collapse text-left text-sm">
               <thead className="bg-slate-50 text-xs font-medium text-slate-500">
                 <tr>
                   <th className="px-5 py-3">设备</th>
                   <th className="px-4 py-3">所属产品</th>
                   <th className="px-4 py-3">Device Key</th>
-                  <th className="px-4 py-3">启用状态</th>
                   <th className="px-4 py-3">在线状态</th>
                   <th className="px-4 py-3">最后心跳</th>
                   <th className="px-5 py-3">创建时间</th>
@@ -385,10 +384,7 @@ export function DeviceListPanel() {
                       {device.device_key}
                     </td>
                     <td className="px-4 py-4">
-                      <StatusBadge kind="status" value={device.status} />
-                    </td>
-                    <td className="px-4 py-4">
-                      <StatusBadge kind="online" value={device.online_status} />
+                      <OnlineStatusBadge value={device.online_status} />
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-slate-500">
                       {device.last_heartbeat_at
@@ -582,15 +578,8 @@ function formatDateTime(value: string): string {
   }).format(new Date(value));
 }
 
-function StatusBadge({
-  kind,
-  value
-}: {
-  kind: "status" | "online";
-  value: string;
-}) {
-  const meta =
-    kind === "online" ? onlineStatusMeta(value) : deviceStatusMeta(value);
+function OnlineStatusBadge({ value }: { value: string }) {
+  const meta = onlineStatusMeta(value);
 
   return (
     <span
@@ -603,22 +592,6 @@ function StatusBadge({
       {meta.label}
     </span>
   );
-}
-
-function deviceStatusMeta(value: string) {
-  if (value === "active") {
-    return {
-      label: "启用",
-      className: "bg-slate-100 text-slate-700",
-      dotClassName: "bg-slate-500"
-    };
-  }
-
-  return {
-    label: "禁用",
-    className: "bg-amber-50 text-amber-700",
-    dotClassName: "bg-amber-500"
-  };
 }
 
 function onlineStatusMeta(value: string) {
