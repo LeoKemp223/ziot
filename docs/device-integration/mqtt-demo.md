@@ -29,6 +29,20 @@ MQTT 连接时使用：
 docker compose -f deploy/docker-compose.yml up emqx web
 ```
 
+EMQX 启动后配置连接生命周期 WebHook，这样设备页才能显示在线/离线：
+
+```bash
+./scripts/setup-emqx-webhook.sh
+```
+
+该脚本依赖 `curl` 和 `jq`。
+
+如果 EMQX 运行在 Docker 中、Web 运行在宿主机 `localhost:3000`，使用：
+
+```bash
+ZIOT_WEBHOOK_BASE_URL=http://host.docker.internal:3000 ./scripts/setup-emqx-webhook.sh
+```
+
 如果是第一次初始化数据库，另开终端执行迁移和 seed：
 
 ```bash

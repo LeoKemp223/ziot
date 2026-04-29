@@ -14,6 +14,7 @@ type DeviceItem = {
   name: string;
   status: string;
   online_status: string;
+  last_heartbeat_at: string | null;
   created_at: string;
 };
 
@@ -42,8 +43,10 @@ export function DeviceListPanel() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
-  async function loadData() {
-    setLoading(true);
+  async function loadData(showLoading = true) {
+    if (showLoading) {
+      setLoading(true);
+    }
     setError("");
 
     try {
@@ -79,7 +82,9 @@ export function DeviceListPanel() {
     } catch {
       setError("请求失败，请确认 Web 服务状态。");
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }
 
@@ -258,6 +263,12 @@ export function DeviceListPanel() {
 
   useEffect(() => {
     void loadData();
+
+    const timer = window.setInterval(() => {
+      void loadData(false);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
   }, []);
 
   return (
@@ -340,13 +351,15 @@ export function DeviceListPanel() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+            <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
               <thead className="bg-slate-50 text-xs font-medium text-slate-500">
                 <tr>
                   <th className="px-5 py-3">设备</th>
                   <th className="px-4 py-3">所属产品</th>
                   <th className="px-4 py-3">Device Key</th>
-                  <th className="px-4 py-3">状态</th>
+                  <th className="px-4 py-3">启用状态</th>
+                  <th className="px-4 py-3">在线状态</th>
+                  <th className="px-4 py-3">最后心跳</th>
                   <th className="px-5 py-3">创建时间</th>
                   <th className="px-5 py-3 text-right">操作</th>
                 </tr>
@@ -372,9 +385,15 @@ export function DeviceListPanel() {
                       {device.device_key}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
-                        {device.status} / {device.online_status}
-                      </span>
+                      <StatusBadge kind="status" value={device.status} />
+                    </td>
+                    <td className="px-4 py-4">
+                      <StatusBadge kind="online" value={device.online_status} />
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-slate-500">
+                      {device.last_heartbeat_at
+                        ? formatDateTime(device.last_heartbeat_at)
+                        : "-"}
                     </td>
                     <td className="px-5 py-4 whitespace-nowrap text-slate-500">
                       {formatDateTime(device.created_at)}
@@ -561,4 +580,67 @@ function formatDateTime(value: string): string {
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date(value));
+}
+
+function StatusBadge({
+  kind,
+  value
+}: {
+  kind: "status" | "online";
+  value: string;
+}) {
+  const meta =
+    kind === "online" ? onlineStatusMeta(value) : deviceStatusMeta(value);
+
+  return (
+    <span
+      className={[
+        "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium",
+        meta.className
+      ].join(" ")}
+    >
+      <span className={["h-1.5 w-1.5 rounded-full", meta.dotClassName].join(" ")} />
+      {meta.label}
+    </span>
+  );
+}
+
+function deviceStatusMeta(value: string) {
+  if (value === "active") {
+    return {
+      label: "启用",
+      className: "bg-slate-100 text-slate-700",
+      dotClassName: "bg-slate-500"
+    };
+  }
+
+  return {
+    label: "禁用",
+    className: "bg-amber-50 text-amber-700",
+    dotClassName: "bg-amber-500"
+  };
+}
+
+function onlineStatusMeta(value: string) {
+  if (value === "online") {
+    return {
+      label: "在线",
+      className: "bg-emerald-50 text-emerald-700",
+      dotClassName: "bg-emerald-500"
+    };
+  }
+
+  if (value === "offline") {
+    return {
+      label: "离线",
+      className: "bg-slate-100 text-slate-600",
+      dotClassName: "bg-slate-400"
+    };
+  }
+
+  return {
+    label: "未知",
+    className: "bg-zinc-100 text-zinc-600",
+    dotClassName: "bg-zinc-400"
+  };
 }

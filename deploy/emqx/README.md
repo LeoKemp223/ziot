@@ -13,6 +13,20 @@ The webhook endpoint for connection lifecycle events is:
 http://web:3000/api/internal/emqx/webhook
 ```
 
-Create a Webhook action in the EMQX dashboard for `client.connected` and
-`client.disconnected` events when running local integration tests. The Next.js
-handler accepts the standard EMQX event body and updates device online state.
+Run the setup script after EMQX starts to create the HTTP connector, action, and
+rule for `client.connected` and `client.disconnected` events:
+
+```bash
+./scripts/setup-emqx-webhook.sh
+```
+
+The script requires `curl` and `jq`.
+
+If EMQX runs in Docker but Web runs on the host, use:
+
+```bash
+ZIOT_WEBHOOK_BASE_URL=http://host.docker.internal:3000 ./scripts/setup-emqx-webhook.sh
+```
+
+The Next.js handler accepts the EMQX lifecycle event body and updates device
+online state.

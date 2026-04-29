@@ -47,8 +47,10 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  async function loadDevice() {
-    setLoading(true);
+  async function loadDevice(showLoading = true) {
+    if (showLoading) {
+      setLoading(true);
+    }
     setError("");
 
     try {
@@ -75,7 +77,9 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
     } catch {
       setError("请求失败，请确认 Web 服务状态。");
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }
 
@@ -187,6 +191,12 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
 
   useEffect(() => {
     void loadDevice();
+
+    const timer = window.setInterval(() => {
+      void loadDevice(false);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
   }, [deviceId]);
 
   if (loading && !device) {
@@ -239,7 +249,12 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
           </Field>
           <Info label="Product Key" value={device.product_key} mono />
           <Info label="Device Key" value={device.device_key} mono />
-          <Info label="在线状态" value={device.online_status} />
+          <div>
+            <div className="text-xs font-medium text-slate-400">在线状态</div>
+            <div className="mt-1">
+              <OnlineStatusBadge value={device.online_status} />
+            </div>
+          </div>
           <Info
             label="最后心跳"
             value={
@@ -381,6 +396,46 @@ function Info({
       </div>
     </div>
   );
+}
+
+function OnlineStatusBadge({ value }: { value: string }) {
+  const meta = onlineStatusMeta(value);
+
+  return (
+    <span
+      className={[
+        "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium",
+        meta.className
+      ].join(" ")}
+    >
+      <span className={["h-1.5 w-1.5 rounded-full", meta.dotClassName].join(" ")} />
+      {meta.label}
+    </span>
+  );
+}
+
+function onlineStatusMeta(value: string) {
+  if (value === "online") {
+    return {
+      label: "在线",
+      className: "bg-emerald-50 text-emerald-700",
+      dotClassName: "bg-emerald-500"
+    };
+  }
+
+  if (value === "offline") {
+    return {
+      label: "离线",
+      className: "bg-slate-100 text-slate-600",
+      dotClassName: "bg-slate-400"
+    };
+  }
+
+  return {
+    label: "未知",
+    className: "bg-zinc-100 text-zinc-600",
+    dotClassName: "bg-zinc-400"
+  };
 }
 
 function formatDateTime(value: string): string {
