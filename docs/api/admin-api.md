@@ -1154,6 +1154,17 @@ method + "\n" + path + "\n" + timestamp + "\n" + nonce + "\n" + body_sha256
 }
 ```
 
+### `POST /api/v1/firmwares/upload`
+
+直接上传固件文件并创建固件记录。需要 `ota:write` 权限。请求格式为 `multipart/form-data`，服务端会保存文件并自动计算 `file_size` 和 `sha256`。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `product_id` | string | 是 | 产品 ID |
+| `version` | string | 是 | 固件版本，同一产品内唯一 |
+| `file` | file | 是 | 固件文件，当前本地上传限制 50MB |
+| `release_note` | string | 否 | 发布说明 |
+
 ### `GET /api/v1/firmwares/{firmware_id}`
 
 查询固件详情。需要 `ota:read` 权限。

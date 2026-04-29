@@ -46,8 +46,6 @@ type ApiResponse<T> = {
   data?: T;
 };
 
-const demoSha = "0".repeat(64);
-
 export function OtaConsolePanel() {
   const [products, setProducts] = useState<Product[]>([]);
   const [firmwares, setFirmwares] = useState<Firmware[]>([]);
@@ -99,20 +97,13 @@ export function OtaConsolePanel() {
     event.preventDefault();
     setMessage("");
     setError("");
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
 
     try {
-      const response = await fetch("/api/v1/firmwares", {
+      const response = await fetch("/api/v1/firmwares/upload", {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          product_id: String(form.get("product_id") ?? ""),
-          version: String(form.get("version") ?? ""),
-          file_url: String(form.get("file_url") ?? ""),
-          file_size: Number(form.get("file_size") ?? 0),
-          sha256: String(form.get("sha256") ?? ""),
-          release_note: String(form.get("release_note") ?? "")
-        })
+        body: form
       });
       const body = (await response.json()) as ApiResponse<Firmware>;
 
@@ -121,11 +112,11 @@ export function OtaConsolePanel() {
         return;
       }
 
-      setMessage("固件已创建。");
-      event.currentTarget.reset();
+      setMessage("固件已上传并创建。");
+      formElement.reset();
       await load();
     } catch {
-      setError("创建固件失败。");
+      setError("上传固件失败。");
     }
   }
 
@@ -231,14 +222,17 @@ export function OtaConsolePanel() {
             ))}
           </Select>
           <Input name="version" placeholder="v1.0.1" required />
-          <Input name="file_url" placeholder="https://example.com/firmware.bin" required />
-          <Input name="file_size" placeholder="1024" required type="number" />
-          <Input name="sha256" placeholder={demoSha} required />
+          <Input
+            accept=".bin,.hex,.img,.ota,.uf2,.zip,.tar,.gz,application/octet-stream"
+            name="file"
+            required
+            type="file"
+          />
           <Input name="release_note" placeholder="修复问题或新增能力" />
           <div className="md:col-span-2">
             <button className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white hover:bg-slate-800">
               <Plus className="h-4 w-4" />
-              创建固件
+              上传并创建
             </button>
           </div>
         </form>
