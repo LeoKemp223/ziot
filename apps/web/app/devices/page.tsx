@@ -2,7 +2,10 @@ import { Database } from "lucide-react";
 import { ConsoleHeader } from "@/components/console/header";
 import { ConsoleSidebar } from "@/components/console/sidebar";
 import { navItems } from "@/components/console/dashboard-data";
-import { DeviceListPanel } from "@/components/devices/device-list-panel";
+import {
+  DeviceCreateForm,
+  DeviceListPanel
+} from "@/components/devices/device-list-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -25,16 +28,19 @@ export default function DevicesPage() {
                   设备管理
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">
-                  管理设备实例、运行状态、分组和接入密钥。
+                  管理设备实例、运行状态和接入密钥。
                 </p>
               </div>
-              <a
-                className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-                href="/api/v1/devices"
-              >
-                <Database className="h-4 w-4" />
-                查看 API
-              </a>
+              <div className="flex items-center gap-2">
+                <a
+                  className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                  href="/api/v1/devices"
+                >
+                  <Database className="h-4 w-4" />
+                  查看 API
+                </a>
+                <DeviceCreateForm />
+              </div>
             </div>
 
             <div className="mt-6">
