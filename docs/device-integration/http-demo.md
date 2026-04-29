@@ -86,7 +86,7 @@ POST /device-api/v1/commands/{request_id}/reply
 }
 ```
 
-## 运行模拟器
+## TypeScript 模拟器
 
 ```bash
 pnpm --filter @ziot/device-simulator http
@@ -99,3 +99,49 @@ HTTP_DEVICE_API_URL=http://localhost:3000 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt
 ```
 
 模拟器会执行一次属性上报，然后拉取待处理命令并逐条回复成功。
+
+## Python Demo
+
+Python demo 只使用标准库，不需要额外安装依赖。
+
+运行：
+
+```bash
+python3 docs/device-integration/http-python-demo.py
+```
+
+指定设备参数：
+
+```bash
+HTTP_DEVICE_API_URL=http://localhost:3000 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/http-python-demo.py
+```
+
+## C Demo
+
+C demo 使用 POSIX socket 发送 HTTP 请求，使用 OpenSSL `libcrypto` 计算 SHA256 和 HMAC。
+
+安装依赖示例：
+
+```bash
+sudo apt-get install libssl-dev
+```
+
+编译：
+
+```bash
+gcc docs/device-integration/http-c-demo.c -lcrypto -o /tmp/ziot-http-c-demo
+```
+
+运行：
+
+```bash
+/tmp/ziot-http-c-demo
+```
+
+指定设备参数：
+
+```bash
+HTTP_DEVICE_API_URL=http://localhost:3000 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-http-c-demo
+```
+
+Python 和 C demo 都会执行一次属性上报，然后拉取待处理命令并逐条回复成功。C demo 为轻量示例，仅支持本地明文 `http://`，不支持 `https://`。
