@@ -1133,7 +1133,127 @@ method + "\n" + path + "\n" + timestamp + "\n" + nonce + "\n" + body_sha256
 - 同一设备、同一 timestamp、同一 nonce 重复请求返回 `409001`。
 - 如果配置 `REDIS_URL`，nonce 通过 Redis `SET NX EX` 保存；本地未配置 Redis 时使用进程内 nonce 存储。
 
-## 10. 已验证用例
+## 10. OTA API
+
+### `GET /api/v1/firmwares`
+
+查询固件列表。需要 `ota:read` 权限。
+
+### `POST /api/v1/firmwares`
+
+创建固件记录。需要 `ota:write` 权限。
+
+```json
+{
+  "product_id": "prd_demo",
+  "version": "v1.0.1",
+  "file_url": "https://example.com/fw.bin",
+  "file_size": 1024,
+  "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "release_note": "演示固件"
+}
+```
+
+### `GET /api/v1/firmwares/{firmware_id}`
+
+查询固件详情。需要 `ota:read` 权限。
+
+### `PATCH /api/v1/firmwares/{firmware_id}`
+
+发布或废弃固件。需要 `ota:write` 权限。
+
+```json
+{
+  "status": "released"
+}
+```
+
+### `POST /api/v1/firmwares/{firmware_id}/upload-url`
+
+生成固件上传 URL。需要 `ota:write` 权限。
+如果配置了 MinIO 环境变量，返回预签名 PUT URL；本地未配置 MinIO 时返回固件记录中的 `file_url` 作为占位上传地址。
+
+### `GET /api/v1/ota/tasks`
+
+查询 OTA 任务列表。需要 `ota:read` 权限。
+
+### `POST /api/v1/ota/tasks`
+
+创建 OTA 任务。需要 `ota:write` 权限。
+
+```json
+{
+  "firmware_id": "fw_xxx",
+  "name": "演示升级任务",
+  "strategy": {
+    "target_type": "all"
+  }
+}
+```
+
+`strategy.target_type` 支持：
+
+- `all`: 选择固件所属产品下全部设备。
+- `devices`: 通过 `device_ids` 指定设备。
+- `group`: 通过 `group_id` 指定设备分组。
+
+### `GET /api/v1/ota/tasks/{task_id}`
+
+查询 OTA 任务详情和统计。需要 `ota:read` 权限。
+
+### `POST /api/v1/ota/tasks/{task_id}/start`
+
+启动 OTA 任务。需要 `ota:execute` 权限。
+启动后任务状态变为 `running`，设备记录变为 `notified`，平台向 MQTT 设备发布：
+
+```text
+/ota/{product_key}/{device_key}/upgrade/notify
+```
+
+### `POST /api/v1/ota/tasks/{task_id}/cancel`
+
+取消 OTA 任务。需要 `ota:execute` 权限。
+
+### `GET /api/v1/ota/tasks/{task_id}/records`
+
+查询任务下设备升级记录。需要 `ota:read` 权限。
+
+### HTTP 设备 OTA API
+
+HTTP 设备使用 Task 7 的设备签名头认证。
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `GET` | `/device-api/v1/ota/tasks/current` | 查询当前设备正在执行的 OTA 任务 |
+| `POST` | `/device-api/v1/ota/tasks/{task_id}/progress` | 上报 OTA 进度或结果 |
+
+进度上报示例：
+
+```json
+{
+  "status": "installing",
+  "progress": 80
+}
+```
+
+成功结果示例：
+
+```json
+{
+  "status": "success",
+  "progress": 100,
+  "firmware_version": "v1.0.1"
+}
+```
+
+MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web：
+
+```text
+/ota/{product_key}/{device_key}/upgrade/progress
+/ota/{product_key}/{device_key}/upgrade/result
+```
+
+## 11. 已验证用例
 
 2026-04-28 本地验证过以下用例：
 
@@ -1191,6 +1311,6 @@ docs/dev-logs/2026-04-28-local-db-and-product-api.md
 
 | 接口 | 状态 |
 | --- | --- |
-| 控制 API | 未实现 |
-| OTA API | 未实现 |
+| 控制 API | 已实现 |
+| OTA API | 已实现 |
 | 日志 API | 未实现 |

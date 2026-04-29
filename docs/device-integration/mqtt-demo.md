@@ -91,6 +91,19 @@ DATABASE_URL=postgresql://ziot:ziot@localhost:5432/ziot pnpm --filter @ziot/db s
 /sys/{product_key}/{device_key}/thing/service/{identifier}/reply
 ```
 
+OTA 通知订阅：
+
+```text
+/ota/{product_key}/{device_key}/upgrade/notify
+```
+
+OTA 进度和结果上报：
+
+```text
+/ota/{product_key}/{device_key}/upgrade/progress
+/ota/{product_key}/{device_key}/upgrade/result
+```
+
 控制台设备详情页会展示当前设备的完整 Topic 列表。设备发布属性、事件和日志上报后，会出现在设备详情页的“上报记录”；属性上报还会同步更新设备影子的 `reported`。也可以调用：
 
 ```bash
@@ -163,7 +176,7 @@ MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo D
 REPORT_INTERVAL_SECONDS=5 MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-mqtt-c-demo
 ```
 
-两个 demo 都会在连接成功后订阅属性设置和服务调用 Topic，立即上报一条属性数据，并按 `REPORT_INTERVAL_SECONDS` 定时上报属性。收到属性设置后，会再次上报属性；收到服务调用后，会自动向对应的 reply Topic 回复 `code=0`。
+两个 demo 都会在连接成功后订阅属性设置、服务调用和 OTA 通知 Topic，立即上报一条属性数据，并按 `REPORT_INTERVAL_SECONDS` 定时上报属性。收到属性设置后，会再次上报属性；收到服务调用后，会自动向对应的 reply Topic 回复 `code=0`。TypeScript MQTT simulator 收到 OTA 通知后会自动上报下载、安装和成功结果。
 
 ## 控制下发测试
 

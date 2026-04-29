@@ -33,6 +33,11 @@ type MqttReportInput = {
   payload: unknown;
 };
 
+type MqttOtaProgressInput = {
+  topic: unknown;
+  payload: unknown;
+};
+
 function deny(reason: string): MqttDecision {
   return { result: "deny", reason };
 }
@@ -401,4 +406,22 @@ export async function recordMqttReport(
   });
 
   return allow();
+}
+
+export async function parseMqttOtaProgressInput(input: MqttOtaProgressInput) {
+  const topic = typeof input.topic === "string" ? input.topic : "";
+  const parsed = parseTopic(topic);
+
+  if (
+    !parsed ||
+    parsed.namespace !== "ota" ||
+    !["upgrade.progress", "upgrade.result"].includes(parsed.messageType)
+  ) {
+    return null;
+  }
+
+  return {
+    parsed,
+    payload: parsePayload(input.payload)
+  };
 }

@@ -42,3 +42,11 @@ Device reports are forwarded from:
 
 Property reports update `device_shadows.reported` and all report messages are
 stored in `device_logs` for the device detail page's report history.
+
+OTA progress messages are forwarded from:
+
+- `/ota/+/+/upgrade/progress`
+- `/ota/+/+/upgrade/result`
+
+Progress updates write `ota_records`; success results also update the device's
+`firmware_version`.

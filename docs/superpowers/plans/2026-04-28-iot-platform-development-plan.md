@@ -724,18 +724,18 @@ Acceptance:
 - Modify: `packages/device-simulator/mqtt-simulator/`
 - Modify: `packages/device-simulator/http-simulator/`
 
-- [ ] Implement firmware create, list, detail, release, and deprecate.
-- [ ] Implement MinIO upload URL generation.
-- [ ] Store firmware file URL, file size, SHA256, version, release note, and product ID.
-- [ ] Implement OTA task create, start, cancel, list, detail, and records.
-- [ ] Implement target device selection by product, explicit device IDs, and device group.
-- [ ] Implement OTA notify for MQTT device.
-- [ ] Implement current OTA task query for HTTP device.
-- [ ] Implement OTA progress report handling for MQTT and HTTP.
-- [ ] Implement firmware list, upload firmware, OTA task list, create task, and task detail pages.
-- [ ] Add tests for firmware version uniqueness, SHA256 requirement, OTA target selection, progress update, failed upgrade, cancelled task, and unauthorized task access.
-- [ ] Run: `pnpm test -- --run ota`.
-- [ ] Commit: `feat: add ota firmware and upgrade tasks`.
+- [x] Implement firmware create, list, detail, release, and deprecate.
+- [x] Implement MinIO upload URL generation.
+- [x] Store firmware file URL, file size, SHA256, version, release note, and product ID.
+- [x] Implement OTA task create, start, cancel, list, detail, and records.
+- [x] Implement target device selection by product, explicit device IDs, and device group.
+- [x] Implement OTA notify for MQTT device.
+- [x] Implement current OTA task query for HTTP device.
+- [x] Implement OTA progress report handling for MQTT and HTTP.
+- [x] Implement firmware list, upload firmware, OTA task list, create task, and task detail pages.
+- [x] Add tests for firmware version uniqueness, SHA256 requirement, OTA target selection, progress update, failed upgrade, cancelled task, and unauthorized task access.
+- [x] Run: `pnpm test -- --run ota`.
+- [x] Commit: `feat: add ota firmware and upgrade tasks`.
 
 Acceptance:
 

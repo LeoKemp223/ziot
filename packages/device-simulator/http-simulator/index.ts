@@ -84,6 +84,35 @@ async function main() {
     );
     console.log(`replied command=${command.request_id}`, reply);
   }
+
+  const otaTask = (await request("/device-api/v1/ota/tasks/current", {
+    method: "GET"
+  })) as null | { task_id: string; firmware?: { version?: string } };
+
+  if (!otaTask) {
+    console.log("current ota task=none");
+    return;
+  }
+
+  console.log(`current ota task=${otaTask.task_id}`);
+  for (const [status, progress] of [
+    ["downloading", 30],
+    ["installing", 80],
+    ["success", 100]
+  ] as const) {
+    const otaProgress = await request(
+      `/device-api/v1/ota/tasks/${encodeURIComponent(otaTask.task_id)}/progress`,
+      {
+        method: "POST",
+        body: {
+          status,
+          progress,
+          firmware_version: otaTask.firmware?.version
+        }
+      }
+    );
+    console.log(`reported ota ${status}`, otaProgress);
+  }
 }
 
 main().catch((error) => {

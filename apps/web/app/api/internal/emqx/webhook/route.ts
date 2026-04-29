@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@ziot/db";
 import {
+  parseMqttOtaProgressInput,
   recordMqttReport,
   recordMqttWebhookEvent
 } from "@/features/ingress/mqtt/mqtt-ingress-service";
 import { recordCommandReply } from "@/features/control/control-service";
+import { recordOtaProgress } from "@/features/ota/ota-service";
 
 export const runtime = "nodejs";
 
@@ -27,6 +29,42 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json(decision);
+    }
+
+    if (typeof body.topic === "string" && body.topic.startsWith("/ota/")) {
+      const parsed = await parseMqttOtaProgressInput({
+        topic: body.topic,
+        payload: body.payload
+      });
+
+      if (!parsed) {
+        return NextResponse.json({ result: "deny", reason: "invalid ota topic" });
+      }
+
+      await recordOtaProgress(prisma, {
+        productKey: parsed.parsed.productKey,
+        deviceKey: parsed.parsed.deviceKey,
+        taskId: String(parsed.payload.task_id ?? parsed.payload.taskId ?? ""),
+        status:
+          parsed.parsed.messageType === "upgrade.result"
+            ? Number(parsed.payload.code ?? 0) === 0
+              ? "success"
+              : "failed"
+            : (["notified", "downloading", "installing", "success", "failed"].includes(
+                  String(parsed.payload.status)
+                )
+                ? (String(parsed.payload.status) as any)
+                : "downloading"),
+        progress: parsed.payload.progress,
+        ...(typeof parsed.payload.error_message === "string"
+          ? { errorMessage: parsed.payload.error_message }
+          : {}),
+        ...(typeof parsed.payload.firmware_version === "string"
+          ? { firmwareVersion: parsed.payload.firmware_version }
+          : {})
+      });
+
+      return NextResponse.json({ result: "allow" });
     }
 
     const connectedAt =

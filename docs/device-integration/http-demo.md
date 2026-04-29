@@ -63,6 +63,18 @@ GET /device-api/v1/commands/pending
 POST /device-api/v1/commands/{request_id}/reply
 ```
 
+查询当前 OTA 任务：
+
+```text
+GET /device-api/v1/ota/tasks/current
+```
+
+上报 OTA 进度：
+
+```text
+POST /device-api/v1/ota/tasks/{task_id}/progress
+```
+
 属性上报示例 body：
 
 ```json
@@ -98,7 +110,7 @@ pnpm --filter @ziot/device-simulator http
 HTTP_DEVICE_API_URL=http://localhost:3000 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 pnpm --filter @ziot/device-simulator http
 ```
 
-模拟器会执行一次属性上报，然后拉取待处理命令并逐条回复成功。
+模拟器会执行一次属性上报，拉取待处理命令并逐条回复成功；如果存在当前 OTA 任务，还会依次上报下载、安装和成功结果。
 
 ## Python Demo
 
