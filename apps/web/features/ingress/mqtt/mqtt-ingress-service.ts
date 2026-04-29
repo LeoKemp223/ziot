@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import {
   parseMqttUsername,
   parseTopic,
+  signHmacSha256,
   type MqttUsername
 } from "@ziot/domain";
 
@@ -59,6 +60,19 @@ function parseClientUsername(username: unknown): MqttUsername | null {
   return typeof username === "string" ? parseMqttUsername(username) : null;
 }
 
+async function verifyMqttPassword(
+  password: string,
+  rawUsername: string,
+  passwordHash: string
+): Promise<boolean> {
+  if (await bcrypt.compare(password, passwordHash)) {
+    return true;
+  }
+
+  const legacyHmacPassword = signHmacSha256(password, rawUsername);
+  return bcrypt.compare(legacyHmacPassword, passwordHash);
+}
+
 export async function authenticateMqttClient(
   db: Db,
   input: {
@@ -66,6 +80,7 @@ export async function authenticateMqttClient(
     password: unknown;
   }
 ): Promise<MqttDecision> {
+  const rawUsername = typeof input.username === "string" ? input.username : "";
   const username = parseClientUsername(input.username);
   const password = typeof input.password === "string" ? input.password : "";
 
@@ -79,8 +94,9 @@ export async function authenticateMqttClient(
     return deny("device not found or disabled");
   }
 
-  const verified = await bcrypt.compare(
-    password.toLowerCase(),
+  const verified = await verifyMqttPassword(
+    password,
+    rawUsername,
     device.device_secret_hash
   );
 

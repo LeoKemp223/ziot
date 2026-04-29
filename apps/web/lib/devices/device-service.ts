@@ -1,6 +1,5 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { signHmacSha256 } from "@ziot/domain";
 
 type Db = { [key: string]: any };
 type AccessScope = {
@@ -29,10 +28,6 @@ function deviceSecret(): string {
 
 function deviceKey(): string {
   return `dk_${randomUUID().replaceAll("-", "").slice(0, 12)}`;
-}
-
-function mqttPassword(secret: string, productKey: string, key: string): string {
-  return signHmacSha256(secret, `${productKey}:${key}`);
 }
 
 function mapDevice(device: any, plainSecret?: string) {
@@ -146,7 +141,7 @@ export async function createDevice(
     tags?: unknown;
   }
 ) {
-  const product = await findProductForScope(db, input);
+  await findProductForScope(db, input);
 
   const name = input.name.trim();
 
@@ -182,10 +177,7 @@ export async function createDevice(
       created_by: input.createdBy,
       product_id: input.productId,
       device_key: key,
-      device_secret_hash: await bcrypt.hash(
-        mqttPassword(secret, product.product_key, key),
-        10
-      ),
+      device_secret_hash: await bcrypt.hash(secret, 10),
       name,
       firmware_version: input.firmwareVersion,
       tags: typeof input.tags === "object" && input.tags !== null ? input.tags : {}
@@ -302,10 +294,7 @@ export async function resetDeviceSecret(
   const device = await db.device.update({
     where: { id: input.deviceId },
     data: {
-      device_secret_hash: await bcrypt.hash(
-        mqttPassword(secret, currentDevice.product.product_key, currentDevice.device_key),
-        10
-      )
+      device_secret_hash: await bcrypt.hash(secret, 10)
     },
     include: { product: true }
   });

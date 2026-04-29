@@ -1,12 +1,12 @@
 import mqtt from "mqtt";
-import { buildServiceInvokeTopic, signHmacSha256 } from "@ziot/domain";
+import { buildServiceInvokeTopic } from "@ziot/domain";
 
 const brokerUrl = process.env.MQTT_BROKER_URL ?? "mqtt://localhost:1883";
 const productKey = process.env.PRODUCT_KEY ?? "pk_demo";
 const deviceKey = process.env.DEVICE_KEY ?? "dk_mqtt_demo";
 const deviceSecret = process.env.DEVICE_SECRET ?? "DeviceSecret123";
 const username = `${productKey}:${deviceKey}`;
-const password = signHmacSha256(deviceSecret, username);
+const password = deviceSecret;
 
 const client = mqtt.connect(brokerUrl, {
   clientId: process.env.MQTT_CLIENT_ID ?? deviceKey,

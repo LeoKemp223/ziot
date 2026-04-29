@@ -1,5 +1,3 @@
-import { signHmacSha256 } from "./http";
-
 export type MqttUsername = {
   productKey: string;
   deviceKey: string;
@@ -20,5 +18,5 @@ export function verifyMqttPassword(
   username: string,
   password: string
 ): boolean {
-  return signHmacSha256(deviceSecret, username) === password.toLowerCase();
+  return parseMqttUsername(username) !== null && deviceSecret === password;
 }

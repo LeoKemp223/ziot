@@ -13,10 +13,8 @@ describe("mqtt signatures", () => {
     expect(parseMqttUsername("bad")).toBeNull();
   });
 
-  it("verifies HMAC password", () => {
-    const password =
-      "033a4ce6822028ca02cdfea22fe80a3e0672d5ee446219d4be8121b387916e06";
-
-    expect(verifyMqttPassword("secret", "pk_001:dk_001", password)).toBe(true);
+  it("verifies direct device secret password", () => {
+    expect(verifyMqttPassword("secret", "pk_001:dk_001", "secret")).toBe(true);
+    expect(verifyMqttPassword("secret", "pk_001:dk_001", "wrong")).toBe(false);
   });
 });

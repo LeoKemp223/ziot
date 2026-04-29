@@ -48,7 +48,7 @@ The following decisions are considered locked for MVP. Do not reopen them during
 | Application shape | Modular monolith in `apps/web`, background processing in `apps/worker` |
 | Tenant model | Every tenant-owned resource includes `org_id`; cross-org access returns 403 |
 | Device protocol | JSON over MQTT and HTTP only |
-| MQTT authentication | One-device-one-secret with HMAC-SHA256 signature |
+| MQTT authentication | One-device-one-secret with direct `device_secret` password |
 | HTTP authentication | Device headers with product key, device key, timestamp, nonce, and signature |
 | Device identity storage | Store only `device_secret_hash`; show plain secret only once |
 | Invitation storage | Store only `code_hash`; show plain invitation code only once |
@@ -356,7 +356,7 @@ Verification status on 2026-04-28:
 - [x] Add enums for resource status, online status, command status, firmware status, OTA task status, OTA record status, and log level.
 - [x] Add indexes listed in the PRD recommended index section.
 - [x] Add seed data for platform admin, default organization, default roles, default permissions, one product, and two demo devices.
-- [x] Define domain contracts for permission decisions, thing model validation, shadow merge, Topic parsing, HTTP/MQTT signature validation, command state transitions, and OTA state transitions.
+- [x] Define domain contracts for permission decisions, thing model validation, shadow merge, Topic parsing, MQTT credential validation, HTTP signature validation, command state transitions, and OTA state transitions.
 - [x] Add unit tests for all domain contracts.
 - [x] Enforce 80%+ coverage for `packages/domain`.
 - [x] Generate initial Prisma migration and verify it with `prisma migrate deploy` against an empty database.
@@ -553,7 +553,7 @@ Verification status on 2026-04-28:
 - [x] Implement EMQX ACL callback.
 - [x] Implement EMQX WebHook callback.
 - [x] Implement MQTT username parsing for `product_key:device_key`.
-- [x] Implement HMAC-SHA256 password validation.
+- [x] Implement direct `device_secret` password validation.
 - [x] Implement Topic parser for product key, device key, message type, service identifier, and OTA action.
 - [x] Configure EMQX HTTP auth and ACL in `deploy/emqx` for local Docker Compose.
 - [x] Verify local EMQX callbacks use Docker service names and do not depend on `host.docker.internal`.
@@ -563,6 +563,7 @@ Verification status on 2026-04-28:
 - [x] Update device online, offline, last heartbeat, and device log records from WebHook events.
 - [ ] Add online status compensation using Redis online state and last heartbeat time.
 - [x] Create MQTT simulator that can connect, publish property payload, subscribe command Topic, and reply.
+- [x] Add C and Python MQTT device demos in `docs/device-integration/`.
 - [x] Add service tests for successful auth, wrong password, disabled device, wrong Topic publish, and cross-device subscription.
 - [x] Run: `pnpm test -- --run mqtt ingress`.
 - [x] Commit: `feat: integrate mqtt ingress with emqx`.
@@ -577,12 +578,13 @@ Acceptance:
 
 Verification status on 2026-04-29:
 
-- `POST /api/internal/emqx/auth` validates `HMAC-SHA256(device_secret, "{product_key}:{device_key}")` against the stored bcrypt hash.
+- `POST /api/internal/emqx/auth` validates MQTT password as direct `device_secret` against the stored bcrypt hash, with temporary compatibility for earlier HMAC hashes.
 - Disabled devices and invalid MQTT passwords are denied.
 - `POST /api/internal/emqx/acl` allows only same-device publish/subscribe Topic patterns and rejects cross-device access.
 - `POST /api/internal/emqx/webhook` updates `online_status`, heartbeat timestamps, and lifecycle device logs for connect/disconnect events.
 - `deploy/emqx/dev.conf` uses `http://web:3000/...` callback URLs for Compose networking.
 - `packages/device-simulator` provides an MQTT simulator for connect, property publish, command subscribe, and command reply.
+- `docs/device-integration/` provides C and Python MQTT demos for direct `device_secret` authentication.
 - `pnpm test -- --run mqtt ingress topics devices` and `pnpm typecheck` pass.
 
 ### Task 5: Telemetry, Device Logs, And Shadow Updates
@@ -929,7 +931,7 @@ Run these test groups before each release gate. A task is not complete until its
 
 | Test Group | Command Pattern | Required Coverage |
 | --- | --- | --- |
-| Domain unit tests | `pnpm test -- --run domain` | Topic parsing, HMAC signatures, HTTP signature strings, command state machine, OTA state machine, permission helpers |
+| Domain unit tests | `pnpm test -- --run domain` | Topic parsing, MQTT credential checks, HTTP HMAC signatures, command state machine, OTA state machine, permission helpers |
 | Identity API tests | `pnpm test -- --run identity` | Registration, login, refresh, logout, invitation expiry, invitation overuse, disabled user, role checks |
 | Tenant isolation tests | `pnpm test -- --run tenancy` | Product, device, command, OTA, log, and audit APIs reject cross-org access with 403 |
 | Device management tests | `pnpm test -- --run products devices` | Product CRUD, device secret one-time display, secret reset, disabled device behavior, shadow versioning |

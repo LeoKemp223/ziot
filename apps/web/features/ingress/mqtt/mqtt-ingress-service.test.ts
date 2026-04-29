@@ -25,7 +25,11 @@ function device(overrides: Record<string, unknown> = {}) {
   };
 }
 
-async function hashedMqttPassword(secret = "DeviceSecret123") {
+async function hashedDeviceSecret(secret = "DeviceSecret123") {
+  return bcrypt.hash(secret, 10);
+}
+
+async function hashedLegacyMqttPassword(secret = "DeviceSecret123") {
   return bcrypt.hash(signHmacSha256(secret, "pk_demo:dk_demo"), 10);
 }
 
@@ -35,7 +39,7 @@ describe("mqtt ingress service", () => {
       device: {
         findFirst: vi.fn().mockResolvedValue(
           device({
-            device_secret_hash: await hashedMqttPassword()
+            device_secret_hash: await hashedDeviceSecret()
           })
         )
       }
@@ -43,7 +47,26 @@ describe("mqtt ingress service", () => {
 
     const result = await authenticateMqttClient(db, {
       username: "pk_demo:dk_demo",
-      password: signHmacSha256("DeviceSecret123", "pk_demo:dk_demo")
+      password: "DeviceSecret123"
+    });
+
+    expect(result).toEqual({ result: "allow" });
+  });
+
+  it("allows direct device_secret against legacy HMAC hashes", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(
+          device({
+            device_secret_hash: await hashedLegacyMqttPassword()
+          })
+        )
+      }
+    };
+
+    const result = await authenticateMqttClient(db, {
+      username: "pk_demo:dk_demo",
+      password: "DeviceSecret123"
     });
 
     expect(result).toEqual({ result: "allow" });
@@ -54,7 +77,7 @@ describe("mqtt ingress service", () => {
       device: {
         findFirst: vi.fn().mockResolvedValue(
           device({
-            device_secret_hash: await hashedMqttPassword(),
+            device_secret_hash: await hashedDeviceSecret(),
             status: "disabled"
           })
         )
@@ -64,7 +87,7 @@ describe("mqtt ingress service", () => {
     await expect(
       authenticateMqttClient(db, {
         username: "pk_demo:dk_demo",
-        password: signHmacSha256("wrong", "pk_demo:dk_demo")
+        password: "wrong"
       })
     ).resolves.toMatchObject({ result: "deny" });
   });

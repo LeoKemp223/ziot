@@ -880,9 +880,9 @@ HTTP 状态码：`200`
 | 字段 | 值 |
 | --- | --- |
 | username | `{product_key}:{device_key}` |
-| password | `HMAC-SHA256(device_secret, username)` |
+| password | `device_secret` |
 
-服务端不保存明文 `device_secret`，只保存 MQTT password 的 bcrypt hash。创建或重置设备密钥后，旧 MQTT password 立即失效。
+服务端不保存明文 `device_secret`，只保存 `device_secret` 的 bcrypt hash。创建或重置设备密钥后，旧 MQTT password 立即失效。
 
 ### `POST /api/internal/emqx/auth`
 
@@ -891,7 +891,7 @@ EMQX HTTP 认证回调。请求体示例：
 ```json
 {
   "username": "pk_demo:dk_mqtt_demo",
-  "password": "hex_hmac_sha256_password",
+  "password": "DeviceSecret123",
   "clientid": "dk_mqtt_demo"
 }
 ```
@@ -972,7 +972,7 @@ EMQX WebHook 回调。当前处理 `client.connected` 和 `client.disconnected`�
 | `PATCH /api/v1/devices/{device_id}/shadow` | 更新 desired 并递增 version |
 | `GET /api/v1/device-groups` | 返回设备分组列表 |
 | `POST /api/v1/device-groups` | 可创建同产品分组并添加设备成员 |
-| `POST /api/internal/emqx/auth` | 有效 MQTT HMAC password 返回 `allow`，错误密钥或禁用设备返回 `deny` |
+| `POST /api/internal/emqx/auth` | 有效 MQTT `device_secret` 返回 `allow`，错误密钥或禁用设备返回 `deny` |
 | `POST /api/internal/emqx/acl` | 允许本设备 Topic，拒绝跨设备 Topic |
 | `POST /api/internal/emqx/webhook` | 连接事件更新设备在线状态并写入生命周期日志 |
 | 数据库直查 | `products`、`devices`、`device_groups`、`device_shadows` 表可查到对应数据 |

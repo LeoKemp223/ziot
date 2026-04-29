@@ -392,11 +392,11 @@ MVP 推荐一机一密：
 
 - 平台创建设备时生成 `device_key` 和 `device_secret`。
 - MQTT 连接时使用 `username = product_key + ":" + device_key`。
-- `password` 使用 HMAC-SHA256 签名。
+- MQTT `password` 直接使用 `device_secret`。
 - EMQX 通过 HTTP Auth 回调后端校验设备凭证。
 - HTTP 接入使用请求头携带设备标识、时间戳、nonce、签名。
 
-签名规则示例：
+HTTP 签名规则示例：
 
 ```text
 sign = HMAC_SHA256(device_secret, method + "\n" + path + "\n" + timestamp + "\n" + nonce + "\n" + body_sha256)
@@ -486,7 +486,7 @@ EMQX 与后端通过 HTTP Auth、HTTP ACL、Webhook 和规则引擎集成。
 {
   "clientid": "prd_xxx.dev_xxx",
   "username": "pk_xxx:dk_xxx",
-  "password": "signature",
+  "password": "device_secret",
   "peerhost": "192.168.1.10",
   "proto_name": "MQTT",
   "mountpoint": ""
@@ -497,7 +497,7 @@ EMQX 与后端通过 HTTP Auth、HTTP ACL、Webhook 和规则引擎集成。
 
 - 解析 `product_key` 和 `device_key`。
 - 查询设备状态，禁用或删除设备拒绝连接。
-- 校验签名和时间窗口。
+- 校验 MQTT password 是否为设备的 `device_secret`。
 - 认证成功后刷新设备最近认证时间。
 
 #### ACL 回调
@@ -1764,7 +1764,7 @@ MVP 可先通过消息队列事件实现，后续再做可视化规则配置。
 | AC-03 | 组织隔离 | 用户 A 属于组织 A，资源属于组织 B | 用户 A 查询或修改组织 B 资源返回 403 |
 | AC-04 | 设备密钥展示 | 管理员创建设备 | 响应中返回一次明文密钥，后续详情不再展示 |
 | AC-05 | 密钥重置 | 设备已使用旧密钥接入 | 重置后旧密钥无法认证，新密钥可以认证 |
-| AC-06 | MQTT 上线 | 设备使用正确 Product Key、Device Key、签名 | EMQX 认证成功，设备状态变为在线 |
+| AC-06 | MQTT 上线 | 设备使用正确 Product Key、Device Key、Device Secret | EMQX 认证成功，设备状态变为在线 |
 | AC-07 | MQTT ACL | 设备尝试发布或订阅其他设备 Topic | EMQX ACL 拒绝 |
 | AC-08 | 属性上报 | MQTT 或 HTTP 设备上报属性 | 设备影子 `reported` 更新，版本号递增 |
 | AC-09 | 同步控制成功 | MQTT 设备在线并订阅命令 Topic | Web 发起控制后在超时时间内收到成功结果 |
@@ -1809,7 +1809,7 @@ MVP 可先通过消息队列事件实现，后续再做可视化规则配置。
 
 设备端需要获得以下资料：
 
-- MQTT 连接参数：地址、端口、Client ID、Username、签名规则。
+- MQTT 连接参数：地址、端口、Client ID、Username、Password。
 - HTTP 接入参数：基础地址、请求头、签名规则、防重放规则。
 - Topic 清单和消息 JSON 示例。
 - 属性上报、事件上报、日志上报协议。
