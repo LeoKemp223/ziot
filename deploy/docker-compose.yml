@@ -39,7 +39,7 @@ services:
       - "1883:1883"
       - "18083:18083"
     volumes:
-      - ./emqx/dev.conf:/opt/ziot/emqx-dev.conf:ro
+      - ./emqx/dev.conf:/opt/emqx/etc/conf.d/ziot.conf:ro
     depends_on:
       - web
     healthcheck:

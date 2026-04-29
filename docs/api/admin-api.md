@@ -869,7 +869,77 @@ HTTP 状态码：`200`
 
 分组在 MVP 中必须绑定一个产品。添加成员时，如果设备和分组不属于同一产品，接口返回 `409001`。
 
-## 8. 已验证用例
+## 8. EMQX 内部回调 API
+
+以下接口供 EMQX 在 Docker Compose 网络内调用，不面向浏览器用户。本地 EMQX 配置位于 `deploy/emqx/dev.conf`，回调地址使用 Compose 服务名 `web`。
+
+### MQTT 认证口令
+
+设备连接 MQTT 时使用：
+
+| 字段 | 值 |
+| --- | --- |
+| username | `{product_key}:{device_key}` |
+| password | `HMAC-SHA256(device_secret, username)` |
+
+服务端不保存明文 `device_secret`，只保存 MQTT password 的 bcrypt hash。创建或重置设备密钥后，旧 MQTT password 立即失效。
+
+### `POST /api/internal/emqx/auth`
+
+EMQX HTTP 认证回调。请求体示例：
+
+```json
+{
+  "username": "pk_demo:dk_mqtt_demo",
+  "password": "hex_hmac_sha256_password",
+  "clientid": "dk_mqtt_demo"
+}
+```
+
+成功响应：
+
+```json
+{ "result": "allow" }
+```
+
+失败响应：
+
+```json
+{ "result": "deny", "reason": "invalid credentials" }
+```
+
+禁用设备、已删除设备、错误密钥都会返回 `deny`。
+
+### `POST /api/internal/emqx/acl`
+
+EMQX HTTP 授权回调。请求体示例：
+
+```json
+{
+  "username": "pk_demo:dk_mqtt_demo",
+  "action": "publish",
+  "topic": "/sys/pk_demo/dk_mqtt_demo/thing/property/post"
+}
+```
+
+当前允许：
+
+- 发布到本设备的属性、事件、日志上报 Topic。
+- 发布到本设备的服务回复 Topic。
+- 发布到本设备的 OTA 进度/结果 Topic。
+- 订阅本设备的服务调用和 OTA 通知 Topic。
+
+跨设备 Topic、未知 Topic 或禁用设备返回 `deny`。
+
+### `POST /api/internal/emqx/webhook`
+
+EMQX WebHook 回调。当前处理 `client.connected` 和 `client.disconnected`：
+
+- `client.connected`: 设备置为 `online`，更新 `last_online_at` 和 `last_heartbeat_at`。
+- `client.disconnected`: 设备置为 `offline`，更新 `last_offline_at`。
+- 同步写入 `device_logs` 生命周期日志。
+
+## 9. 已验证用例
 
 2026-04-28 本地验证过以下用例：
 
@@ -902,6 +972,9 @@ HTTP 状态码：`200`
 | `PATCH /api/v1/devices/{device_id}/shadow` | 更新 desired 并递增 version |
 | `GET /api/v1/device-groups` | 返回设备分组列表 |
 | `POST /api/v1/device-groups` | 可创建同产品分组并添加设备成员 |
+| `POST /api/internal/emqx/auth` | 有效 MQTT HMAC password 返回 `allow`，错误密钥或禁用设备返回 `deny` |
+| `POST /api/internal/emqx/acl` | 允许本设备 Topic，拒绝跨设备 Topic |
+| `POST /api/internal/emqx/webhook` | 连接事件更新设备在线状态并写入生命周期日志 |
 | 数据库直查 | `products`、`devices`、`device_groups`、`device_shadows` 表可查到对应数据 |
 
 验证日志：
@@ -910,7 +983,7 @@ HTTP 状态码：`200`
 docs/dev-logs/2026-04-28-local-db-and-product-api.md
 ```
 
-## 9. 待补充接口
+## 10. 待补充接口
 
 以下接口在 PRD 中已规划，但当前尚未实现：
 

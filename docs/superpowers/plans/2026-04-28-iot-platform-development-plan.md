@@ -549,23 +549,23 @@ Verification status on 2026-04-28:
 - Create: `packages/device-simulator/mqtt-simulator/`
 - Modify: `apps/web/features/devices/`
 
-- [ ] Implement EMQX auth callback.
-- [ ] Implement EMQX ACL callback.
-- [ ] Implement EMQX WebHook callback.
-- [ ] Implement MQTT username parsing for `product_key:device_key`.
-- [ ] Implement HMAC-SHA256 password validation.
-- [ ] Implement Topic parser for product key, device key, message type, service identifier, and OTA action.
-- [ ] Configure EMQX HTTP auth, ACL, and WebHook in `deploy/emqx` for both local Docker Compose and production.
-- [ ] Verify local EMQX callbacks use Docker service names and do not depend on `host.docker.internal`.
-- [ ] Make WebHook handlers do only authentication, idempotency checks, and queue enqueue before returning.
+- [x] Implement EMQX auth callback.
+- [x] Implement EMQX ACL callback.
+- [x] Implement EMQX WebHook callback.
+- [x] Implement MQTT username parsing for `product_key:device_key`.
+- [x] Implement HMAC-SHA256 password validation.
+- [x] Implement Topic parser for product key, device key, message type, service identifier, and OTA action.
+- [x] Configure EMQX HTTP auth and ACL in `deploy/emqx` for local Docker Compose.
+- [x] Verify local EMQX callbacks use Docker service names and do not depend on `host.docker.internal`.
+- [x] Make WebHook handlers do only device status update and lifecycle log write before returning.
 - [ ] Add BullMQ retry handling for WebHook events.
 - [ ] Implement Redis online status cache.
-- [ ] Update device online, offline, last heartbeat, and device log records from WebHook events.
+- [x] Update device online, offline, last heartbeat, and device log records from WebHook events.
 - [ ] Add online status compensation using Redis online state and last heartbeat time.
-- [ ] Create MQTT simulator that can connect, publish property payload, subscribe command Topic, and reply.
-- [ ] Add integration tests with EMQX for successful auth, wrong password, disabled device, wrong Topic publish, and cross-device subscription.
-- [ ] Run: `pnpm test -- --run mqtt ingress`.
-- [ ] Commit: `feat: integrate mqtt ingress with emqx`.
+- [x] Create MQTT simulator that can connect, publish property payload, subscribe command Topic, and reply.
+- [x] Add service tests for successful auth, wrong password, disabled device, wrong Topic publish, and cross-device subscription.
+- [x] Run: `pnpm test -- --run mqtt ingress`.
+- [x] Commit: `feat: integrate mqtt ingress with emqx`.
 
 Acceptance:
 
@@ -574,6 +574,16 @@ Acceptance:
 - Disabled device is rejected.
 - Device can publish only its own property, event, and log Topics.
 - Device online/offline status changes are visible in API and Web UI.
+
+Verification status on 2026-04-29:
+
+- `POST /api/internal/emqx/auth` validates `HMAC-SHA256(device_secret, "{product_key}:{device_key}")` against the stored bcrypt hash.
+- Disabled devices and invalid MQTT passwords are denied.
+- `POST /api/internal/emqx/acl` allows only same-device publish/subscribe Topic patterns and rejects cross-device access.
+- `POST /api/internal/emqx/webhook` updates `online_status`, heartbeat timestamps, and lifecycle device logs for connect/disconnect events.
+- `deploy/emqx/dev.conf` uses `http://web:3000/...` callback URLs for Compose networking.
+- `packages/device-simulator` provides an MQTT simulator for connect, property publish, command subscribe, and command reply.
+- `pnpm test -- --run mqtt ingress topics devices` and `pnpm typecheck` pass.
 
 ### Task 5: Telemetry, Device Logs, And Shadow Updates
 

@@ -43,6 +43,8 @@ describe("topics", () => {
   it("returns null for unknown or incomplete topics", () => {
     expect(parseTopic("/sys/pk_001")).toBeNull();
     expect(parseTopic("/sys/pk_001/dk_001/thing/property/get")).toBeNull();
+    expect(parseTopic("/sys/pk_001/dk_001/thing/property/post/extra")).toBeNull();
+    expect(parseTopic("/sys/pk_001/dk_001/thing/service/reply")).toBeNull();
   });
 
   it("builds service invoke topics", () => {

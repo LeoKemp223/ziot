@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { describe, expect, it, vi } from "vitest";
+import { signHmacSha256 } from "@ziot/domain";
 import {
   addDeviceToGroup,
   createDevice,
@@ -87,7 +88,10 @@ describe("device service", () => {
     expect(createArgs.data.device_secret).toBeUndefined();
     expect(createArgs.data.created_by).toBe("usr_member");
     await expect(
-      bcrypt.compare(result.device_secret ?? "", createArgs.data.device_secret_hash)
+      bcrypt.compare(
+        signHmacSha256(result.device_secret ?? "", "pk_demo:dk_sensor"),
+        createArgs.data.device_secret_hash
+      )
     ).resolves.toBe(true);
     expect(db.deviceShadow.create).toHaveBeenCalledWith({
       data: {
@@ -258,7 +262,10 @@ describe("device service", () => {
     expect(result.device_secret).toMatch(/^ds_/);
     expect(updateArgs.data.device_secret).toBeUndefined();
     await expect(
-      bcrypt.compare(result.device_secret ?? "", updateArgs.data.device_secret_hash)
+      bcrypt.compare(
+        signHmacSha256(result.device_secret ?? "", "pk_demo:dk_demo"),
+        updateArgs.data.device_secret_hash
+      )
     ).resolves.toBe(true);
   });
 

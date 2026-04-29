@@ -1,0 +1,160 @@
+import bcrypt from "bcryptjs";
+import { describe, expect, it, vi } from "vitest";
+import { signHmacSha256 } from "@ziot/domain";
+import {
+  authenticateMqttClient,
+  authorizeMqttAction,
+  recordMqttWebhookEvent
+} from "./mqtt-ingress-service";
+
+const now = new Date("2026-04-29T01:00:00.000Z");
+
+function device(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "dev_demo",
+    org_id: "org_default",
+    product_id: "prd_demo",
+    device_key: "dk_demo",
+    device_secret_hash: "",
+    status: "active",
+    product: {
+      id: "prd_demo",
+      product_key: "pk_demo"
+    },
+    ...overrides
+  };
+}
+
+async function hashedMqttPassword(secret = "DeviceSecret123") {
+  return bcrypt.hash(signHmacSha256(secret, "pk_demo:dk_demo"), 10);
+}
+
+describe("mqtt ingress service", () => {
+  it("allows valid mqtt credentials", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(
+          device({
+            device_secret_hash: await hashedMqttPassword()
+          })
+        )
+      }
+    };
+
+    const result = await authenticateMqttClient(db, {
+      username: "pk_demo:dk_demo",
+      password: signHmacSha256("DeviceSecret123", "pk_demo:dk_demo")
+    });
+
+    expect(result).toEqual({ result: "allow" });
+  });
+
+  it("denies invalid secret and disabled devices", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(
+          device({
+            device_secret_hash: await hashedMqttPassword(),
+            status: "disabled"
+          })
+        )
+      }
+    };
+
+    await expect(
+      authenticateMqttClient(db, {
+        username: "pk_demo:dk_demo",
+        password: signHmacSha256("wrong", "pk_demo:dk_demo")
+      })
+    ).resolves.toMatchObject({ result: "deny" });
+  });
+
+  it("allows publishing only to the device's own report topics", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device())
+      }
+    };
+
+    await expect(
+      authorizeMqttAction(db, {
+        username: "pk_demo:dk_demo",
+        action: "publish",
+        topic: "/sys/pk_demo/dk_demo/thing/property/post"
+      })
+    ).resolves.toEqual({ result: "allow" });
+
+    await expect(
+      authorizeMqttAction(db, {
+        username: "pk_demo:dk_demo",
+        action: "publish",
+        topic: "/sys/pk_demo/dk_other/thing/property/post"
+      })
+    ).resolves.toMatchObject({ result: "deny" });
+  });
+
+  it("allows subscribing only to own command topics", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device())
+      }
+    };
+
+    await expect(
+      authorizeMqttAction(db, {
+        username: "pk_demo:dk_demo",
+        action: "subscribe",
+        topic: "/sys/pk_demo/dk_demo/thing/service/+/invoke"
+      })
+    ).resolves.toEqual({ result: "allow" });
+
+    await expect(
+      authorizeMqttAction(db, {
+        username: "pk_demo:dk_demo",
+        action: "subscribe",
+        topic: "/sys/pk_demo/+/thing/service/+/invoke"
+      })
+    ).resolves.toMatchObject({ result: "deny" });
+  });
+
+  it("updates online status and writes lifecycle logs from webhooks", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device()),
+        update: vi.fn().mockResolvedValue({})
+      },
+      deviceLog: {
+        create: vi.fn().mockResolvedValue({})
+      }
+    };
+
+    const result = await recordMqttWebhookEvent(db, {
+      event: "client.connected",
+      username: "pk_demo:dk_demo",
+      clientId: "client-1",
+      connectedAt: now
+    });
+
+    expect(result).toEqual({ result: "allow" });
+    expect(db.device.update).toHaveBeenCalledWith({
+      where: { id: "dev_demo" },
+      data: {
+        online_status: "online",
+        last_online_at: now,
+        last_heartbeat_at: now
+      }
+    });
+    expect(db.deviceLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        org_id: "org_default",
+        product_id: "prd_demo",
+        device_id: "dev_demo",
+        type: "lifecycle",
+        content: {
+          event: "client.connected",
+          client_id: "client-1"
+        }
+      })
+    });
+  });
+});

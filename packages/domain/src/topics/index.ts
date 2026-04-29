@@ -13,8 +13,12 @@ export function parseTopic(topic: string): ParsedTopic | null {
     return null;
   }
 
+  if (!parts[1] || !parts[2]) {
+    return null;
+  }
+
   if (parts[0] === "sys" && parts[3] === "thing") {
-    if (parts[4] === "property" && parts[5] === "post") {
+    if (parts.length === 6 && parts[4] === "property" && parts[5] === "post") {
       return {
         namespace: "sys",
         productKey: parts[1] ?? "",
@@ -23,7 +27,7 @@ export function parseTopic(topic: string): ParsedTopic | null {
       };
     }
 
-    if (parts[4] === "event" && parts[5] === "post") {
+    if (parts.length === 6 && parts[4] === "event" && parts[5] === "post") {
       return {
         namespace: "sys",
         productKey: parts[1] ?? "",
@@ -32,7 +36,7 @@ export function parseTopic(topic: string): ParsedTopic | null {
       };
     }
 
-    if (parts[4] === "log" && parts[5] === "post") {
+    if (parts.length === 6 && parts[4] === "log" && parts[5] === "post") {
       return {
         namespace: "sys",
         productKey: parts[1] ?? "",
@@ -41,7 +45,7 @@ export function parseTopic(topic: string): ParsedTopic | null {
       };
     }
 
-    if (parts[4] === "service" && parts[6] === "reply") {
+    if (parts.length === 7 && parts[4] === "service" && parts[5] && parts[6] === "reply") {
       return {
         namespace: "sys",
         productKey: parts[1] ?? "",
@@ -52,7 +56,7 @@ export function parseTopic(topic: string): ParsedTopic | null {
     }
   }
 
-  if (parts[0] === "ota" && parts[3] === "upgrade") {
+  if (parts.length === 5 && parts[0] === "ota" && parts[3] === "upgrade" && parts[4]) {
     return {
       namespace: "ota",
       productKey: parts[1] ?? "",

@@ -1,6 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import bcrypt from "bcryptjs";
+import { createHmac } from "node:crypto";
 
 const adapter = new PrismaPg({
   connectionString:
@@ -37,9 +38,12 @@ const memberPermissionCodes = new Set([
   "log:read"
 ]);
 
+function signHmacSha256(secret: string, message: string): string {
+  return createHmac("sha256", secret).update(message).digest("hex");
+}
+
 async function main() {
   const password_hash = await bcrypt.hash("Admin123456", 10);
-  const device_secret_hash = await bcrypt.hash("DeviceSecret123", 10);
 
   await prisma.organization.upsert({
     where: { id: "org_default" },
@@ -145,7 +149,9 @@ async function main() {
 
   await prisma.product.upsert({
     where: { product_key: "pk_demo" },
-    update: {},
+    update: {
+      created_by: "usr_admin"
+    },
     create: {
       id: "prd_demo",
       org_id: "org_default",
@@ -168,6 +174,11 @@ async function main() {
     ["dev_mqtt_demo", "dk_mqtt_demo", "MQTT 演示设备"],
     ["dev_http_demo", "dk_http_demo", "HTTP 演示设备"]
   ] as const) {
+    const mqttPassword = signHmacSha256(
+      "DeviceSecret123",
+      `pk_demo:${device_key}`
+    );
+
     await prisma.device.upsert({
       where: {
         product_id_device_key: {
@@ -175,14 +186,17 @@ async function main() {
           device_key
         }
       },
-      update: {},
+      update: {
+        created_by: "usr_admin",
+        device_secret_hash: await bcrypt.hash(mqttPassword, 10)
+      },
       create: {
         id,
         org_id: "org_default",
         created_by: "usr_admin",
         product_id: "prd_demo",
         device_key,
-        device_secret_hash,
+        device_secret_hash: await bcrypt.hash(mqttPassword, 10),
         name,
         tags: {}
       }

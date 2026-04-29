@@ -1,0 +1,17 @@
+{
+  "name": "@ziot/device-simulator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "mqtt": "tsx mqtt-simulator/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ziot/domain": "workspace:*",
+    "mqtt": "^5.14.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}
