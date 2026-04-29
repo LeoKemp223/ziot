@@ -22,7 +22,7 @@ PROPERTY_POST_TOPIC = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/property/post"
 
 def create_client():
     try:
-        return mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id=CLIENT_ID)
+        return mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=CLIENT_ID)
     except AttributeError:
         return mqtt.Client(client_id=CLIENT_ID)
 
@@ -34,9 +34,9 @@ def service_identifier(topic):
     return "unknown"
 
 
-def on_connect(client, userdata, flags, rc):
-    if rc != 0:
-        print(f"connect failed rc={rc}")
+def on_connect(client, userdata, flags, reason_code, properties=None):
+    if reason_code != 0 and str(reason_code) != "Success":
+        print(f"connect failed reason_code={reason_code}")
         return
 
     print(f"connected username={USERNAME}")
@@ -74,7 +74,14 @@ def main():
     client.on_connect = on_connect
     client.on_message = on_message
 
-    client.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
+    try:
+        client.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
+    except OSError as error:
+        print(f"tcp connect failed {MQTT_HOST}:{MQTT_PORT}: {error}")
+        print("请确认 EMQX 已启动并映射 1883 端口。")
+        print("本地可执行: docker compose -f deploy/docker-compose.yml up emqx web")
+        raise SystemExit(1) from error
+
     client.loop_forever()
 
 

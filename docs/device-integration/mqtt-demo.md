@@ -21,6 +21,24 @@ MQTT 连接时使用：
 
 平台只保存 `device_secret` 的 bcrypt hash。创建设备或重置设备密钥后，响应里的 `device_secret` 只显示一次。
 
+## 启动本地 Broker
+
+本地 demo 依赖 EMQX、Web 回调服务和数据库。先启动本地 Compose：
+
+```bash
+docker compose -f deploy/docker-compose.yml up emqx web
+```
+
+如果是第一次初始化数据库，另开终端执行迁移和 seed：
+
+```bash
+pnpm --filter @ziot/db prisma:generate
+pnpm --filter @ziot/db exec prisma migrate deploy --schema prisma/schema.prisma
+DATABASE_URL=postgresql://ziot:ziot@localhost:5432/ziot pnpm --filter @ziot/db seed
+```
+
+确认 `localhost:1883` 可连接后再运行下面的设备 demo。
+
 ## Topic
 
 属性上报：
