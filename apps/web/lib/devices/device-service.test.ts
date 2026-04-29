@@ -4,6 +4,7 @@ import {
   addDeviceToGroup,
   createDevice,
   getDevice,
+  listDeviceReports,
   listDeviceTopics,
   listDevices,
   resetDeviceSecret,
@@ -424,5 +425,69 @@ describe("device service", () => {
       desired: { power: true },
       version: 2
     });
+  });
+
+  it("lists recent device reports after checking device scope", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device({ created_by: "usr_member" }))
+      },
+      deviceLog: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "dlg_property",
+            device_id: "dev_demo",
+            type: "property",
+            level: "info",
+            content: {
+              topic: "/sys/pk_demo/dk_demo/thing/property/post",
+              payload: { params: { temperature: 23.5 } }
+            },
+            occurred_at: now,
+            created_at: now
+          }
+        ])
+      }
+    };
+
+    const result = await listDeviceReports(db, {
+      orgId: "org_default",
+      userId: "usr_member",
+      canAccessAll: false,
+      deviceId: "dev_demo"
+    });
+
+    expect(db.device.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: "dev_demo",
+        org_id: "org_default",
+        deleted_at: null,
+        created_by: "usr_member"
+      },
+      include: { product: true }
+    });
+    expect(db.deviceLog.findMany).toHaveBeenCalledWith({
+      where: {
+        org_id: "org_default",
+        device_id: "dev_demo",
+        type: { in: ["property", "event", "log"] }
+      },
+      orderBy: { occurred_at: "desc" },
+      take: 20
+    });
+    expect(result).toEqual([
+      {
+        id: "dlg_property",
+        device_id: "dev_demo",
+        type: "property",
+        level: "info",
+        content: {
+          topic: "/sys/pk_demo/dk_demo/thing/property/post",
+          payload: { params: { temperature: 23.5 } }
+        },
+        occurred_at: now.toISOString(),
+        created_at: now.toISOString()
+      }
+    ]);
   });
 });

@@ -89,6 +89,29 @@ command_reply_action_payload=$(
     }'
 )
 
+report_action_payload=$(
+  jq -cn \
+    '{
+      type: "http",
+      name: "ziot_device_report_webhook",
+      connector: "ziot_webhook_connector",
+      enable: true,
+      parameters: {
+        method: "post",
+        path: "/api/internal/emqx/webhook",
+        headers: {
+          "content-type": "application/json",
+          "x-request-source": "emqx"
+        },
+        body: "{\"topic\":\"${topic}\",\"payload\":${payload}}"
+      },
+      resource_opts: {
+        query_mode: "sync",
+        worker_pool_size: 1
+      }
+    }'
+)
+
 rule_payload=$(
   jq -cn \
     '{
@@ -111,17 +134,33 @@ command_reply_rule_payload=$(
     }'
 )
 
+report_rule_payload=$(
+  jq -cn \
+    '{
+      id: "ziot_device_report_events",
+      name: "ZiOT device report events",
+      enable: true,
+      sql: "SELECT topic, payload FROM \"/sys/+/+/thing/property/post\", \"/sys/+/+/thing/event/post\", \"/sys/+/+/thing/log/post\"",
+      actions: ["http:ziot_device_report_webhook"]
+    }'
+)
+
 api -X DELETE "$EMQX_API_URL/api/v5/rules/ziot_lifecycle_events" >/dev/null 2>&1 || true
 api -X DELETE "$EMQX_API_URL/api/v5/rules/ziot_command_reply_events" >/dev/null 2>&1 || true
+api -X DELETE "$EMQX_API_URL/api/v5/rules/ziot_device_report_events" >/dev/null 2>&1 || true
 api -X DELETE "$EMQX_API_URL/api/v5/actions/http:ziot_lifecycle_webhook" >/dev/null 2>&1 || true
 api -X DELETE "$EMQX_API_URL/api/v5/actions/http:ziot_command_reply_webhook" >/dev/null 2>&1 || true
+api -X DELETE "$EMQX_API_URL/api/v5/actions/http:ziot_device_report_webhook" >/dev/null 2>&1 || true
 api -X DELETE "$EMQX_API_URL/api/v5/connectors/http:ziot_webhook_connector" >/dev/null 2>&1 || true
 
 api -X POST "$EMQX_API_URL/api/v5/connectors" -d "$connector_payload" >/dev/null
 api -X POST "$EMQX_API_URL/api/v5/actions" -d "$action_payload" >/dev/null
 api -X POST "$EMQX_API_URL/api/v5/actions" -d "$command_reply_action_payload" >/dev/null
+api -X POST "$EMQX_API_URL/api/v5/actions" -d "$report_action_payload" >/dev/null
 api -X POST "$EMQX_API_URL/api/v5/rules" -d "$rule_payload" >/dev/null
 api -X POST "$EMQX_API_URL/api/v5/rules" -d "$command_reply_rule_payload" >/dev/null
+api -X POST "$EMQX_API_URL/api/v5/rules" -d "$report_rule_payload" >/dev/null
 
 echo "EMQX lifecycle webhook configured: $ZIOT_WEBHOOK_BASE_URL/api/internal/emqx/webhook"
 echo "EMQX command reply webhook configured: $ZIOT_WEBHOOK_BASE_URL/api/internal/emqx/webhook"
+echo "EMQX device report webhook configured: $ZIOT_WEBHOOK_BASE_URL/api/internal/emqx/webhook"

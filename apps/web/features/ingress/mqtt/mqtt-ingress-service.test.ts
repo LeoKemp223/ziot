@@ -4,6 +4,7 @@ import { signHmacSha256 } from "@ziot/domain";
 import {
   authenticateMqttClient,
   authorizeMqttAction,
+  recordMqttReport,
   recordMqttWebhookEvent
 } from "./mqtt-ingress-service";
 
@@ -184,6 +185,69 @@ describe("mqtt ingress service", () => {
         content: {
           event: "client.connected",
           client_id: "client-1"
+        }
+      })
+    });
+  });
+
+  it("records property reports and updates reported shadow", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device()),
+        update: vi.fn().mockResolvedValue({})
+      },
+      deviceShadow: {
+        findUnique: vi.fn().mockResolvedValue({
+          device_id: "dev_demo",
+          reported: { humidity: 50 },
+          desired: {},
+          version: BigInt(1)
+        }),
+        update: vi.fn().mockResolvedValue({})
+      },
+      deviceLog: {
+        create: vi.fn().mockResolvedValue({})
+      }
+    };
+
+    const result = await recordMqttReport(db, {
+      topic: "/sys/pk_demo/dk_demo/thing/property/post",
+      payload: {
+        id: "report_1",
+        params: {
+          temperature: 23.6,
+          humidity: 58
+        }
+      }
+    });
+
+    expect(result).toEqual({ result: "allow" });
+    expect(db.deviceShadow.update).toHaveBeenCalledWith({
+      where: { device_id: "dev_demo" },
+      data: {
+        reported: {
+          humidity: 58,
+          temperature: 23.6
+        },
+        version: { increment: 1 }
+      }
+    });
+    expect(db.deviceLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        org_id: "org_default",
+        product_id: "prd_demo",
+        device_id: "dev_demo",
+        type: "property",
+        level: "info",
+        content: {
+          topic: "/sys/pk_demo/dk_demo/thing/property/post",
+          payload: {
+            id: "report_1",
+            params: {
+              temperature: 23.6,
+              humidity: 58
+            }
+          }
         }
       })
     });

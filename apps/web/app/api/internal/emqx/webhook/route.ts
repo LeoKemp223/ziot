@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@ziot/db";
-import { recordMqttWebhookEvent } from "@/features/ingress/mqtt/mqtt-ingress-service";
+import {
+  recordMqttReport,
+  recordMqttWebhookEvent
+} from "@/features/ingress/mqtt/mqtt-ingress-service";
 import { recordCommandReply } from "@/features/control/control-service";
 
 export const runtime = "nodejs";
@@ -15,6 +18,15 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json({ result: "allow" });
+    }
+
+    if (typeof body.topic === "string" && body.topic.includes("/thing/")) {
+      const decision = await recordMqttReport(prisma, {
+        topic: body.topic,
+        payload: body.payload
+      });
+
+      return NextResponse.json(decision);
     }
 
     const connectedAt =

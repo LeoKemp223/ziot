@@ -411,6 +411,38 @@ export async function getDeviceShadow(
   };
 }
 
+export async function listDeviceReports(
+  db: Db,
+  input: {
+    orgId: string;
+    userId?: string;
+    canAccessAll?: boolean;
+    deviceId: string;
+  }
+) {
+  await getDevice(db, input);
+
+  const reports = await db.deviceLog.findMany({
+    where: {
+      org_id: input.orgId,
+      device_id: input.deviceId,
+      type: { in: ["property", "event", "log"] }
+    },
+    orderBy: { occurred_at: "desc" },
+    take: 20
+  });
+
+  return reports.map((report: any) => ({
+    id: report.id,
+    device_id: report.device_id,
+    type: report.type,
+    level: report.level,
+    content: report.content,
+    occurred_at: report.occurred_at.toISOString(),
+    created_at: report.created_at.toISOString()
+  }));
+}
+
 export async function updateDeviceDesiredShadow(
   db: Db,
   input: {

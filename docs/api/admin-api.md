@@ -1,7 +1,7 @@
 # 后台管理 API 文档
 
 版本：v0.1  
-更新日期：2026-04-28  
+更新日期：2026-04-29  
 当前状态：本文件只记录本地已实现并验证过的接口，未实现接口不在本文档中展开。
 
 ## 1. 本地开发环境
@@ -948,6 +948,44 @@ HTTP 状态码：`200`
 查询当前设备最近 20 条控制指令。需要 `device:read` 权限。
 查询时会把已超过 `timeout_at` 的 `pending` / `sent` / `delivered` 命令懒更新为 `timeout`。
 
+### `GET /api/v1/devices/{device_id}/reports`
+
+查询当前设备最近 20 条设备主动上报记录。需要 `device:read` 权限。
+普通用户访问别人创建的设备返回 `404001`。
+
+该接口只返回设备发布到以下 Topic 后由 EMQX webhook 写入的记录：
+
+- `/sys/{product_key}/{device_key}/thing/property/post`
+- `/sys/{product_key}/{device_key}/thing/event/post`
+- `/sys/{product_key}/{device_key}/thing/log/post`
+
+成功响应中的 `data` 是数组：
+
+```json
+[
+  {
+    "id": "dlg_xxx",
+    "device_id": "dev_demo",
+    "type": "property",
+    "level": "info",
+    "content": {
+      "topic": "/sys/pk_demo/dk_demo/thing/property/post",
+      "payload": {
+        "id": "report_1",
+        "params": {
+          "temperature": 23.6
+        }
+      }
+    },
+    "occurred_at": "2026-04-29T08:00:00.000Z",
+    "created_at": "2026-04-29T08:00:00.000Z"
+  }
+]
+```
+
+属性上报会同步合并到设备影子的 `reported` 字段，并递增 `version`。
+命令记录只记录平台主动下发的控制指令；设备主动上报应使用本接口查询。
+
 ### `GET /api/v1/commands/{command_id}`
 
 查询单条控制指令。需要 `device:read` 权限。
@@ -1043,16 +1081,21 @@ EMQX HTTP 授权回调。请求体示例：
 - 发布到本设备的 OTA 进度/结果 Topic。
 - 订阅本设备的属性设置、服务调用和 OTA 通知 Topic。
 - Web 下发服务调用后，设备发布到本设备服务回执 Topic，EMQX rule 转发回执并更新命令状态。
+- 设备发布属性、事件、日志上报后，EMQX rule 转发消息并写入 `device_logs`；属性上报还会更新设备影子的 `reported`。
 
 跨设备 Topic、未知 Topic 或禁用设备返回 `deny`。
 
 ### `POST /api/internal/emqx/webhook`
 
-EMQX WebHook 回调。当前处理 `client.connected` 和 `client.disconnected`：
+EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主动上报：
 
 - `client.connected`: 设备置为 `online`，更新 `last_online_at` 和 `last_heartbeat_at`。
 - `client.disconnected`: 设备置为 `offline`，更新 `last_offline_at`。
 - 同步写入 `device_logs` 生命周期日志。
+- `/sys/{product_key}/{device_key}/thing/service/{identifier}/reply`: 更新匹配的 `device_commands` 状态。
+- `/sys/{product_key}/{device_key}/thing/property/post`: 写入上报日志，并合并到 `device_shadows.reported`。
+- `/sys/{product_key}/{device_key}/thing/event/post`: 写入事件上报日志。
+- `/sys/{product_key}/{device_key}/thing/log/post`: 写入设备日志上报。
 
 ## 9. 已验证用例
 
@@ -1088,12 +1131,13 @@ EMQX WebHook 回调。当前处理 `client.connected` 和 `client.disconnected`�
 | `GET /api/v1/devices/{device_id}/topics` | 返回设备内置 MQTT Topic 列表 |
 | `POST /api/v1/devices/{device_id}/commands` | 返回命令记录并通过 EMQX 发布下发消息 |
 | `GET /api/v1/devices/{device_id}/commands` | 返回设备最近命令记录 |
+| `GET /api/v1/devices/{device_id}/reports` | 返回设备最近主动上报记录 |
 | `GET /api/v1/commands/{command_id}` | 返回单条命令记录 |
 | `GET /api/v1/device-groups` | 返回设备分组列表 |
 | `POST /api/v1/device-groups` | 可创建同产品分组并添加设备成员 |
 | `POST /api/internal/emqx/auth` | 有效 MQTT `device_secret` 返回 `allow`，错误密钥或禁用设备返回 `deny` |
 | `POST /api/internal/emqx/acl` | 允许本设备 Topic，拒绝跨设备 Topic |
-| `POST /api/internal/emqx/webhook` | 连接事件更新设备在线状态并写入生命周期日志 |
+| `POST /api/internal/emqx/webhook` | 连接事件更新设备在线状态，命令回执更新命令状态，设备上报写入日志并更新 reported 影子 |
 | 数据库直查 | `products`、`devices`、`device_groups`、`device_shadows` 表可查到对应数据 |
 
 验证日志：

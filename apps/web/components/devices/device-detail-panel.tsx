@@ -51,6 +51,16 @@ type DeviceCommand = {
   created_at: string;
 };
 
+type DeviceReport = {
+  id: string;
+  device_id: string;
+  type: string;
+  level: string;
+  content: unknown;
+  occurred_at: string;
+  created_at: string;
+};
+
 type ApiResponse<T> = {
   code: number;
   message: string;
@@ -66,6 +76,7 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
   const [shadow, setShadow] = useState<DeviceShadow | null>(null);
   const [topics, setTopics] = useState<DeviceTopic[]>([]);
   const [commands, setCommands] = useState<DeviceCommand[]>([]);
+  const [reports, setReports] = useState<DeviceReport[]>([]);
   const [desiredText, setDesiredText] = useState("{}");
   const [commandKind, setCommandKind] = useState<"property_set" | "service">(
     "service"
@@ -89,18 +100,23 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
         deviceResponse,
         shadowResponse,
         topicsResponse,
-        commandsResponse
+        commandsResponse,
+        reportsResponse
       ] = await Promise.all([
         fetch(`/api/v1/devices/${deviceId}`),
         fetch(`/api/v1/devices/${deviceId}/shadow`),
         fetch(`/api/v1/devices/${deviceId}/topics`),
-        fetch(`/api/v1/devices/${deviceId}/commands`)
+        fetch(`/api/v1/devices/${deviceId}/commands`),
+        fetch(`/api/v1/devices/${deviceId}/reports`)
       ]);
       const deviceBody = (await deviceResponse.json()) as ApiResponse<DeviceItem>;
       const shadowBody = (await shadowResponse.json()) as ApiResponse<DeviceShadow>;
       const topicsBody = (await topicsResponse.json()) as ApiResponse<DeviceTopic[]>;
       const commandsBody = (await commandsResponse.json()) as ApiResponse<
         DeviceCommand[]
+      >;
+      const reportsBody = (await reportsResponse.json()) as ApiResponse<
+        DeviceReport[]
       >;
 
       if (!deviceResponse.ok || deviceBody.code !== 0 || !deviceBody.data) {
@@ -123,10 +139,16 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
         return;
       }
 
+      if (!reportsResponse.ok || reportsBody.code !== 0 || !reportsBody.data) {
+        setError(reportsBody.message);
+        return;
+      }
+
       setDevice(deviceBody.data);
       setShadow(shadowBody.data);
       setTopics(topicsBody.data);
       setCommands(commandsBody.data);
+      setReports(reportsBody.data);
       setDesiredText(JSON.stringify(shadowBody.data.desired, null, 2));
     } catch {
       setError("请求失败，请确认 Web 服务状态。");
@@ -531,6 +553,51 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
 
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
+          <h2 className="text-base font-semibold text-slate-950">上报记录</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            最近 20 条属性、事件和日志上报。
+          </p>
+        </div>
+        {reports.length === 0 ? (
+          <div className="p-8 text-sm text-slate-500">暂无上报记录。</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[920px] border-collapse text-left text-sm">
+              <thead className="bg-slate-50 text-xs font-medium text-slate-500">
+                <tr>
+                  <th className="px-5 py-3">类型</th>
+                  <th className="px-4 py-3">级别</th>
+                  <th className="px-4 py-3">内容</th>
+                  <th className="px-5 py-3">上报时间</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {reports.map((report) => (
+                  <tr className="align-top hover:bg-slate-50" key={report.id}>
+                    <td className="px-5 py-4">
+                      <ReportTypeBadge value={report.type} />
+                    </td>
+                    <td className="px-4 py-4">
+                      <LogLevelBadge value={report.level} />
+                    </td>
+                    <td className="px-4 py-4">
+                      <pre className="max-h-32 overflow-auto rounded-md bg-slate-50 p-2 font-mono text-xs text-slate-600">
+                        {JSON.stringify(report.content, null, 2)}
+                      </pre>
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap text-slate-500">
+                      {formatDateTime(report.occurred_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 px-5 py-4">
           <h2 className="text-base font-semibold text-slate-950">Topic 列表</h2>
           <p className="mt-1 text-sm text-slate-500">
             设备可发布或订阅的内置 MQTT Topic。
@@ -682,6 +749,48 @@ function OperationBadge({ value }: { value: string }) {
       ].join(" ")}
     >
       {label}
+    </span>
+  );
+}
+
+function ReportTypeBadge({ value }: { value: string }) {
+  const meta =
+    value === "property"
+      ? { label: "属性", className: "bg-emerald-50 text-emerald-700" }
+      : value === "event"
+        ? { label: "事件", className: "bg-blue-50 text-blue-700" }
+        : { label: "日志", className: "bg-amber-50 text-amber-700" };
+
+  return (
+    <span
+      className={[
+        "inline-flex rounded-md px-2 py-1 text-xs font-medium",
+        meta.className
+      ].join(" ")}
+    >
+      {meta.label}
+    </span>
+  );
+}
+
+function LogLevelBadge({ value }: { value: string }) {
+  const meta =
+    value === "error"
+      ? { label: "error", className: "bg-rose-50 text-rose-700" }
+      : value === "warn"
+        ? { label: "warn", className: "bg-amber-50 text-amber-700" }
+        : value === "debug"
+          ? { label: "debug", className: "bg-slate-100 text-slate-600" }
+          : { label: "info", className: "bg-blue-50 text-blue-700" };
+
+  return (
+    <span
+      className={[
+        "inline-flex rounded-md px-2 py-1 text-xs font-medium",
+        meta.className
+      ].join(" ")}
+    >
+      {meta.label}
     </span>
   );
 }

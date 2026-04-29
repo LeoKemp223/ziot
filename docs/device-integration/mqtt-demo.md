@@ -29,7 +29,7 @@ MQTT 连接时使用：
 docker compose -f deploy/docker-compose.yml up emqx web
 ```
 
-EMQX 启动后配置连接生命周期 WebHook，这样设备页才能显示在线/离线：
+EMQX 启动后配置连接生命周期、命令回执和上报消息 WebHook，这样设备页才能显示在线/离线、命令回执和上报记录：
 
 ```bash
 ./scripts/setup-emqx-webhook.sh
@@ -91,7 +91,7 @@ DATABASE_URL=postgresql://ziot:ziot@localhost:5432/ziot pnpm --filter @ziot/db s
 /sys/{product_key}/{device_key}/thing/service/{identifier}/reply
 ```
 
-控制台设备详情页会展示当前设备的完整 Topic 列表。也可以调用：
+控制台设备详情页会展示当前设备的完整 Topic 列表。设备发布属性、事件和日志上报后，会出现在设备详情页的“上报记录”；属性上报还会同步更新设备影子的 `reported`。也可以调用：
 
 ```bash
 curl http://localhost:3000/api/v1/devices/{device_id}/topics
