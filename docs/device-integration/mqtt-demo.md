@@ -63,16 +63,24 @@ MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo D
 
 ## C Demo
 
-Debian/Ubuntu 安装依赖：
+该 demo 使用 Eclipse Paho Embedded C 的 `MQTTPacket`，网络层使用 POSIX socket。先获取 Paho Embedded C 源码：
 
 ```bash
-sudo apt-get install -y gcc libmosquitto-dev
+git clone https://github.com/eclipse-paho/paho.mqtt.embedded-c.git /tmp/paho.mqtt.embedded-c
 ```
 
 编译：
 
 ```bash
-gcc docs/device-integration/mqtt-c-demo.c -o /tmp/ziot-mqtt-c-demo -lmosquitto
+PAHO_EMBEDDED_C_DIR=/tmp/paho.mqtt.embedded-c
+gcc docs/device-integration/mqtt-c-demo.c \
+  -I"${PAHO_EMBEDDED_C_DIR}/MQTTPacket/src" \
+  "${PAHO_EMBEDDED_C_DIR}/MQTTPacket/src/MQTTConnectClient.c" \
+  "${PAHO_EMBEDDED_C_DIR}/MQTTPacket/src/MQTTSubscribeClient.c" \
+  "${PAHO_EMBEDDED_C_DIR}/MQTTPacket/src/MQTTSerializePublish.c" \
+  "${PAHO_EMBEDDED_C_DIR}/MQTTPacket/src/MQTTDeserializePublish.c" \
+  "${PAHO_EMBEDDED_C_DIR}/MQTTPacket/src/MQTTPacket.c" \
+  -o /tmp/ziot-mqtt-c-demo
 ```
 
 运行：
