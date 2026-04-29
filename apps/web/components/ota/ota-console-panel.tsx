@@ -61,9 +61,9 @@ export function OtaConsolePanel() {
 
     try {
       const [productsResponse, firmwaresResponse, tasksResponse] = await Promise.all([
-        fetch("/api/v1/products"),
-        fetch("/api/v1/firmwares"),
-        fetch("/api/v1/ota/tasks")
+        fetch("/api/v1/products", { cache: "no-store" }),
+        fetch("/api/v1/firmwares", { cache: "no-store" }),
+        fetch("/api/v1/ota/tasks", { cache: "no-store" })
       ]);
       const productsBody = (await productsResponse.json()) as ApiResponse<ProductList>;
       const firmwaresBody = (await firmwaresResponse.json()) as ApiResponse<Firmware[]>;
@@ -145,7 +145,8 @@ export function OtaConsolePanel() {
     event.preventDefault();
     setMessage("");
     setError("");
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
 
     try {
       const response = await fetch("/api/v1/ota/tasks", {
@@ -159,13 +160,14 @@ export function OtaConsolePanel() {
       });
       const body = (await response.json()) as ApiResponse<OtaTask>;
 
-      if (!response.ok || body.code !== 0) {
+      if (!response.ok || body.code !== 0 || !body.data) {
         setError(body.message);
         return;
       }
 
+      setTasks((currentTasks) => [body.data as OtaTask, ...currentTasks]);
       setMessage("OTA 任务已创建。");
-      event.currentTarget.reset();
+      formElement.reset();
       await load();
     } catch {
       setError("创建 OTA 任务失败。");
