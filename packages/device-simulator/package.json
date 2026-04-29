@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "http": "tsx http-simulator/index.ts",
     "mqtt": "tsx mqtt-simulator/index.ts",
     "typecheck": "tsc --noEmit"
   },

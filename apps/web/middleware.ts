@@ -8,6 +8,7 @@ export function middleware(request: NextRequest) {
   if (
     publicPaths.some((path) => pathname.startsWith(path)) ||
     pathname.startsWith("/api/") ||
+    pathname.startsWith("/device-api/") ||
     pathname.startsWith("/_next/")
   ) {
     return NextResponse.next();

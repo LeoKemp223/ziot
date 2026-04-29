@@ -683,17 +683,17 @@ Acceptance:
 - Create: `packages/device-simulator/http-simulator/`
 - Modify: `apps/web/features/control/`
 
-- [ ] Implement HTTP device signature verification with method, path, timestamp, nonce, and body hash.
-- [ ] Store recent nonce values in Redis to reject replay.
-- [ ] Implement `POST /device-api/v1/properties`.
-- [ ] Implement `POST /device-api/v1/events`.
-- [ ] Implement `POST /device-api/v1/logs`.
-- [ ] Implement `GET /device-api/v1/commands/pending`.
-- [ ] Implement `POST /device-api/v1/commands/{requestId}/reply`.
-- [ ] Implement HTTP simulator for property report, command polling, and command reply.
-- [ ] Add tests for valid signature, invalid signature, expired timestamp, replayed nonce, disabled device, pending command pull, and command reply.
-- [ ] Run: `pnpm test -- --run http-device`.
-- [ ] Commit: `feat: add http device ingress`.
+- [x] Implement HTTP device signature verification with method, path, timestamp, nonce, and body hash.
+- [x] Store recent nonce values in Redis to reject replay.
+- [x] Implement `POST /device-api/v1/properties`.
+- [x] Implement `POST /device-api/v1/events`.
+- [x] Implement `POST /device-api/v1/logs`.
+- [x] Implement `GET /device-api/v1/commands/pending`.
+- [x] Implement `POST /device-api/v1/commands/{requestId}/reply`.
+- [x] Implement HTTP simulator for property report, command polling, and command reply.
+- [x] Add tests for valid signature, invalid signature, expired timestamp, replayed nonce, disabled device, pending command pull, and command reply.
+- [x] Run: `pnpm test -- --run http-device`.
+- [x] Commit: `feat: add http device ingress`.
 
 Acceptance:
 

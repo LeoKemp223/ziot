@@ -4,5 +4,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["mqtt-simulator/**/*.ts"]
+  "include": ["http-simulator/**/*.ts", "mqtt-simulator/**/*.ts"]
 }

@@ -1097,7 +1097,43 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 - `/sys/{product_key}/{device_key}/thing/event/post`: 写入事件上报日志。
 - `/sys/{product_key}/{device_key}/thing/log/post`: 写入设备日志上报。
 
-## 9. 已验证用例
+## 9. HTTP 设备接入 API
+
+HTTP 设备接口面向设备端，不使用后台用户 Cookie。请求必须携带设备签名头：
+
+| Header | 说明 |
+| --- | --- |
+| `x-ziot-product-key` | 产品 Product Key |
+| `x-ziot-device-key` | 设备 Device Key |
+| `x-ziot-device-secret` | 设备密钥；当前用于校验 bcrypt hash 后再校验 HMAC |
+| `x-ziot-timestamp` | 毫秒时间戳，允许 5 分钟窗口 |
+| `x-ziot-nonce` | 随机字符串，窗口内不可重复 |
+| `x-ziot-body-sha256` | 原始 body 的 SHA256 hex |
+| `x-ziot-signature` | HMAC-SHA256 hex 签名 |
+
+签名原文：
+
+```text
+method + "\n" + path + "\n" + timestamp + "\n" + nonce + "\n" + body_sha256
+```
+
+当前 HTTP 设备接口：
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `POST` | `/device-api/v1/properties` | 属性上报，写入上报记录并合并到 `device_shadows.reported` |
+| `POST` | `/device-api/v1/events` | 事件上报，写入 `device_logs` |
+| `POST` | `/device-api/v1/logs` | 日志上报，写入 `device_logs` |
+| `GET` | `/device-api/v1/commands/pending` | 拉取当前设备待处理命令，并标记为 `delivered` |
+| `POST` | `/device-api/v1/commands/{request_id}/reply` | 回复命令执行结果 |
+
+防重放：
+
+- 时间戳超过 5 分钟窗口返回 `401001`。
+- 同一设备、同一 timestamp、同一 nonce 重复请求返回 `409001`。
+- 如果配置 `REDIS_URL`，nonce 通过 Redis `SET NX EX` 保存；本地未配置 Redis 时使用进程内 nonce 存储。
+
+## 10. 已验证用例
 
 2026-04-28 本地验证过以下用例：
 
@@ -1138,6 +1174,9 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 | `POST /api/internal/emqx/auth` | 有效 MQTT `device_secret` 返回 `allow`，错误密钥或禁用设备返回 `deny` |
 | `POST /api/internal/emqx/acl` | 允许本设备 Topic，拒绝跨设备 Topic |
 | `POST /api/internal/emqx/webhook` | 连接事件更新设备在线状态，命令回执更新命令状态，设备上报写入日志并更新 reported 影子 |
+| `POST /device-api/v1/properties` | HTTP 设备属性上报更新 reported 影子并写入上报记录 |
+| `GET /device-api/v1/commands/pending` | HTTP 设备可拉取待处理命令 |
+| `POST /device-api/v1/commands/{request_id}/reply` | HTTP 设备可回复命令结果 |
 | 数据库直查 | `products`、`devices`、`device_groups`、`device_shadows` 表可查到对应数据 |
 
 验证日志：
