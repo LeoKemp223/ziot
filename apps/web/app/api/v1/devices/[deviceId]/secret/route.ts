@@ -8,6 +8,10 @@ import { getCurrentUser } from "@/lib/identity/session";
 
 export const runtime = "nodejs";
 
+function canAccessAllResources(permissions: string[]) {
+  return permissions.includes("user:read");
+}
+
 type DeviceSecretRouteContext = {
   params: Promise<{
     deviceId: string;
@@ -32,6 +36,8 @@ export async function POST(
       apiOk(
         await resetDeviceSecret(prisma, {
           orgId: user.current_org_id,
+          userId: user.id,
+          canAccessAll: canAccessAllResources(user.permissions),
           deviceId
         }),
         requestId

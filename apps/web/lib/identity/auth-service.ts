@@ -60,7 +60,16 @@ const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 const DEFAULT_JWT_SECRET = "local-development-secret-change-before-production";
 const MEMBER_ROLE_CODE = "org_member";
 const MEMBER_ROLE_NAME = "普通用户";
-const MEMBER_PERMISSION_CODES = ["product:read", "device:read", "ota:read", "log:read"];
+const MEMBER_PERMISSION_CODES = [
+  "product:read",
+  "product:write",
+  "device:read",
+  "device:write",
+  "ota:read",
+  "ota:write",
+  "ota:execute",
+  "log:read"
+];
 
 function serviceError(
   code: IdentityError["code"],

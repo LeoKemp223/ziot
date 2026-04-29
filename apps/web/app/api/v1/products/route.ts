@@ -8,6 +8,10 @@ import { getCurrentUser } from "@/lib/identity/session";
 
 export const runtime = "nodejs";
 
+function canAccessAllResources(permissions: string[]) {
+  return permissions.includes("user:read");
+}
+
 export async function GET(request: NextRequest) {
   const requestId = createRequestId();
   const { searchParams } = request.nextUrl;
@@ -21,6 +25,8 @@ export async function GET(request: NextRequest) {
 
     const products = await listProducts(prisma, {
       orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
       page: Number(searchParams.get("page") ?? "1"),
       pageSize: Number(searchParams.get("page_size") ?? "20"),
       ...(searchParams.has("keyword")
@@ -47,6 +53,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as Record<string, unknown>;
     const input = {
       orgId: user.current_org_id,
+      createdBy: user.id,
       name: String(body.name ?? ""),
       thing_model: body.thing_model
     };

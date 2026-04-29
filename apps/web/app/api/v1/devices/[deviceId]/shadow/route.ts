@@ -11,6 +11,10 @@ import { getCurrentUser } from "@/lib/identity/session";
 
 export const runtime = "nodejs";
 
+function canAccessAllResources(permissions: string[]) {
+  return permissions.includes("user:read");
+}
+
 type DeviceShadowRouteContext = {
   params: Promise<{
     deviceId: string;
@@ -35,6 +39,8 @@ export async function GET(
       apiOk(
         await getDeviceShadow(prisma, {
           orgId: user.current_org_id,
+          userId: user.id,
+          canAccessAll: canAccessAllResources(user.permissions),
           deviceId
         }),
         requestId
@@ -65,6 +71,8 @@ export async function PATCH(
       apiOk(
         await updateDeviceDesiredShadow(prisma, {
           orgId: user.current_org_id,
+          userId: user.id,
+          canAccessAll: canAccessAllResources(user.permissions),
           deviceId,
           desired: body.desired
         }),

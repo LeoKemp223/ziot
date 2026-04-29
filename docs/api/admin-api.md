@@ -200,7 +200,7 @@ curl http://localhost:3000/api/v1/health
 
 ### `GET /api/v1/roles`
 
-查询当前组织角色列表。需要 `user:read` 或 `invite:write` 权限。接口会确保当前组织至少存在 `org_admin` 和 `org_member` 中的普通用户角色，其中 `org_member` 只包含产品、设备、OTA 和日志的查看权限，不包含用户管理和邀请码权限。
+查询当前组织角色列表。需要 `user:read` 或 `invite:write` 权限。接口会确保当前组织至少存在 `org_admin` 和 `org_member` 中的普通用户角色，其中 `org_member` 包含产品、设备、OTA 的创建/更新权限和日志查看权限，不包含用户管理、邀请码和审计权限。
 
 角色示例：
 
@@ -274,6 +274,7 @@ curl http://localhost:3000/api/v1/health
 ```json
 {
   "id": "prd_demo",
+  "created_by": "usr_admin",
   "product_key": "pk_demo",
   "name": "演示产品",
   "protocols": ["mqtt", "http"],
@@ -297,6 +298,7 @@ curl http://localhost:3000/api/v1/health
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `id` | string | 产品 ID，服务端生成，当前前缀为 `prd_` |
+| `created_by` | string | 创建用户 ID |
 | `product_key` | string | 产品唯一标识，全局唯一 |
 | `name` | string | 产品名称 |
 | `protocols` | string[] | 支持协议，当前使用 `mqtt` / `http` |
@@ -322,6 +324,11 @@ curl http://localhost:3000/api/v1/health
 ### `GET /api/v1/products`
 
 查询产品列表。
+
+资源范围：
+
+- 组织管理员可查看当前组织全部产品。
+- 普通用户只返回自己创建的产品。
 
 查询参数：
 
@@ -379,10 +386,12 @@ curl "http://localhost:3000/api/v1/products?page=1&page_size=20"
 
 - `keyword` 当前只匹配 `name`，不匹配 `product_key`。
 - 需要登录，并按当前组织和 `product:read` / `product:write` 权限访问。
+- 普通用户访问别人创建的产品详情、物模型、更新或删除接口时返回 `404001`。
 
 ### `POST /api/v1/products`
 
 创建产品。
+创建成功后，服务端自动写入当前用户为 `created_by`。
 
 请求头：
 
@@ -656,6 +665,7 @@ HTTP 状态码：`200`
 {
   "id": "dev_demo",
   "org_id": "org_default",
+  "created_by": "usr_admin",
   "product_id": "prd_demo",
   "product_name": "演示产品",
   "product_key": "pk_demo",
@@ -677,6 +687,11 @@ HTTP 状态码：`200`
 
 查询当前组织设备列表。需要 `device:read` 权限。
 
+资源范围：
+
+- 组织管理员可查看当前组织全部设备。
+- 普通用户只返回自己创建的设备。
+
 查询参数：
 
 | 参数 | 类型 | 必填 | 说明 |
@@ -686,6 +701,7 @@ HTTP 状态码：`200`
 ### `POST /api/v1/devices`
 
 创建设备。需要 `device:write` 权限。
+普通用户只能在自己创建的产品下创建设备；服务端自动写入当前用户为 `created_by`。
 
 请求体：
 
@@ -742,12 +758,13 @@ HTTP 状态码：`200`
 常见错误：
 
 - `400001`: `name` 或 `device_key` 格式不合法。
-- `404001`: 产品不存在、不是当前组织产品或已删除。
+- `404001`: 产品不存在、不是当前组织产品、已删除，或普通用户无权访问该产品。
 - `409001`: 同一产品下 `device_key` 已存在。
 
 ### `GET /api/v1/devices/{device_id}`
 
 查询设备详情。需要 `device:read` 权限。
+普通用户访问别人创建的设备返回 `404001`。
 
 ### `PATCH /api/v1/devices/{device_id}`
 
@@ -824,10 +841,12 @@ HTTP 状态码：`200`
 ### `GET /api/v1/device-groups`
 
 查询设备分组列表。需要 `device:read` 权限。
+普通用户只返回自己创建的设备分组。
 
 ### `POST /api/v1/device-groups`
 
 创建设备分组，或添加设备到分组。需要 `device:write` 权限。
+普通用户只能基于自己创建的产品、设备和分组操作。
 
 创建设备分组：
 

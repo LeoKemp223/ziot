@@ -12,6 +12,10 @@ import { getCurrentUser } from "@/lib/identity/session";
 
 export const runtime = "nodejs";
 
+function canAccessAllResources(permissions: string[]) {
+  return permissions.includes("user:read");
+}
+
 type ProductRouteContext = {
   params: Promise<{
     productId: string;
@@ -34,6 +38,8 @@ export async function GET(
     const { productId } = await params;
     const product = await getProduct(prisma, {
       orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
       productId
     });
 
@@ -60,6 +66,8 @@ export async function PATCH(
     const body = (await request.json()) as Record<string, unknown>;
     const product = await updateProduct(prisma, {
       orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
       productId,
       ...(typeof body.name === "string" ? { name: body.name } : {}),
       ...(Array.isArray(body.protocols)
@@ -102,6 +110,8 @@ export async function DELETE(
     const { productId } = await params;
     const product = await deleteProduct(prisma, {
       orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
       productId
     });
 

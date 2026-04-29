@@ -24,6 +24,10 @@ function requirePermission(permissions: string[], permission: string) {
   }
 }
 
+function canAccessAllResources(permissions: string[]) {
+  return permissions.includes("user:read");
+}
+
 export async function GET(request: NextRequest, { params }: DeviceRouteContext) {
   const requestId = createRequestId();
 
@@ -34,7 +38,12 @@ export async function GET(request: NextRequest, { params }: DeviceRouteContext) 
 
     return NextResponse.json(
       apiOk(
-        await getDevice(prisma, { orgId: user.current_org_id, deviceId }),
+        await getDevice(prisma, {
+          orgId: user.current_org_id,
+          userId: user.id,
+          canAccessAll: canAccessAllResources(user.permissions),
+          deviceId
+        }),
         requestId
       )
     );
@@ -56,6 +65,8 @@ export async function PATCH(
     const body = (await request.json()) as Record<string, unknown>;
     const device = await updateDevice(prisma, {
       orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
       deviceId,
       ...(typeof body.name === "string" ? { name: body.name } : {}),
       ...(body.status === "active" || body.status === "disabled"
@@ -86,7 +97,12 @@ export async function DELETE(
 
     return NextResponse.json(
       apiOk(
-        await deleteDevice(prisma, { orgId: user.current_org_id, deviceId }),
+        await deleteDevice(prisma, {
+          orgId: user.current_org_id,
+          userId: user.id,
+          canAccessAll: canAccessAllResources(user.permissions),
+          deviceId
+        }),
         requestId
       )
     );

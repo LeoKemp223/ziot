@@ -2056,6 +2056,7 @@ export type RefreshTokenScalarFieldEnum = (typeof RefreshTokenScalarFieldEnum)[k
 export const ProductScalarFieldEnum = {
   id: 'id',
   org_id: 'org_id',
+  created_by: 'created_by',
   product_key: 'product_key',
   name: 'name',
   protocols: 'protocols',
@@ -2074,6 +2075,7 @@ export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeo
 export const DeviceScalarFieldEnum = {
   id: 'id',
   org_id: 'org_id',
+  created_by: 'created_by',
   product_id: 'product_id',
   device_key: 'device_key',
   device_secret_hash: 'device_secret_hash',
@@ -2096,6 +2098,7 @@ export type DeviceScalarFieldEnum = (typeof DeviceScalarFieldEnum)[keyof typeof 
 export const DeviceGroupScalarFieldEnum = {
   id: 'id',
   org_id: 'org_id',
+  created_by: 'created_by',
   product_id: 'product_id',
   name: 'name',
   description: 'description',

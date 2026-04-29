@@ -14,6 +14,10 @@ function requireDevicePermission(permissions: string[], permission: string) {
   }
 }
 
+function canAccessAllResources(permissions: string[]) {
+  return permissions.includes("user:read");
+}
+
 export async function GET(request: NextRequest) {
   const requestId = createRequestId();
 
@@ -25,6 +29,8 @@ export async function GET(request: NextRequest) {
       apiOk(
         await listDevices(prisma, {
           orgId: user.current_org_id,
+          userId: user.id,
+          canAccessAll: canAccessAllResources(user.permissions),
           ...(request.nextUrl.searchParams.has("product_id")
             ? { productId: request.nextUrl.searchParams.get("product_id") ?? "" }
             : {})
@@ -46,6 +52,9 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as Record<string, unknown>;
     const device = await createDevice(prisma, {
       orgId: user.current_org_id,
+      createdBy: user.id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
       productId: String(body.product_id ?? ""),
       name: String(body.name ?? ""),
       ...(typeof body.device_key === "string"

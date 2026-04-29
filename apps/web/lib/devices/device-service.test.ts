@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   addDeviceToGroup,
   createDevice,
+  getDevice,
+  listDevices,
   resetDeviceSecret,
   updateDevice,
   updateDeviceDesiredShadow
@@ -14,6 +16,7 @@ function product(overrides: Record<string, unknown> = {}) {
   return {
     id: "prd_demo",
     org_id: "org_default",
+    created_by: "usr_admin",
     product_key: "pk_demo",
     name: "演示产品",
     deleted_at: null,
@@ -25,6 +28,7 @@ function device(overrides: Record<string, unknown> = {}) {
   return {
     id: "dev_demo",
     org_id: "org_default",
+    created_by: "usr_admin",
     product_id: "prd_demo",
     device_key: "dk_demo",
     device_secret_hash: "$2b$10$hash",
@@ -60,12 +64,19 @@ describe("device service", () => {
 
     const result = await createDevice(db, {
       orgId: "org_default",
+      createdBy: "usr_member",
+      userId: "usr_member",
+      canAccessAll: false,
       productId: "prd_demo",
       name: "传感器",
       deviceKey: "dk_sensor"
     });
     const createArgs = db.device.create.mock.calls[0]?.[0] as {
-      data: { device_secret_hash: string; device_secret?: string };
+      data: {
+        created_by: string;
+        device_secret_hash: string;
+        device_secret?: string;
+      };
     };
 
     expect(result).toMatchObject({
@@ -74,6 +85,7 @@ describe("device service", () => {
       device_secret: expect.stringMatching(/^ds_/)
     });
     expect(createArgs.data.device_secret).toBeUndefined();
+    expect(createArgs.data.created_by).toBe("usr_member");
     await expect(
       bcrypt.compare(result.device_secret ?? "", createArgs.data.device_secret_hash)
     ).resolves.toBe(true);
@@ -101,6 +113,7 @@ describe("device service", () => {
     await expect(
       createDevice(db, {
         orgId: "org_default",
+        createdBy: "usr_admin",
         productId: "prd_demo",
         name: "重复设备",
         deviceKey: "dk_demo"
@@ -110,6 +123,94 @@ describe("device service", () => {
       message: "device_key already exists in product"
     });
     expect(db.device.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects creating a device under another creator's product", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(null)
+      },
+      device: {
+        findFirst: vi.fn(),
+        create: vi.fn()
+      }
+    };
+
+    await expect(
+      createDevice(db, {
+        orgId: "org_default",
+        createdBy: "usr_member",
+        userId: "usr_member",
+        canAccessAll: false,
+        productId: "prd_other",
+        name: "无权设备"
+      })
+    ).rejects.toMatchObject({
+      code: 404001,
+      message: "product not found"
+    });
+    expect(db.product.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: "prd_other",
+        org_id: "org_default",
+        deleted_at: null,
+        created_by: "usr_member"
+      }
+    });
+    expect(db.device.create).not.toHaveBeenCalled();
+  });
+
+  it("scopes device lists to the creator when access is not organization-wide", async () => {
+    const db = {
+      device: {
+        findMany: vi.fn().mockResolvedValue([device({ created_by: "usr_member" })])
+      }
+    };
+
+    await listDevices(db, {
+      orgId: "org_default",
+      userId: "usr_member",
+      canAccessAll: false
+    });
+
+    expect(db.device.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          org_id: "org_default",
+          deleted_at: null,
+          created_by: "usr_member"
+        }
+      })
+    );
+  });
+
+  it("rejects reading another creator's device", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(null)
+      }
+    };
+
+    await expect(
+      getDevice(db, {
+        orgId: "org_default",
+        userId: "usr_member",
+        canAccessAll: false,
+        deviceId: "dev_other"
+      })
+    ).rejects.toMatchObject({
+      code: 404001,
+      message: "device not found"
+    });
+    expect(db.device.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: "dev_other",
+        org_id: "org_default",
+        deleted_at: null,
+        created_by: "usr_member"
+      },
+      include: { product: true }
+    });
   });
 
   it("updates device status to disabled", async () => {

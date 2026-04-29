@@ -12,6 +12,10 @@ import { getCurrentUser } from "@/lib/identity/session";
 
 export const runtime = "nodejs";
 
+function canAccessAllResources(permissions: string[]) {
+  return permissions.includes("user:read");
+}
+
 export async function GET(request: NextRequest) {
   const requestId = createRequestId();
 
@@ -23,7 +27,14 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      apiOk(await listDeviceGroups(prisma, user.current_org_id), requestId)
+      apiOk(
+        await listDeviceGroups(prisma, {
+          orgId: user.current_org_id,
+          userId: user.id,
+          canAccessAll: canAccessAllResources(user.permissions)
+        }),
+        requestId
+      )
     );
   } catch (error) {
     return apiErrorResponse(error, requestId);
@@ -47,6 +58,8 @@ export async function POST(request: NextRequest) {
         apiOk(
           await addDeviceToGroup(prisma, {
             orgId: user.current_org_id,
+            userId: user.id,
+            canAccessAll: canAccessAllResources(user.permissions),
             groupId: body.group_id,
             deviceId: body.device_id
           }),
@@ -59,6 +72,9 @@ export async function POST(request: NextRequest) {
       apiOk(
         await createDeviceGroup(prisma, {
           orgId: user.current_org_id,
+          createdBy: user.id,
+          userId: user.id,
+          canAccessAll: canAccessAllResources(user.permissions),
           productId: String(body.product_id ?? ""),
           name: String(body.name ?? ""),
           ...(typeof body.description === "string"

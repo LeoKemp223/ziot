@@ -7,6 +7,7 @@ export type ProductServiceError = Error & {
 export type ProductRecord = {
   id: string;
   org_id: string;
+  created_by?: string;
   product_key: string;
   name: string;
   protocols: unknown;
@@ -56,6 +57,8 @@ export type ProductMutationDb = {
 
 export type ListProductsInput = {
   orgId: string;
+  userId?: string;
+  canAccessAll?: boolean;
   page?: number;
   pageSize?: number;
   keyword?: string;
@@ -63,6 +66,7 @@ export type ListProductsInput = {
 
 export type CreateProductInput = {
   orgId: string;
+  createdBy: string;
   product_key?: string;
   name: string;
   protocols?: string[];
@@ -73,6 +77,8 @@ export type CreateProductInput = {
 
 export type UpdateProductInput = {
   orgId: string;
+  userId?: string;
+  canAccessAll?: boolean;
   productId: string;
   name?: string;
   protocols?: string[];
@@ -83,17 +89,22 @@ export type UpdateProductInput = {
 
 export type DeleteProductInput = {
   orgId: string;
+  userId?: string;
+  canAccessAll?: boolean;
   productId: string;
 };
 
 export type ProductThingModelInput = {
   orgId: string;
+  userId?: string;
+  canAccessAll?: boolean;
   productId: string;
   thing_model: unknown;
 };
 
 export type ProductDto = {
   id: string;
+  created_by?: string;
   product_key: string;
   name: string;
   protocols: string[];
@@ -161,6 +172,7 @@ function normalizeThingModel(input: unknown): ThingModel {
 function mapProduct(product: ProductRecord): ProductDto {
   return {
     id: product.id,
+    ...(product.created_by ? { created_by: product.created_by } : {}),
     product_key: product.product_key,
     name: product.name,
     protocols: normalizeProtocols(product.protocols),
@@ -174,6 +186,10 @@ function mapProduct(product: ProductRecord): ProductDto {
   };
 }
 
+function ownerFilter(input: { userId?: string; canAccessAll?: boolean }) {
+  return input.canAccessAll || !input.userId ? {} : { created_by: input.userId };
+}
+
 async function findActiveProduct(
   db: ProductMutationDb,
   input: DeleteProductInput
@@ -182,7 +198,8 @@ async function findActiveProduct(
     where: {
       id: input.productId,
       org_id: input.orgId,
-      deleted_at: null
+      deleted_at: null,
+      ...ownerFilter(input)
     },
     include: { _count: { select: { devices: true } } }
   });
@@ -205,6 +222,7 @@ export async function listProducts(db: ProductListDb, input: ListProductsInput) 
   const where = {
     org_id: input.orgId,
     deleted_at: null,
+    ...ownerFilter(input),
     ...(keyword
       ? { name: { contains: keyword, mode: "insensitive" as const } }
       : {})
@@ -262,6 +280,7 @@ export async function createProduct(
     data: {
       id: `prd_${crypto.randomUUID().replaceAll("-", "").slice(0, 16)}`,
       org_id: input.orgId,
+      created_by: input.createdBy,
       product_key: productKey,
       name,
       protocols: input.protocols?.length ? input.protocols : ["mqtt"],

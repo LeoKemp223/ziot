@@ -2,6 +2,10 @@ import { randomBytes, randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 
 type Db = { [key: string]: any };
+type AccessScope = {
+  userId?: string;
+  canAccessAll?: boolean;
+};
 
 export type DeviceServiceError = Error & {
   code: 400001 | 404001 | 409001;
@@ -30,6 +34,7 @@ function mapDevice(device: any, plainSecret?: string) {
   return {
     id: device.id,
     org_id: device.org_id,
+    created_by: device.created_by,
     product_id: device.product_id,
     product_name: device.product?.name ?? "",
     product_key: device.product?.product_key ?? "",
@@ -46,12 +51,23 @@ function mapDevice(device: any, plainSecret?: string) {
   };
 }
 
-async function findProduct(db: Db, orgId: string, productId: string) {
+function ownerFilter(input: AccessScope) {
+  return input.canAccessAll || !input.userId ? {} : { created_by: input.userId };
+}
+
+async function findProductForScope(
+  db: Db,
+  input: AccessScope & {
+    orgId: string;
+    productId: string;
+  }
+) {
   const product = await db.product.findFirst({
     where: {
-      id: productId,
-      org_id: orgId,
-      deleted_at: null
+      id: input.productId,
+      org_id: input.orgId,
+      deleted_at: null,
+      ...ownerFilter(input)
     }
   });
 
@@ -66,6 +82,8 @@ export async function listDevices(
   db: Db,
   input: {
     orgId: string;
+    userId?: string;
+    canAccessAll?: boolean;
     productId?: string;
   }
 ) {
@@ -73,6 +91,7 @@ export async function listDevices(
     where: {
       org_id: input.orgId,
       deleted_at: null,
+      ...ownerFilter(input),
       ...(input.productId ? { product_id: input.productId } : {})
     },
     orderBy: { created_at: "desc" },
@@ -86,6 +105,8 @@ export async function getDevice(
   db: Db,
   input: {
     orgId: string;
+    userId?: string;
+    canAccessAll?: boolean;
     deviceId: string;
   }
 ) {
@@ -93,7 +114,8 @@ export async function getDevice(
     where: {
       id: input.deviceId,
       org_id: input.orgId,
-      deleted_at: null
+      deleted_at: null,
+      ...ownerFilter(input)
     },
     include: { product: true }
   });
@@ -109,6 +131,9 @@ export async function createDevice(
   db: Db,
   input: {
     orgId: string;
+    createdBy: string;
+    userId?: string;
+    canAccessAll?: boolean;
     productId: string;
     name: string;
     deviceKey?: string;
@@ -116,7 +141,7 @@ export async function createDevice(
     tags?: unknown;
   }
 ) {
-  await findProduct(db, input.orgId, input.productId);
+  await findProductForScope(db, input);
 
   const name = input.name.trim();
 
@@ -149,6 +174,7 @@ export async function createDevice(
     data: {
       id: id("dev"),
       org_id: input.orgId,
+      created_by: input.createdBy,
       product_id: input.productId,
       device_key: key,
       device_secret_hash: await bcrypt.hash(secret, 10),
@@ -175,6 +201,8 @@ export async function updateDevice(
   db: Db,
   input: {
     orgId: string;
+    userId?: string;
+    canAccessAll?: boolean;
     deviceId: string;
     name?: string;
     status?: "active" | "disabled";
@@ -220,6 +248,8 @@ export async function deleteDevice(
   db: Db,
   input: {
     orgId: string;
+    userId?: string;
+    canAccessAll?: boolean;
     deviceId: string;
   }
 ) {
@@ -240,6 +270,8 @@ export async function resetDeviceSecret(
   db: Db,
   input: {
     orgId: string;
+    userId?: string;
+    canAccessAll?: boolean;
     deviceId: string;
   }
 ) {
@@ -258,6 +290,8 @@ export async function getDeviceShadow(
   db: Db,
   input: {
     orgId: string;
+    userId?: string;
+    canAccessAll?: boolean;
     deviceId: string;
   }
 ) {
@@ -283,6 +317,8 @@ export async function updateDeviceDesiredShadow(
   db: Db,
   input: {
     orgId: string;
+    userId?: string;
+    canAccessAll?: boolean;
     deviceId: string;
     desired: unknown;
   }
@@ -314,9 +350,18 @@ export async function updateDeviceDesiredShadow(
   };
 }
 
-export async function listDeviceGroups(db: Db, orgId: string) {
+export async function listDeviceGroups(
+  db: Db,
+  input: AccessScope & {
+    orgId: string;
+  }
+) {
   const groups = await db.deviceGroup.findMany({
-    where: { org_id: orgId, deleted_at: null },
+    where: {
+      org_id: input.orgId,
+      deleted_at: null,
+      ...ownerFilter(input)
+    },
     orderBy: { created_at: "desc" },
     include: { product: true, members: true }
   });
@@ -336,12 +381,15 @@ export async function createDeviceGroup(
   db: Db,
   input: {
     orgId: string;
+    createdBy: string;
+    userId?: string;
+    canAccessAll?: boolean;
     productId: string;
     name: string;
     description?: string;
   }
 ) {
-  await findProduct(db, input.orgId, input.productId);
+  await findProductForScope(db, input);
   const name = input.name.trim();
 
   if (!name || name.length > 128) {
@@ -352,6 +400,7 @@ export async function createDeviceGroup(
     data: {
       id: id("dgp"),
       org_id: input.orgId,
+      created_by: input.createdBy,
       product_id: input.productId,
       name,
       description: input.description
@@ -374,6 +423,8 @@ export async function addDeviceToGroup(
   db: Db,
   input: {
     orgId: string;
+    userId?: string;
+    canAccessAll?: boolean;
     groupId: string;
     deviceId: string;
   }
@@ -382,7 +433,8 @@ export async function addDeviceToGroup(
     where: {
       id: input.groupId,
       org_id: input.orgId,
-      deleted_at: null
+      deleted_at: null,
+      ...ownerFilter(input)
     }
   });
 
@@ -394,7 +446,8 @@ export async function addDeviceToGroup(
     where: {
       id: input.deviceId,
       org_id: input.orgId,
-      deleted_at: null
+      deleted_at: null,
+      ...ownerFilter(input)
     }
   });
 

@@ -173,7 +173,16 @@ describe("auth service", () => {
       expect.objectContaining({
         where: {
           code: {
-            in: ["product:read", "device:read", "ota:read", "log:read"]
+            in: [
+              "product:read",
+              "product:write",
+              "device:read",
+              "device:write",
+              "ota:read",
+              "ota:write",
+              "ota:execute",
+              "log:read"
+            ]
           }
         }
       })

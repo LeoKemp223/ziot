@@ -28,8 +28,12 @@ const permissions = [
 
 const memberPermissionCodes = new Set([
   "product:read",
+  "product:write",
   "device:read",
+  "device:write",
   "ota:read",
+  "ota:write",
+  "ota:execute",
   "log:read"
 ]);
 
@@ -145,6 +149,7 @@ async function main() {
     create: {
       id: "prd_demo",
       org_id: "org_default",
+      created_by: "usr_admin",
       product_key: "pk_demo",
       name: "演示产品",
       protocols: ["mqtt", "http"],
@@ -174,6 +179,7 @@ async function main() {
       create: {
         id,
         org_id: "org_default",
+        created_by: "usr_admin",
         product_id: "prd_demo",
         device_key,
         device_secret_hash,

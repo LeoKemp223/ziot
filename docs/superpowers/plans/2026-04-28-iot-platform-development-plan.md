@@ -409,7 +409,7 @@ Verification status on 2026-04-28:
 - [x] Implement multi-role permission union within the current organization.
 - [x] Implement permission helpers that check `org_id` for tenant-owned resources.
 - [x] Seed platform admin, default organization, default roles, and default permissions.
-- [x] Seed and auto-ensure `org_member` ordinary-user role with read-only product, device, OTA, and log permissions.
+- [x] Seed and auto-ensure `org_member` ordinary-user role with product, device, and OTA write permissions plus log read permission.
 - [x] Implement login and invitation registration pages with shadcn/ui forms.
 - [x] Implement user list, role list, and invitation management pages.
 - [x] Filter console navigation by current-user permissions so ordinary users cannot see user management or invitation menus.
@@ -426,7 +426,7 @@ Acceptance:
 - Web login persists session and loads current user profile.
 - User can switch between organizations they belong to.
 - Multiple roles in the same organization combine permissions by union.
-- Ordinary users can view only permitted console menus and cannot see user management or invitation menus.
+- Ordinary users can use developer-facing product, device, and OTA menus but cannot see user management or invitation menus.
 
 Verification status on 2026-04-28:
 
@@ -435,6 +435,7 @@ Verification status on 2026-04-28:
 - `GET /api/v1/roles` returns both `组织管理员` and `普通用户`; invitations can target `普通用户`.
 - Registration uses the invitation's role automatically and does not accept or require a role field.
 - Console sidebar hides `用户管理` and `邀请码` when current permissions do not include `user:read` or `invite:read`.
+- `org_member` has product/device/OTA write permissions but still lacks user, invitation, and audit permissions.
 - Unauthenticated `GET /products` redirects to `/login`.
 - `pnpm test`, `pnpm typecheck`, and `pnpm --filter @ziot/web build` pass.
 - `prisma migrate deploy` applies both foundation and identity migrations from an empty database, and seed succeeds.
@@ -455,6 +456,7 @@ Verification status on 2026-04-28:
 - [x] Generate unique `product_key`.
 - [x] Implement product thing model read and update using the PRD minimal thing model structure.
 - [x] Validate thing model `properties`, `events`, and `services`.
+- [x] Track product `created_by` and scope ordinary users to products they created.
 - [x] Implement product list, product detail, thing model editor, and access guide.
 - [x] Add API tests for product creation, product key uniqueness, thing model validation, product deletion with existing devices, and cross-organization access.
 - [x] Run: `pnpm test -- --run products thing-model`.
@@ -466,6 +468,7 @@ Acceptance:
 - Product thing model validates identifiers, data types, service input, and service output.
 - Invalid thing models return structured validation errors.
 - Product with existing devices cannot be deleted.
+- Ordinary users can create products and only view or manage products they created.
 
 Verification status on 2026-04-28:
 
@@ -474,6 +477,7 @@ Verification status on 2026-04-28:
 - `PUT /api/v1/products/{product_id}/thing-model` updates a valid thing model.
 - `DELETE /api/v1/products/{product_id}` soft-deletes a product with no devices.
 - `DELETE /api/v1/products/prd_demo` returns `409001` because the seed product has active devices.
+- Ordinary-user product list/detail/update/delete is scoped by `created_by`; another user's product returns `404001`.
 - `pnpm test apps/web/lib/products/product-service.test.ts` and `pnpm --filter @ziot/web typecheck` pass.
 
 ### Task 3B: Device Management, Groups, And Shadow
@@ -499,6 +503,7 @@ Verification status on 2026-04-28:
 - [x] Implement reset device secret.
 - [x] Implement same-product device groups and group membership.
 - [x] Reject adding a device to a group that belongs to a different product.
+- [x] Track device and device group `created_by` and scope ordinary users to resources they created.
 - [x] Implement device shadow read and desired-state update.
 - [x] Implement device list, create device, device detail, shadow tab, and group management.
 - [x] Document batch import as outside MVP runtime scope; do not implement CSV/Excel parsing in MVP.
@@ -513,6 +518,7 @@ Acceptance:
 - Disabled devices cannot be used by ingress authentication.
 - Device groups contain devices from only one product.
 - Device shadow stores `reported`, `desired`, `version`, and `updated_at`.
+- Ordinary users can create devices and groups only under products they created, and can only view or manage devices and groups they created.
 
 Verification status on 2026-04-28:
 
@@ -524,6 +530,7 @@ Verification status on 2026-04-28:
 - `GET /api/v1/devices/{device_id}/shadow` returns `reported`, `desired`, `version`, and `updated_at`.
 - `PATCH /api/v1/devices/{device_id}/shadow` validates object payloads and increments `version`.
 - `POST /api/v1/device-groups` creates same-product groups and rejects cross-product membership with `409001`.
+- Ordinary-user device list/detail/update/delete, shadow, secret reset, and group membership are scoped by `created_by`; another user's resource returns `404001`.
 - `/devices` shows device create/list/update/delete controls and same-product group management.
 - `/devices/{device_id}` shows device detail, secret reset, and reported/desired shadow editing.
 - `pnpm test -- --run devices` and `pnpm --filter @ziot/web typecheck` pass.

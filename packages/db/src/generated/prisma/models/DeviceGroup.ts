@@ -27,6 +27,7 @@ export type AggregateDeviceGroup = {
 export type DeviceGroupMinAggregateOutputType = {
   id: string | null
   org_id: string | null
+  created_by: string | null
   product_id: string | null
   name: string | null
   description: string | null
@@ -38,6 +39,7 @@ export type DeviceGroupMinAggregateOutputType = {
 export type DeviceGroupMaxAggregateOutputType = {
   id: string | null
   org_id: string | null
+  created_by: string | null
   product_id: string | null
   name: string | null
   description: string | null
@@ -49,6 +51,7 @@ export type DeviceGroupMaxAggregateOutputType = {
 export type DeviceGroupCountAggregateOutputType = {
   id: number
   org_id: number
+  created_by: number
   product_id: number
   name: number
   description: number
@@ -62,6 +65,7 @@ export type DeviceGroupCountAggregateOutputType = {
 export type DeviceGroupMinAggregateInputType = {
   id?: true
   org_id?: true
+  created_by?: true
   product_id?: true
   name?: true
   description?: true
@@ -73,6 +77,7 @@ export type DeviceGroupMinAggregateInputType = {
 export type DeviceGroupMaxAggregateInputType = {
   id?: true
   org_id?: true
+  created_by?: true
   product_id?: true
   name?: true
   description?: true
@@ -84,6 +89,7 @@ export type DeviceGroupMaxAggregateInputType = {
 export type DeviceGroupCountAggregateInputType = {
   id?: true
   org_id?: true
+  created_by?: true
   product_id?: true
   name?: true
   description?: true
@@ -168,6 +174,7 @@ export type DeviceGroupGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 export type DeviceGroupGroupByOutputType = {
   id: string
   org_id: string
+  created_by: string
   product_id: string
   name: string
   description: string | null
@@ -200,6 +207,7 @@ export type DeviceGroupWhereInput = {
   NOT?: Prisma.DeviceGroupWhereInput | Prisma.DeviceGroupWhereInput[]
   id?: Prisma.StringFilter<"DeviceGroup"> | string
   org_id?: Prisma.StringFilter<"DeviceGroup"> | string
+  created_by?: Prisma.StringFilter<"DeviceGroup"> | string
   product_id?: Prisma.StringFilter<"DeviceGroup"> | string
   name?: Prisma.StringFilter<"DeviceGroup"> | string
   description?: Prisma.StringNullableFilter<"DeviceGroup"> | string | null
@@ -207,6 +215,7 @@ export type DeviceGroupWhereInput = {
   updated_at?: Prisma.DateTimeFilter<"DeviceGroup"> | Date | string
   deleted_at?: Prisma.DateTimeNullableFilter<"DeviceGroup"> | Date | string | null
   organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
+  creator?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   product?: Prisma.XOR<Prisma.ProductScalarRelationFilter, Prisma.ProductWhereInput>
   members?: Prisma.DeviceGroupMemberListRelationFilter
 }
@@ -214,6 +223,7 @@ export type DeviceGroupWhereInput = {
 export type DeviceGroupOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
   product_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -221,6 +231,7 @@ export type DeviceGroupOrderByWithRelationInput = {
   updated_at?: Prisma.SortOrder
   deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder
   organization?: Prisma.OrganizationOrderByWithRelationInput
+  creator?: Prisma.UserOrderByWithRelationInput
   product?: Prisma.ProductOrderByWithRelationInput
   members?: Prisma.DeviceGroupMemberOrderByRelationAggregateInput
 }
@@ -231,6 +242,7 @@ export type DeviceGroupWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.DeviceGroupWhereInput[]
   NOT?: Prisma.DeviceGroupWhereInput | Prisma.DeviceGroupWhereInput[]
   org_id?: Prisma.StringFilter<"DeviceGroup"> | string
+  created_by?: Prisma.StringFilter<"DeviceGroup"> | string
   product_id?: Prisma.StringFilter<"DeviceGroup"> | string
   name?: Prisma.StringFilter<"DeviceGroup"> | string
   description?: Prisma.StringNullableFilter<"DeviceGroup"> | string | null
@@ -238,6 +250,7 @@ export type DeviceGroupWhereUniqueInput = Prisma.AtLeast<{
   updated_at?: Prisma.DateTimeFilter<"DeviceGroup"> | Date | string
   deleted_at?: Prisma.DateTimeNullableFilter<"DeviceGroup"> | Date | string | null
   organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
+  creator?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   product?: Prisma.XOR<Prisma.ProductScalarRelationFilter, Prisma.ProductWhereInput>
   members?: Prisma.DeviceGroupMemberListRelationFilter
 }, "id">
@@ -245,6 +258,7 @@ export type DeviceGroupWhereUniqueInput = Prisma.AtLeast<{
 export type DeviceGroupOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
   product_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -262,6 +276,7 @@ export type DeviceGroupScalarWhereWithAggregatesInput = {
   NOT?: Prisma.DeviceGroupScalarWhereWithAggregatesInput | Prisma.DeviceGroupScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"DeviceGroup"> | string
   org_id?: Prisma.StringWithAggregatesFilter<"DeviceGroup"> | string
+  created_by?: Prisma.StringWithAggregatesFilter<"DeviceGroup"> | string
   product_id?: Prisma.StringWithAggregatesFilter<"DeviceGroup"> | string
   name?: Prisma.StringWithAggregatesFilter<"DeviceGroup"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"DeviceGroup"> | string | null
@@ -278,6 +293,7 @@ export type DeviceGroupCreateInput = {
   updated_at?: Date | string
   deleted_at?: Date | string | null
   organization: Prisma.OrganizationCreateNestedOneWithoutDevice_groupsInput
+  creator: Prisma.UserCreateNestedOneWithoutDevice_groupsInput
   product: Prisma.ProductCreateNestedOneWithoutDevice_groupsInput
   members?: Prisma.DeviceGroupMemberCreateNestedManyWithoutGroupInput
 }
@@ -285,6 +301,7 @@ export type DeviceGroupCreateInput = {
 export type DeviceGroupUncheckedCreateInput = {
   id: string
   org_id: string
+  created_by: string
   product_id: string
   name: string
   description?: string | null
@@ -302,6 +319,7 @@ export type DeviceGroupUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutDevice_groupsNestedInput
+  creator?: Prisma.UserUpdateOneRequiredWithoutDevice_groupsNestedInput
   product?: Prisma.ProductUpdateOneRequiredWithoutDevice_groupsNestedInput
   members?: Prisma.DeviceGroupMemberUpdateManyWithoutGroupNestedInput
 }
@@ -309,6 +327,7 @@ export type DeviceGroupUpdateInput = {
 export type DeviceGroupUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -321,6 +340,7 @@ export type DeviceGroupUncheckedUpdateInput = {
 export type DeviceGroupCreateManyInput = {
   id: string
   org_id: string
+  created_by: string
   product_id: string
   name: string
   description?: string | null
@@ -341,6 +361,7 @@ export type DeviceGroupUpdateManyMutationInput = {
 export type DeviceGroupUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -362,6 +383,7 @@ export type DeviceGroupOrderByRelationAggregateInput = {
 export type DeviceGroupCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
   product_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
@@ -373,6 +395,7 @@ export type DeviceGroupCountOrderByAggregateInput = {
 export type DeviceGroupMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
   product_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
@@ -384,6 +407,7 @@ export type DeviceGroupMaxOrderByAggregateInput = {
 export type DeviceGroupMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
   product_id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
@@ -436,6 +460,48 @@ export type DeviceGroupUncheckedUpdateManyWithoutOrganizationNestedInput = {
   connect?: Prisma.DeviceGroupWhereUniqueInput | Prisma.DeviceGroupWhereUniqueInput[]
   update?: Prisma.DeviceGroupUpdateWithWhereUniqueWithoutOrganizationInput | Prisma.DeviceGroupUpdateWithWhereUniqueWithoutOrganizationInput[]
   updateMany?: Prisma.DeviceGroupUpdateManyWithWhereWithoutOrganizationInput | Prisma.DeviceGroupUpdateManyWithWhereWithoutOrganizationInput[]
+  deleteMany?: Prisma.DeviceGroupScalarWhereInput | Prisma.DeviceGroupScalarWhereInput[]
+}
+
+export type DeviceGroupCreateNestedManyWithoutCreatorInput = {
+  create?: Prisma.XOR<Prisma.DeviceGroupCreateWithoutCreatorInput, Prisma.DeviceGroupUncheckedCreateWithoutCreatorInput> | Prisma.DeviceGroupCreateWithoutCreatorInput[] | Prisma.DeviceGroupUncheckedCreateWithoutCreatorInput[]
+  connectOrCreate?: Prisma.DeviceGroupCreateOrConnectWithoutCreatorInput | Prisma.DeviceGroupCreateOrConnectWithoutCreatorInput[]
+  createMany?: Prisma.DeviceGroupCreateManyCreatorInputEnvelope
+  connect?: Prisma.DeviceGroupWhereUniqueInput | Prisma.DeviceGroupWhereUniqueInput[]
+}
+
+export type DeviceGroupUncheckedCreateNestedManyWithoutCreatorInput = {
+  create?: Prisma.XOR<Prisma.DeviceGroupCreateWithoutCreatorInput, Prisma.DeviceGroupUncheckedCreateWithoutCreatorInput> | Prisma.DeviceGroupCreateWithoutCreatorInput[] | Prisma.DeviceGroupUncheckedCreateWithoutCreatorInput[]
+  connectOrCreate?: Prisma.DeviceGroupCreateOrConnectWithoutCreatorInput | Prisma.DeviceGroupCreateOrConnectWithoutCreatorInput[]
+  createMany?: Prisma.DeviceGroupCreateManyCreatorInputEnvelope
+  connect?: Prisma.DeviceGroupWhereUniqueInput | Prisma.DeviceGroupWhereUniqueInput[]
+}
+
+export type DeviceGroupUpdateManyWithoutCreatorNestedInput = {
+  create?: Prisma.XOR<Prisma.DeviceGroupCreateWithoutCreatorInput, Prisma.DeviceGroupUncheckedCreateWithoutCreatorInput> | Prisma.DeviceGroupCreateWithoutCreatorInput[] | Prisma.DeviceGroupUncheckedCreateWithoutCreatorInput[]
+  connectOrCreate?: Prisma.DeviceGroupCreateOrConnectWithoutCreatorInput | Prisma.DeviceGroupCreateOrConnectWithoutCreatorInput[]
+  upsert?: Prisma.DeviceGroupUpsertWithWhereUniqueWithoutCreatorInput | Prisma.DeviceGroupUpsertWithWhereUniqueWithoutCreatorInput[]
+  createMany?: Prisma.DeviceGroupCreateManyCreatorInputEnvelope
+  set?: Prisma.DeviceGroupWhereUniqueInput | Prisma.DeviceGroupWhereUniqueInput[]
+  disconnect?: Prisma.DeviceGroupWhereUniqueInput | Prisma.DeviceGroupWhereUniqueInput[]
+  delete?: Prisma.DeviceGroupWhereUniqueInput | Prisma.DeviceGroupWhereUniqueInput[]
+  connect?: Prisma.DeviceGroupWhereUniqueInput | Prisma.DeviceGroupWhereUniqueInput[]
+  update?: Prisma.DeviceGroupUpdateWithWhereUniqueWithoutCreatorInput | Prisma.DeviceGroupUpdateWithWhereUniqueWithoutCreatorInput[]
+  updateMany?: Prisma.DeviceGroupUpdateManyWithWhereWithoutCreatorInput | Prisma.DeviceGroupUpdateManyWithWhereWithoutCreatorInput[]
+  deleteMany?: Prisma.DeviceGroupScalarWhereInput | Prisma.DeviceGroupScalarWhereInput[]
+}
+
+export type DeviceGroupUncheckedUpdateManyWithoutCreatorNestedInput = {
+  create?: Prisma.XOR<Prisma.DeviceGroupCreateWithoutCreatorInput, Prisma.DeviceGroupUncheckedCreateWithoutCreatorInput> | Prisma.DeviceGroupCreateWithoutCreatorInput[] | Prisma.DeviceGroupUncheckedCreateWithoutCreatorInput[]
+  connectOrCreate?: Prisma.DeviceGroupCreateOrConnectWithoutCreatorInput | Prisma.DeviceGroupCreateOrConnectWithoutCreatorInput[]
+  upsert?: Prisma.DeviceGroupUpsertWithWhereUniqueWithoutCreatorInput | Prisma.DeviceGroupUpsertWithWhereUniqueWithoutCreatorInput[]
+  createMany?: Prisma.DeviceGroupCreateManyCreatorInputEnvelope
+  set?: Prisma.DeviceGroupWhereUniqueInput | Prisma.DeviceGroupWhereUniqueInput[]
+  disconnect?: Prisma.DeviceGroupWhereUniqueInput | Prisma.DeviceGroupWhereUniqueInput[]
+  delete?: Prisma.DeviceGroupWhereUniqueInput | Prisma.DeviceGroupWhereUniqueInput[]
+  connect?: Prisma.DeviceGroupWhereUniqueInput | Prisma.DeviceGroupWhereUniqueInput[]
+  update?: Prisma.DeviceGroupUpdateWithWhereUniqueWithoutCreatorInput | Prisma.DeviceGroupUpdateWithWhereUniqueWithoutCreatorInput[]
+  updateMany?: Prisma.DeviceGroupUpdateManyWithWhereWithoutCreatorInput | Prisma.DeviceGroupUpdateManyWithWhereWithoutCreatorInput[]
   deleteMany?: Prisma.DeviceGroupScalarWhereInput | Prisma.DeviceGroupScalarWhereInput[]
 }
 
@@ -502,12 +568,14 @@ export type DeviceGroupCreateWithoutOrganizationInput = {
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
+  creator: Prisma.UserCreateNestedOneWithoutDevice_groupsInput
   product: Prisma.ProductCreateNestedOneWithoutDevice_groupsInput
   members?: Prisma.DeviceGroupMemberCreateNestedManyWithoutGroupInput
 }
 
 export type DeviceGroupUncheckedCreateWithoutOrganizationInput = {
   id: string
+  created_by: string
   product_id: string
   name: string
   description?: string | null
@@ -549,12 +617,63 @@ export type DeviceGroupScalarWhereInput = {
   NOT?: Prisma.DeviceGroupScalarWhereInput | Prisma.DeviceGroupScalarWhereInput[]
   id?: Prisma.StringFilter<"DeviceGroup"> | string
   org_id?: Prisma.StringFilter<"DeviceGroup"> | string
+  created_by?: Prisma.StringFilter<"DeviceGroup"> | string
   product_id?: Prisma.StringFilter<"DeviceGroup"> | string
   name?: Prisma.StringFilter<"DeviceGroup"> | string
   description?: Prisma.StringNullableFilter<"DeviceGroup"> | string | null
   created_at?: Prisma.DateTimeFilter<"DeviceGroup"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"DeviceGroup"> | Date | string
   deleted_at?: Prisma.DateTimeNullableFilter<"DeviceGroup"> | Date | string | null
+}
+
+export type DeviceGroupCreateWithoutCreatorInput = {
+  id: string
+  name: string
+  description?: string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  deleted_at?: Date | string | null
+  organization: Prisma.OrganizationCreateNestedOneWithoutDevice_groupsInput
+  product: Prisma.ProductCreateNestedOneWithoutDevice_groupsInput
+  members?: Prisma.DeviceGroupMemberCreateNestedManyWithoutGroupInput
+}
+
+export type DeviceGroupUncheckedCreateWithoutCreatorInput = {
+  id: string
+  org_id: string
+  product_id: string
+  name: string
+  description?: string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  deleted_at?: Date | string | null
+  members?: Prisma.DeviceGroupMemberUncheckedCreateNestedManyWithoutGroupInput
+}
+
+export type DeviceGroupCreateOrConnectWithoutCreatorInput = {
+  where: Prisma.DeviceGroupWhereUniqueInput
+  create: Prisma.XOR<Prisma.DeviceGroupCreateWithoutCreatorInput, Prisma.DeviceGroupUncheckedCreateWithoutCreatorInput>
+}
+
+export type DeviceGroupCreateManyCreatorInputEnvelope = {
+  data: Prisma.DeviceGroupCreateManyCreatorInput | Prisma.DeviceGroupCreateManyCreatorInput[]
+  skipDuplicates?: boolean
+}
+
+export type DeviceGroupUpsertWithWhereUniqueWithoutCreatorInput = {
+  where: Prisma.DeviceGroupWhereUniqueInput
+  update: Prisma.XOR<Prisma.DeviceGroupUpdateWithoutCreatorInput, Prisma.DeviceGroupUncheckedUpdateWithoutCreatorInput>
+  create: Prisma.XOR<Prisma.DeviceGroupCreateWithoutCreatorInput, Prisma.DeviceGroupUncheckedCreateWithoutCreatorInput>
+}
+
+export type DeviceGroupUpdateWithWhereUniqueWithoutCreatorInput = {
+  where: Prisma.DeviceGroupWhereUniqueInput
+  data: Prisma.XOR<Prisma.DeviceGroupUpdateWithoutCreatorInput, Prisma.DeviceGroupUncheckedUpdateWithoutCreatorInput>
+}
+
+export type DeviceGroupUpdateManyWithWhereWithoutCreatorInput = {
+  where: Prisma.DeviceGroupScalarWhereInput
+  data: Prisma.XOR<Prisma.DeviceGroupUpdateManyMutationInput, Prisma.DeviceGroupUncheckedUpdateManyWithoutCreatorInput>
 }
 
 export type DeviceGroupCreateWithoutProductInput = {
@@ -565,12 +684,14 @@ export type DeviceGroupCreateWithoutProductInput = {
   updated_at?: Date | string
   deleted_at?: Date | string | null
   organization: Prisma.OrganizationCreateNestedOneWithoutDevice_groupsInput
+  creator: Prisma.UserCreateNestedOneWithoutDevice_groupsInput
   members?: Prisma.DeviceGroupMemberCreateNestedManyWithoutGroupInput
 }
 
 export type DeviceGroupUncheckedCreateWithoutProductInput = {
   id: string
   org_id: string
+  created_by: string
   name: string
   description?: string | null
   created_at?: Date | string
@@ -613,12 +734,14 @@ export type DeviceGroupCreateWithoutMembersInput = {
   updated_at?: Date | string
   deleted_at?: Date | string | null
   organization: Prisma.OrganizationCreateNestedOneWithoutDevice_groupsInput
+  creator: Prisma.UserCreateNestedOneWithoutDevice_groupsInput
   product: Prisma.ProductCreateNestedOneWithoutDevice_groupsInput
 }
 
 export type DeviceGroupUncheckedCreateWithoutMembersInput = {
   id: string
   org_id: string
+  created_by: string
   product_id: string
   name: string
   description?: string | null
@@ -651,12 +774,14 @@ export type DeviceGroupUpdateWithoutMembersInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutDevice_groupsNestedInput
+  creator?: Prisma.UserUpdateOneRequiredWithoutDevice_groupsNestedInput
   product?: Prisma.ProductUpdateOneRequiredWithoutDevice_groupsNestedInput
 }
 
 export type DeviceGroupUncheckedUpdateWithoutMembersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -667,6 +792,7 @@ export type DeviceGroupUncheckedUpdateWithoutMembersInput = {
 
 export type DeviceGroupCreateManyOrganizationInput = {
   id: string
+  created_by: string
   product_id: string
   name: string
   description?: string | null
@@ -682,12 +808,14 @@ export type DeviceGroupUpdateWithoutOrganizationInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  creator?: Prisma.UserUpdateOneRequiredWithoutDevice_groupsNestedInput
   product?: Prisma.ProductUpdateOneRequiredWithoutDevice_groupsNestedInput
   members?: Prisma.DeviceGroupMemberUpdateManyWithoutGroupNestedInput
 }
 
 export type DeviceGroupUncheckedUpdateWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -699,6 +827,53 @@ export type DeviceGroupUncheckedUpdateWithoutOrganizationInput = {
 
 export type DeviceGroupUncheckedUpdateManyWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type DeviceGroupCreateManyCreatorInput = {
+  id: string
+  org_id: string
+  product_id: string
+  name: string
+  description?: string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  deleted_at?: Date | string | null
+}
+
+export type DeviceGroupUpdateWithoutCreatorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutDevice_groupsNestedInput
+  product?: Prisma.ProductUpdateOneRequiredWithoutDevice_groupsNestedInput
+  members?: Prisma.DeviceGroupMemberUpdateManyWithoutGroupNestedInput
+}
+
+export type DeviceGroupUncheckedUpdateWithoutCreatorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  members?: Prisma.DeviceGroupMemberUncheckedUpdateManyWithoutGroupNestedInput
+}
+
+export type DeviceGroupUncheckedUpdateManyWithoutCreatorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  org_id?: Prisma.StringFieldUpdateOperationsInput | string
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -710,6 +885,7 @@ export type DeviceGroupUncheckedUpdateManyWithoutOrganizationInput = {
 export type DeviceGroupCreateManyProductInput = {
   id: string
   org_id: string
+  created_by: string
   name: string
   description?: string | null
   created_at?: Date | string
@@ -725,12 +901,14 @@ export type DeviceGroupUpdateWithoutProductInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutDevice_groupsNestedInput
+  creator?: Prisma.UserUpdateOneRequiredWithoutDevice_groupsNestedInput
   members?: Prisma.DeviceGroupMemberUpdateManyWithoutGroupNestedInput
 }
 
 export type DeviceGroupUncheckedUpdateWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -742,6 +920,7 @@ export type DeviceGroupUncheckedUpdateWithoutProductInput = {
 export type DeviceGroupUncheckedUpdateManyWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -783,6 +962,7 @@ export type DeviceGroupCountOutputTypeCountMembersArgs<ExtArgs extends runtime.T
 export type DeviceGroupSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   org_id?: boolean
+  created_by?: boolean
   product_id?: boolean
   name?: boolean
   description?: boolean
@@ -790,6 +970,7 @@ export type DeviceGroupSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   updated_at?: boolean
   deleted_at?: boolean
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
   members?: boolean | Prisma.DeviceGroup$membersArgs<ExtArgs>
   _count?: boolean | Prisma.DeviceGroupCountOutputTypeDefaultArgs<ExtArgs>
@@ -798,6 +979,7 @@ export type DeviceGroupSelect<ExtArgs extends runtime.Types.Extensions.InternalA
 export type DeviceGroupSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   org_id?: boolean
+  created_by?: boolean
   product_id?: boolean
   name?: boolean
   description?: boolean
@@ -805,12 +987,14 @@ export type DeviceGroupSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   updated_at?: boolean
   deleted_at?: boolean
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["deviceGroup"]>
 
 export type DeviceGroupSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   org_id?: boolean
+  created_by?: boolean
   product_id?: boolean
   name?: boolean
   description?: boolean
@@ -818,12 +1002,14 @@ export type DeviceGroupSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   updated_at?: boolean
   deleted_at?: boolean
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["deviceGroup"]>
 
 export type DeviceGroupSelectScalar = {
   id?: boolean
   org_id?: boolean
+  created_by?: boolean
   product_id?: boolean
   name?: boolean
   description?: boolean
@@ -832,19 +1018,22 @@ export type DeviceGroupSelectScalar = {
   deleted_at?: boolean
 }
 
-export type DeviceGroupOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "org_id" | "product_id" | "name" | "description" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["deviceGroup"]>
+export type DeviceGroupOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "org_id" | "created_by" | "product_id" | "name" | "description" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["deviceGroup"]>
 export type DeviceGroupInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
   members?: boolean | Prisma.DeviceGroup$membersArgs<ExtArgs>
   _count?: boolean | Prisma.DeviceGroupCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DeviceGroupIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
 }
 export type DeviceGroupIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
 }
 
@@ -852,12 +1041,14 @@ export type $DeviceGroupPayload<ExtArgs extends runtime.Types.Extensions.Interna
   name: "DeviceGroup"
   objects: {
     organization: Prisma.$OrganizationPayload<ExtArgs>
+    creator: Prisma.$UserPayload<ExtArgs>
     product: Prisma.$ProductPayload<ExtArgs>
     members: Prisma.$DeviceGroupMemberPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     org_id: string
+    created_by: string
     product_id: string
     name: string
     description: string | null
@@ -1259,6 +1450,7 @@ readonly fields: DeviceGroupFieldRefs;
 export interface Prisma__DeviceGroupClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   organization<T extends Prisma.OrganizationDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.OrganizationDefaultArgs<ExtArgs>>): Prisma.Prisma__OrganizationClient<runtime.Types.Result.GetResult<Prisma.$OrganizationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  creator<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   product<T extends Prisma.ProductDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProductDefaultArgs<ExtArgs>>): Prisma.Prisma__ProductClient<runtime.Types.Result.GetResult<Prisma.$ProductPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   members<T extends Prisma.DeviceGroup$membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeviceGroup$membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeviceGroupMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1292,6 +1484,7 @@ export interface Prisma__DeviceGroupClient<T, Null = never, ExtArgs extends runt
 export interface DeviceGroupFieldRefs {
   readonly id: Prisma.FieldRef<"DeviceGroup", 'String'>
   readonly org_id: Prisma.FieldRef<"DeviceGroup", 'String'>
+  readonly created_by: Prisma.FieldRef<"DeviceGroup", 'String'>
   readonly product_id: Prisma.FieldRef<"DeviceGroup", 'String'>
   readonly name: Prisma.FieldRef<"DeviceGroup", 'String'>
   readonly description: Prisma.FieldRef<"DeviceGroup", 'String'>

@@ -27,6 +27,7 @@ export type AggregateProduct = {
 export type ProductMinAggregateOutputType = {
   id: string | null
   org_id: string | null
+  created_by: string | null
   product_key: string | null
   name: string | null
   auth_type: string | null
@@ -40,6 +41,7 @@ export type ProductMinAggregateOutputType = {
 export type ProductMaxAggregateOutputType = {
   id: string | null
   org_id: string | null
+  created_by: string | null
   product_key: string | null
   name: string | null
   auth_type: string | null
@@ -53,6 +55,7 @@ export type ProductMaxAggregateOutputType = {
 export type ProductCountAggregateOutputType = {
   id: number
   org_id: number
+  created_by: number
   product_key: number
   name: number
   protocols: number
@@ -70,6 +73,7 @@ export type ProductCountAggregateOutputType = {
 export type ProductMinAggregateInputType = {
   id?: true
   org_id?: true
+  created_by?: true
   product_key?: true
   name?: true
   auth_type?: true
@@ -83,6 +87,7 @@ export type ProductMinAggregateInputType = {
 export type ProductMaxAggregateInputType = {
   id?: true
   org_id?: true
+  created_by?: true
   product_key?: true
   name?: true
   auth_type?: true
@@ -96,6 +101,7 @@ export type ProductMaxAggregateInputType = {
 export type ProductCountAggregateInputType = {
   id?: true
   org_id?: true
+  created_by?: true
   product_key?: true
   name?: true
   protocols?: true
@@ -184,6 +190,7 @@ export type ProductGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
 export type ProductGroupByOutputType = {
   id: string
   org_id: string
+  created_by: string
   product_key: string
   name: string
   protocols: runtime.JsonValue
@@ -220,6 +227,7 @@ export type ProductWhereInput = {
   NOT?: Prisma.ProductWhereInput | Prisma.ProductWhereInput[]
   id?: Prisma.StringFilter<"Product"> | string
   org_id?: Prisma.StringFilter<"Product"> | string
+  created_by?: Prisma.StringFilter<"Product"> | string
   product_key?: Prisma.StringFilter<"Product"> | string
   name?: Prisma.StringFilter<"Product"> | string
   protocols?: Prisma.JsonFilter<"Product">
@@ -231,6 +239,7 @@ export type ProductWhereInput = {
   updated_at?: Prisma.DateTimeFilter<"Product"> | Date | string
   deleted_at?: Prisma.DateTimeNullableFilter<"Product"> | Date | string | null
   organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
+  creator?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   devices?: Prisma.DeviceListRelationFilter
   device_groups?: Prisma.DeviceGroupListRelationFilter
   firmwares?: Prisma.FirmwareListRelationFilter
@@ -241,6 +250,7 @@ export type ProductWhereInput = {
 export type ProductOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
   product_key?: Prisma.SortOrder
   name?: Prisma.SortOrder
   protocols?: Prisma.SortOrder
@@ -252,6 +262,7 @@ export type ProductOrderByWithRelationInput = {
   updated_at?: Prisma.SortOrder
   deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder
   organization?: Prisma.OrganizationOrderByWithRelationInput
+  creator?: Prisma.UserOrderByWithRelationInput
   devices?: Prisma.DeviceOrderByRelationAggregateInput
   device_groups?: Prisma.DeviceGroupOrderByRelationAggregateInput
   firmwares?: Prisma.FirmwareOrderByRelationAggregateInput
@@ -266,6 +277,7 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.ProductWhereInput[]
   NOT?: Prisma.ProductWhereInput | Prisma.ProductWhereInput[]
   org_id?: Prisma.StringFilter<"Product"> | string
+  created_by?: Prisma.StringFilter<"Product"> | string
   name?: Prisma.StringFilter<"Product"> | string
   protocols?: Prisma.JsonFilter<"Product">
   auth_type?: Prisma.StringFilter<"Product"> | string
@@ -276,6 +288,7 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   updated_at?: Prisma.DateTimeFilter<"Product"> | Date | string
   deleted_at?: Prisma.DateTimeNullableFilter<"Product"> | Date | string | null
   organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
+  creator?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   devices?: Prisma.DeviceListRelationFilter
   device_groups?: Prisma.DeviceGroupListRelationFilter
   firmwares?: Prisma.FirmwareListRelationFilter
@@ -286,6 +299,7 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
 export type ProductOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
   product_key?: Prisma.SortOrder
   name?: Prisma.SortOrder
   protocols?: Prisma.SortOrder
@@ -307,6 +321,7 @@ export type ProductScalarWhereWithAggregatesInput = {
   NOT?: Prisma.ProductScalarWhereWithAggregatesInput | Prisma.ProductScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Product"> | string
   org_id?: Prisma.StringWithAggregatesFilter<"Product"> | string
+  created_by?: Prisma.StringWithAggregatesFilter<"Product"> | string
   product_key?: Prisma.StringWithAggregatesFilter<"Product"> | string
   name?: Prisma.StringWithAggregatesFilter<"Product"> | string
   protocols?: Prisma.JsonWithAggregatesFilter<"Product">
@@ -332,6 +347,7 @@ export type ProductCreateInput = {
   updated_at?: Date | string
   deleted_at?: Date | string | null
   organization: Prisma.OrganizationCreateNestedOneWithoutProductsInput
+  creator: Prisma.UserCreateNestedOneWithoutProductsInput
   devices?: Prisma.DeviceCreateNestedManyWithoutProductInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutProductInput
   firmwares?: Prisma.FirmwareCreateNestedManyWithoutProductInput
@@ -342,6 +358,7 @@ export type ProductCreateInput = {
 export type ProductUncheckedCreateInput = {
   id: string
   org_id: string
+  created_by: string
   product_key: string
   name: string
   protocols: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -372,6 +389,7 @@ export type ProductUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutProductsNestedInput
+  creator?: Prisma.UserUpdateOneRequiredWithoutProductsNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutProductNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutProductNestedInput
   firmwares?: Prisma.FirmwareUpdateManyWithoutProductNestedInput
@@ -382,6 +400,7 @@ export type ProductUpdateInput = {
 export type ProductUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   product_key?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   protocols?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -402,6 +421,7 @@ export type ProductUncheckedUpdateInput = {
 export type ProductCreateManyInput = {
   id: string
   org_id: string
+  created_by: string
   product_key: string
   name: string
   protocols: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -431,6 +451,7 @@ export type ProductUpdateManyMutationInput = {
 export type ProductUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   product_key?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   protocols?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -456,6 +477,7 @@ export type ProductOrderByRelationAggregateInput = {
 export type ProductCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
   product_key?: Prisma.SortOrder
   name?: Prisma.SortOrder
   protocols?: Prisma.SortOrder
@@ -471,6 +493,7 @@ export type ProductCountOrderByAggregateInput = {
 export type ProductMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
   product_key?: Prisma.SortOrder
   name?: Prisma.SortOrder
   auth_type?: Prisma.SortOrder
@@ -484,6 +507,7 @@ export type ProductMaxOrderByAggregateInput = {
 export type ProductMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
+  created_by?: Prisma.SortOrder
   product_key?: Prisma.SortOrder
   name?: Prisma.SortOrder
   auth_type?: Prisma.SortOrder
@@ -538,6 +562,48 @@ export type ProductUncheckedUpdateManyWithoutOrganizationNestedInput = {
   connect?: Prisma.ProductWhereUniqueInput | Prisma.ProductWhereUniqueInput[]
   update?: Prisma.ProductUpdateWithWhereUniqueWithoutOrganizationInput | Prisma.ProductUpdateWithWhereUniqueWithoutOrganizationInput[]
   updateMany?: Prisma.ProductUpdateManyWithWhereWithoutOrganizationInput | Prisma.ProductUpdateManyWithWhereWithoutOrganizationInput[]
+  deleteMany?: Prisma.ProductScalarWhereInput | Prisma.ProductScalarWhereInput[]
+}
+
+export type ProductCreateNestedManyWithoutCreatorInput = {
+  create?: Prisma.XOR<Prisma.ProductCreateWithoutCreatorInput, Prisma.ProductUncheckedCreateWithoutCreatorInput> | Prisma.ProductCreateWithoutCreatorInput[] | Prisma.ProductUncheckedCreateWithoutCreatorInput[]
+  connectOrCreate?: Prisma.ProductCreateOrConnectWithoutCreatorInput | Prisma.ProductCreateOrConnectWithoutCreatorInput[]
+  createMany?: Prisma.ProductCreateManyCreatorInputEnvelope
+  connect?: Prisma.ProductWhereUniqueInput | Prisma.ProductWhereUniqueInput[]
+}
+
+export type ProductUncheckedCreateNestedManyWithoutCreatorInput = {
+  create?: Prisma.XOR<Prisma.ProductCreateWithoutCreatorInput, Prisma.ProductUncheckedCreateWithoutCreatorInput> | Prisma.ProductCreateWithoutCreatorInput[] | Prisma.ProductUncheckedCreateWithoutCreatorInput[]
+  connectOrCreate?: Prisma.ProductCreateOrConnectWithoutCreatorInput | Prisma.ProductCreateOrConnectWithoutCreatorInput[]
+  createMany?: Prisma.ProductCreateManyCreatorInputEnvelope
+  connect?: Prisma.ProductWhereUniqueInput | Prisma.ProductWhereUniqueInput[]
+}
+
+export type ProductUpdateManyWithoutCreatorNestedInput = {
+  create?: Prisma.XOR<Prisma.ProductCreateWithoutCreatorInput, Prisma.ProductUncheckedCreateWithoutCreatorInput> | Prisma.ProductCreateWithoutCreatorInput[] | Prisma.ProductUncheckedCreateWithoutCreatorInput[]
+  connectOrCreate?: Prisma.ProductCreateOrConnectWithoutCreatorInput | Prisma.ProductCreateOrConnectWithoutCreatorInput[]
+  upsert?: Prisma.ProductUpsertWithWhereUniqueWithoutCreatorInput | Prisma.ProductUpsertWithWhereUniqueWithoutCreatorInput[]
+  createMany?: Prisma.ProductCreateManyCreatorInputEnvelope
+  set?: Prisma.ProductWhereUniqueInput | Prisma.ProductWhereUniqueInput[]
+  disconnect?: Prisma.ProductWhereUniqueInput | Prisma.ProductWhereUniqueInput[]
+  delete?: Prisma.ProductWhereUniqueInput | Prisma.ProductWhereUniqueInput[]
+  connect?: Prisma.ProductWhereUniqueInput | Prisma.ProductWhereUniqueInput[]
+  update?: Prisma.ProductUpdateWithWhereUniqueWithoutCreatorInput | Prisma.ProductUpdateWithWhereUniqueWithoutCreatorInput[]
+  updateMany?: Prisma.ProductUpdateManyWithWhereWithoutCreatorInput | Prisma.ProductUpdateManyWithWhereWithoutCreatorInput[]
+  deleteMany?: Prisma.ProductScalarWhereInput | Prisma.ProductScalarWhereInput[]
+}
+
+export type ProductUncheckedUpdateManyWithoutCreatorNestedInput = {
+  create?: Prisma.XOR<Prisma.ProductCreateWithoutCreatorInput, Prisma.ProductUncheckedCreateWithoutCreatorInput> | Prisma.ProductCreateWithoutCreatorInput[] | Prisma.ProductUncheckedCreateWithoutCreatorInput[]
+  connectOrCreate?: Prisma.ProductCreateOrConnectWithoutCreatorInput | Prisma.ProductCreateOrConnectWithoutCreatorInput[]
+  upsert?: Prisma.ProductUpsertWithWhereUniqueWithoutCreatorInput | Prisma.ProductUpsertWithWhereUniqueWithoutCreatorInput[]
+  createMany?: Prisma.ProductCreateManyCreatorInputEnvelope
+  set?: Prisma.ProductWhereUniqueInput | Prisma.ProductWhereUniqueInput[]
+  disconnect?: Prisma.ProductWhereUniqueInput | Prisma.ProductWhereUniqueInput[]
+  delete?: Prisma.ProductWhereUniqueInput | Prisma.ProductWhereUniqueInput[]
+  connect?: Prisma.ProductWhereUniqueInput | Prisma.ProductWhereUniqueInput[]
+  update?: Prisma.ProductUpdateWithWhereUniqueWithoutCreatorInput | Prisma.ProductUpdateWithWhereUniqueWithoutCreatorInput[]
+  updateMany?: Prisma.ProductUpdateManyWithWhereWithoutCreatorInput | Prisma.ProductUpdateManyWithWhereWithoutCreatorInput[]
   deleteMany?: Prisma.ProductScalarWhereInput | Prisma.ProductScalarWhereInput[]
 }
 
@@ -623,6 +689,7 @@ export type ProductCreateWithoutOrganizationInput = {
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
+  creator: Prisma.UserCreateNestedOneWithoutProductsInput
   devices?: Prisma.DeviceCreateNestedManyWithoutProductInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutProductInput
   firmwares?: Prisma.FirmwareCreateNestedManyWithoutProductInput
@@ -632,6 +699,7 @@ export type ProductCreateWithoutOrganizationInput = {
 
 export type ProductUncheckedCreateWithoutOrganizationInput = {
   id: string
+  created_by: string
   product_key: string
   name: string
   protocols: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -681,6 +749,7 @@ export type ProductScalarWhereInput = {
   NOT?: Prisma.ProductScalarWhereInput | Prisma.ProductScalarWhereInput[]
   id?: Prisma.StringFilter<"Product"> | string
   org_id?: Prisma.StringFilter<"Product"> | string
+  created_by?: Prisma.StringFilter<"Product"> | string
   product_key?: Prisma.StringFilter<"Product"> | string
   name?: Prisma.StringFilter<"Product"> | string
   protocols?: Prisma.JsonFilter<"Product">
@@ -691,6 +760,72 @@ export type ProductScalarWhereInput = {
   created_at?: Prisma.DateTimeFilter<"Product"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Product"> | Date | string
   deleted_at?: Prisma.DateTimeNullableFilter<"Product"> | Date | string | null
+}
+
+export type ProductCreateWithoutCreatorInput = {
+  id: string
+  product_key: string
+  name: string
+  protocols: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  auth_type: string
+  data_format: string
+  thing_model: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.ResourceStatus
+  created_at?: Date | string
+  updated_at?: Date | string
+  deleted_at?: Date | string | null
+  organization: Prisma.OrganizationCreateNestedOneWithoutProductsInput
+  devices?: Prisma.DeviceCreateNestedManyWithoutProductInput
+  device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutProductInput
+  firmwares?: Prisma.FirmwareCreateNestedManyWithoutProductInput
+  ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutProductInput
+  device_logs?: Prisma.DeviceLogCreateNestedManyWithoutProductInput
+}
+
+export type ProductUncheckedCreateWithoutCreatorInput = {
+  id: string
+  org_id: string
+  product_key: string
+  name: string
+  protocols: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  auth_type: string
+  data_format: string
+  thing_model: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.ResourceStatus
+  created_at?: Date | string
+  updated_at?: Date | string
+  deleted_at?: Date | string | null
+  devices?: Prisma.DeviceUncheckedCreateNestedManyWithoutProductInput
+  device_groups?: Prisma.DeviceGroupUncheckedCreateNestedManyWithoutProductInput
+  firmwares?: Prisma.FirmwareUncheckedCreateNestedManyWithoutProductInput
+  ota_tasks?: Prisma.OtaTaskUncheckedCreateNestedManyWithoutProductInput
+  device_logs?: Prisma.DeviceLogUncheckedCreateNestedManyWithoutProductInput
+}
+
+export type ProductCreateOrConnectWithoutCreatorInput = {
+  where: Prisma.ProductWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProductCreateWithoutCreatorInput, Prisma.ProductUncheckedCreateWithoutCreatorInput>
+}
+
+export type ProductCreateManyCreatorInputEnvelope = {
+  data: Prisma.ProductCreateManyCreatorInput | Prisma.ProductCreateManyCreatorInput[]
+  skipDuplicates?: boolean
+}
+
+export type ProductUpsertWithWhereUniqueWithoutCreatorInput = {
+  where: Prisma.ProductWhereUniqueInput
+  update: Prisma.XOR<Prisma.ProductUpdateWithoutCreatorInput, Prisma.ProductUncheckedUpdateWithoutCreatorInput>
+  create: Prisma.XOR<Prisma.ProductCreateWithoutCreatorInput, Prisma.ProductUncheckedCreateWithoutCreatorInput>
+}
+
+export type ProductUpdateWithWhereUniqueWithoutCreatorInput = {
+  where: Prisma.ProductWhereUniqueInput
+  data: Prisma.XOR<Prisma.ProductUpdateWithoutCreatorInput, Prisma.ProductUncheckedUpdateWithoutCreatorInput>
+}
+
+export type ProductUpdateManyWithWhereWithoutCreatorInput = {
+  where: Prisma.ProductScalarWhereInput
+  data: Prisma.XOR<Prisma.ProductUpdateManyMutationInput, Prisma.ProductUncheckedUpdateManyWithoutCreatorInput>
 }
 
 export type ProductCreateWithoutDevicesInput = {
@@ -706,6 +841,7 @@ export type ProductCreateWithoutDevicesInput = {
   updated_at?: Date | string
   deleted_at?: Date | string | null
   organization: Prisma.OrganizationCreateNestedOneWithoutProductsInput
+  creator: Prisma.UserCreateNestedOneWithoutProductsInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutProductInput
   firmwares?: Prisma.FirmwareCreateNestedManyWithoutProductInput
   ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutProductInput
@@ -715,6 +851,7 @@ export type ProductCreateWithoutDevicesInput = {
 export type ProductUncheckedCreateWithoutDevicesInput = {
   id: string
   org_id: string
+  created_by: string
   product_key: string
   name: string
   protocols: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -760,6 +897,7 @@ export type ProductUpdateWithoutDevicesInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutProductsNestedInput
+  creator?: Prisma.UserUpdateOneRequiredWithoutProductsNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutProductNestedInput
   firmwares?: Prisma.FirmwareUpdateManyWithoutProductNestedInput
   ota_tasks?: Prisma.OtaTaskUpdateManyWithoutProductNestedInput
@@ -769,6 +907,7 @@ export type ProductUpdateWithoutDevicesInput = {
 export type ProductUncheckedUpdateWithoutDevicesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   product_key?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   protocols?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -798,6 +937,7 @@ export type ProductCreateWithoutDevice_groupsInput = {
   updated_at?: Date | string
   deleted_at?: Date | string | null
   organization: Prisma.OrganizationCreateNestedOneWithoutProductsInput
+  creator: Prisma.UserCreateNestedOneWithoutProductsInput
   devices?: Prisma.DeviceCreateNestedManyWithoutProductInput
   firmwares?: Prisma.FirmwareCreateNestedManyWithoutProductInput
   ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutProductInput
@@ -807,6 +947,7 @@ export type ProductCreateWithoutDevice_groupsInput = {
 export type ProductUncheckedCreateWithoutDevice_groupsInput = {
   id: string
   org_id: string
+  created_by: string
   product_key: string
   name: string
   protocols: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -852,6 +993,7 @@ export type ProductUpdateWithoutDevice_groupsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutProductsNestedInput
+  creator?: Prisma.UserUpdateOneRequiredWithoutProductsNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutProductNestedInput
   firmwares?: Prisma.FirmwareUpdateManyWithoutProductNestedInput
   ota_tasks?: Prisma.OtaTaskUpdateManyWithoutProductNestedInput
@@ -861,6 +1003,7 @@ export type ProductUpdateWithoutDevice_groupsInput = {
 export type ProductUncheckedUpdateWithoutDevice_groupsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   product_key?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   protocols?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -890,6 +1033,7 @@ export type ProductCreateWithoutFirmwaresInput = {
   updated_at?: Date | string
   deleted_at?: Date | string | null
   organization: Prisma.OrganizationCreateNestedOneWithoutProductsInput
+  creator: Prisma.UserCreateNestedOneWithoutProductsInput
   devices?: Prisma.DeviceCreateNestedManyWithoutProductInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutProductInput
   ota_tasks?: Prisma.OtaTaskCreateNestedManyWithoutProductInput
@@ -899,6 +1043,7 @@ export type ProductCreateWithoutFirmwaresInput = {
 export type ProductUncheckedCreateWithoutFirmwaresInput = {
   id: string
   org_id: string
+  created_by: string
   product_key: string
   name: string
   protocols: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -944,6 +1089,7 @@ export type ProductUpdateWithoutFirmwaresInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutProductsNestedInput
+  creator?: Prisma.UserUpdateOneRequiredWithoutProductsNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutProductNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutProductNestedInput
   ota_tasks?: Prisma.OtaTaskUpdateManyWithoutProductNestedInput
@@ -953,6 +1099,7 @@ export type ProductUpdateWithoutFirmwaresInput = {
 export type ProductUncheckedUpdateWithoutFirmwaresInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   product_key?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   protocols?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -982,6 +1129,7 @@ export type ProductCreateWithoutOta_tasksInput = {
   updated_at?: Date | string
   deleted_at?: Date | string | null
   organization: Prisma.OrganizationCreateNestedOneWithoutProductsInput
+  creator: Prisma.UserCreateNestedOneWithoutProductsInput
   devices?: Prisma.DeviceCreateNestedManyWithoutProductInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutProductInput
   firmwares?: Prisma.FirmwareCreateNestedManyWithoutProductInput
@@ -991,6 +1139,7 @@ export type ProductCreateWithoutOta_tasksInput = {
 export type ProductUncheckedCreateWithoutOta_tasksInput = {
   id: string
   org_id: string
+  created_by: string
   product_key: string
   name: string
   protocols: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -1036,6 +1185,7 @@ export type ProductUpdateWithoutOta_tasksInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutProductsNestedInput
+  creator?: Prisma.UserUpdateOneRequiredWithoutProductsNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutProductNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutProductNestedInput
   firmwares?: Prisma.FirmwareUpdateManyWithoutProductNestedInput
@@ -1045,6 +1195,7 @@ export type ProductUpdateWithoutOta_tasksInput = {
 export type ProductUncheckedUpdateWithoutOta_tasksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   product_key?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   protocols?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -1074,6 +1225,7 @@ export type ProductCreateWithoutDevice_logsInput = {
   updated_at?: Date | string
   deleted_at?: Date | string | null
   organization: Prisma.OrganizationCreateNestedOneWithoutProductsInput
+  creator: Prisma.UserCreateNestedOneWithoutProductsInput
   devices?: Prisma.DeviceCreateNestedManyWithoutProductInput
   device_groups?: Prisma.DeviceGroupCreateNestedManyWithoutProductInput
   firmwares?: Prisma.FirmwareCreateNestedManyWithoutProductInput
@@ -1083,6 +1235,7 @@ export type ProductCreateWithoutDevice_logsInput = {
 export type ProductUncheckedCreateWithoutDevice_logsInput = {
   id: string
   org_id: string
+  created_by: string
   product_key: string
   name: string
   protocols: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -1128,6 +1281,7 @@ export type ProductUpdateWithoutDevice_logsInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutProductsNestedInput
+  creator?: Prisma.UserUpdateOneRequiredWithoutProductsNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutProductNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutProductNestedInput
   firmwares?: Prisma.FirmwareUpdateManyWithoutProductNestedInput
@@ -1137,6 +1291,7 @@ export type ProductUpdateWithoutDevice_logsInput = {
 export type ProductUncheckedUpdateWithoutDevice_logsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   product_key?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   protocols?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -1155,6 +1310,7 @@ export type ProductUncheckedUpdateWithoutDevice_logsInput = {
 
 export type ProductCreateManyOrganizationInput = {
   id: string
+  created_by: string
   product_key: string
   name: string
   protocols: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -1179,6 +1335,7 @@ export type ProductUpdateWithoutOrganizationInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  creator?: Prisma.UserUpdateOneRequiredWithoutProductsNestedInput
   devices?: Prisma.DeviceUpdateManyWithoutProductNestedInput
   device_groups?: Prisma.DeviceGroupUpdateManyWithoutProductNestedInput
   firmwares?: Prisma.FirmwareUpdateManyWithoutProductNestedInput
@@ -1188,6 +1345,7 @@ export type ProductUpdateWithoutOrganizationInput = {
 
 export type ProductUncheckedUpdateWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
   product_key?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   protocols?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -1207,6 +1365,77 @@ export type ProductUncheckedUpdateWithoutOrganizationInput = {
 
 export type ProductUncheckedUpdateManyWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
+  product_key?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  protocols?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  auth_type?: Prisma.StringFieldUpdateOperationsInput | string
+  data_format?: Prisma.StringFieldUpdateOperationsInput | string
+  thing_model?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type ProductCreateManyCreatorInput = {
+  id: string
+  org_id: string
+  product_key: string
+  name: string
+  protocols: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  auth_type: string
+  data_format: string
+  thing_model: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.ResourceStatus
+  created_at?: Date | string
+  updated_at?: Date | string
+  deleted_at?: Date | string | null
+}
+
+export type ProductUpdateWithoutCreatorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  product_key?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  protocols?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  auth_type?: Prisma.StringFieldUpdateOperationsInput | string
+  data_format?: Prisma.StringFieldUpdateOperationsInput | string
+  thing_model?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutProductsNestedInput
+  devices?: Prisma.DeviceUpdateManyWithoutProductNestedInput
+  device_groups?: Prisma.DeviceGroupUpdateManyWithoutProductNestedInput
+  firmwares?: Prisma.FirmwareUpdateManyWithoutProductNestedInput
+  ota_tasks?: Prisma.OtaTaskUpdateManyWithoutProductNestedInput
+  device_logs?: Prisma.DeviceLogUpdateManyWithoutProductNestedInput
+}
+
+export type ProductUncheckedUpdateWithoutCreatorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  product_key?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  protocols?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  auth_type?: Prisma.StringFieldUpdateOperationsInput | string
+  data_format?: Prisma.StringFieldUpdateOperationsInput | string
+  thing_model?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  devices?: Prisma.DeviceUncheckedUpdateManyWithoutProductNestedInput
+  device_groups?: Prisma.DeviceGroupUncheckedUpdateManyWithoutProductNestedInput
+  firmwares?: Prisma.FirmwareUncheckedUpdateManyWithoutProductNestedInput
+  ota_tasks?: Prisma.OtaTaskUncheckedUpdateManyWithoutProductNestedInput
+  device_logs?: Prisma.DeviceLogUncheckedUpdateManyWithoutProductNestedInput
+}
+
+export type ProductUncheckedUpdateManyWithoutCreatorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  org_id?: Prisma.StringFieldUpdateOperationsInput | string
   product_key?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   protocols?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -1289,6 +1518,7 @@ export type ProductCountOutputTypeCountDevice_logsArgs<ExtArgs extends runtime.T
 export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   org_id?: boolean
+  created_by?: boolean
   product_key?: boolean
   name?: boolean
   protocols?: boolean
@@ -1300,6 +1530,7 @@ export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   updated_at?: boolean
   deleted_at?: boolean
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   devices?: boolean | Prisma.Product$devicesArgs<ExtArgs>
   device_groups?: boolean | Prisma.Product$device_groupsArgs<ExtArgs>
   firmwares?: boolean | Prisma.Product$firmwaresArgs<ExtArgs>
@@ -1311,6 +1542,7 @@ export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 export type ProductSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   org_id?: boolean
+  created_by?: boolean
   product_key?: boolean
   name?: boolean
   protocols?: boolean
@@ -1322,11 +1554,13 @@ export type ProductSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   updated_at?: boolean
   deleted_at?: boolean
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["product"]>
 
 export type ProductSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   org_id?: boolean
+  created_by?: boolean
   product_key?: boolean
   name?: boolean
   protocols?: boolean
@@ -1338,11 +1572,13 @@ export type ProductSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   updated_at?: boolean
   deleted_at?: boolean
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["product"]>
 
 export type ProductSelectScalar = {
   id?: boolean
   org_id?: boolean
+  created_by?: boolean
   product_key?: boolean
   name?: boolean
   protocols?: boolean
@@ -1355,9 +1591,10 @@ export type ProductSelectScalar = {
   deleted_at?: boolean
 }
 
-export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "org_id" | "product_key" | "name" | "protocols" | "auth_type" | "data_format" | "thing_model" | "status" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["product"]>
+export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "org_id" | "created_by" | "product_key" | "name" | "protocols" | "auth_type" | "data_format" | "thing_model" | "status" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["product"]>
 export type ProductInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   devices?: boolean | Prisma.Product$devicesArgs<ExtArgs>
   device_groups?: boolean | Prisma.Product$device_groupsArgs<ExtArgs>
   firmwares?: boolean | Prisma.Product$firmwaresArgs<ExtArgs>
@@ -1367,15 +1604,18 @@ export type ProductInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
 }
 export type ProductIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 export type ProductIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 
 export type $ProductPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Product"
   objects: {
     organization: Prisma.$OrganizationPayload<ExtArgs>
+    creator: Prisma.$UserPayload<ExtArgs>
     devices: Prisma.$DevicePayload<ExtArgs>[]
     device_groups: Prisma.$DeviceGroupPayload<ExtArgs>[]
     firmwares: Prisma.$FirmwarePayload<ExtArgs>[]
@@ -1385,6 +1625,7 @@ export type $ProductPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     org_id: string
+    created_by: string
     product_key: string
     name: string
     protocols: runtime.JsonValue
@@ -1790,6 +2031,7 @@ readonly fields: ProductFieldRefs;
 export interface Prisma__ProductClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   organization<T extends Prisma.OrganizationDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.OrganizationDefaultArgs<ExtArgs>>): Prisma.Prisma__OrganizationClient<runtime.Types.Result.GetResult<Prisma.$OrganizationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  creator<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   devices<T extends Prisma.Product$devicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$devicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   device_groups<T extends Prisma.Product$device_groupsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$device_groupsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeviceGroupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   firmwares<T extends Prisma.Product$firmwaresArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Product$firmwaresArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FirmwarePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -1826,6 +2068,7 @@ export interface Prisma__ProductClient<T, Null = never, ExtArgs extends runtime.
 export interface ProductFieldRefs {
   readonly id: Prisma.FieldRef<"Product", 'String'>
   readonly org_id: Prisma.FieldRef<"Product", 'String'>
+  readonly created_by: Prisma.FieldRef<"Product", 'String'>
   readonly product_key: Prisma.FieldRef<"Product", 'String'>
   readonly name: Prisma.FieldRef<"Product", 'String'>
   readonly protocols: Prisma.FieldRef<"Product", 'Json'>

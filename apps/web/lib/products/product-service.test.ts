@@ -14,6 +14,7 @@ function product(overrides: Record<string, unknown> = {}) {
   return {
     id: "prd_demo",
     org_id: "org_default",
+    created_by: "usr_admin",
     product_key: "pk_demo",
     name: "演示产品",
     protocols: ["mqtt", "http"],
@@ -78,6 +79,29 @@ describe("product service", () => {
     });
   });
 
+  it("scopes product lists to the creator when access is not organization-wide", async () => {
+    const db = {
+      product: {
+        count: vi.fn().mockResolvedValue(1),
+        findMany: vi.fn().mockResolvedValue([product({ created_by: "usr_member" })])
+      }
+    };
+
+    await listProducts(db, {
+      orgId: "org_default",
+      userId: "usr_member",
+      canAccessAll: false
+    });
+
+    expect(db.product.count).toHaveBeenCalledWith({
+      where: {
+        org_id: "org_default",
+        deleted_at: null,
+        created_by: "usr_member"
+      }
+    });
+  });
+
   it("creates a product with a validated default thing model", async () => {
     const db = {
       product: {
@@ -88,6 +112,7 @@ describe("product service", () => {
 
     const result = await createProduct(db, {
       orgId: "org_default",
+      createdBy: "usr_admin",
       product_key: "pk_sensor",
       name: "传感器产品",
       protocols: ["mqtt"],
@@ -101,6 +126,7 @@ describe("product service", () => {
     expect(db.product.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         org_id: "org_default",
+        created_by: "usr_admin",
         product_key: "pk_sensor",
         name: "传感器产品",
         protocols: ["mqtt"],
@@ -128,6 +154,7 @@ describe("product service", () => {
 
     await createProduct(db, {
       orgId: "org_default",
+      createdBy: "usr_admin",
       name: "自动 Key 产品"
     });
 
@@ -150,6 +177,7 @@ describe("product service", () => {
     await expect(
       createProduct(db, {
         orgId: "org_default",
+        createdBy: "usr_admin",
         product_key: "pk_demo",
         name: "重复产品",
         protocols: ["mqtt"],
@@ -210,6 +238,36 @@ describe("product service", () => {
     });
 
     expect(result.id).toBe("prd_demo");
+  });
+
+  it("rejects access to products owned by another creator", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn()
+      }
+    };
+
+    await expect(
+      getProduct(db, {
+        orgId: "org_default",
+        userId: "usr_member",
+        canAccessAll: false,
+        productId: "prd_other"
+      })
+    ).rejects.toMatchObject({
+      code: 404001,
+      message: "product not found"
+    });
+    expect(db.product.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: "prd_other",
+        org_id: "org_default",
+        deleted_at: null,
+        created_by: "usr_member"
+      },
+      include: { _count: { select: { devices: true } } }
+    });
   });
 
   it("updates a product thing model", async () => {
