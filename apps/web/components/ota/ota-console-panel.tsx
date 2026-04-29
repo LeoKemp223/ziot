@@ -50,6 +50,7 @@ export function OtaConsolePanel() {
   const [products, setProducts] = useState<Product[]>([]);
   const [firmwares, setFirmwares] = useState<Firmware[]>([]);
   const [tasks, setTasks] = useState<OtaTask[]>([]);
+  const [lastUploadedFirmware, setLastUploadedFirmware] = useState<Firmware | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -107,11 +108,12 @@ export function OtaConsolePanel() {
       });
       const body = (await response.json()) as ApiResponse<Firmware>;
 
-      if (!response.ok || body.code !== 0) {
+      if (!response.ok || body.code !== 0 || !body.data) {
         setError(body.message);
         return;
       }
 
+      setLastUploadedFirmware(body.data);
       setMessage("固件已上传并创建。");
       formElement.reset();
       await load();
@@ -238,18 +240,57 @@ export function OtaConsolePanel() {
         </form>
       </section>
 
+      {lastUploadedFirmware ? (
+        <section className="rounded-lg border border-emerald-200 bg-emerald-50 shadow-sm">
+          <div className="border-b border-emerald-200 px-5 py-4">
+            <h2 className="text-base font-semibold text-emerald-950">最近上传结果</h2>
+          </div>
+          <dl className="grid gap-3 p-5 text-sm md:grid-cols-[120px_1fr]">
+            <dt className="font-medium text-emerald-900">file_size</dt>
+            <dd className="font-mono text-emerald-950">{lastUploadedFirmware.file_size} B</dd>
+            <dt className="font-medium text-emerald-900">SHA256</dt>
+            <dd className="break-all font-mono text-xs text-emerald-950">
+              {lastUploadedFirmware.sha256}
+            </dd>
+            <dt className="font-medium text-emerald-900">URL</dt>
+            <dd>
+              <a
+                className="break-all font-mono text-xs text-blue-700 hover:underline"
+                href={lastUploadedFirmware.file_url}
+                rel="noreferrer"
+                target="_blank"
+              >
+                {lastUploadedFirmware.file_url}
+              </a>
+            </dd>
+          </dl>
+        </section>
+      ) : null}
+
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
           <h2 className="text-base font-semibold text-slate-950">固件列表</h2>
         </div>
         <Table
           empty="暂无固件。"
-          headers={["版本", "产品", "状态", "大小", "操作"]}
+          headers={["版本", "产品", "状态", "file_size", "SHA256", "URL", "操作"]}
           rows={firmwares.map((firmware) => [
             firmware.version,
             firmware.product_name,
             firmware.status,
             `${firmware.file_size} B`,
+            <span className="block max-w-[320px] break-all font-mono text-xs" key="sha256">
+              {firmware.sha256}
+            </span>,
+            <a
+              className="block max-w-[360px] break-all font-mono text-xs text-blue-600 hover:underline"
+              href={firmware.file_url}
+              key="url"
+              rel="noreferrer"
+              target="_blank"
+            >
+              {firmware.file_url}
+            </a>,
             <div className="flex gap-2" key={firmware.id}>
               <button
                 className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700"
