@@ -27,6 +27,15 @@ type DeviceShadow = {
   updated_at: string;
 };
 
+type DeviceTopic = {
+  key: string;
+  name: string;
+  direction: string;
+  operation: string;
+  topic: string;
+  description: string;
+};
+
 type ApiResponse<T> = {
   code: number;
   message: string;
@@ -40,6 +49,7 @@ type DeviceDetailPanelProps = {
 export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
   const [device, setDevice] = useState<DeviceItem | null>(null);
   const [shadow, setShadow] = useState<DeviceShadow | null>(null);
+  const [topics, setTopics] = useState<DeviceTopic[]>([]);
   const [desiredText, setDesiredText] = useState("{}");
   const [secret, setSecret] = useState("");
   const [loading, setLoading] = useState(true);
@@ -54,12 +64,14 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
     setError("");
 
     try {
-      const [deviceResponse, shadowResponse] = await Promise.all([
+      const [deviceResponse, shadowResponse, topicsResponse] = await Promise.all([
         fetch(`/api/v1/devices/${deviceId}`),
-        fetch(`/api/v1/devices/${deviceId}/shadow`)
+        fetch(`/api/v1/devices/${deviceId}/shadow`),
+        fetch(`/api/v1/devices/${deviceId}/topics`)
       ]);
       const deviceBody = (await deviceResponse.json()) as ApiResponse<DeviceItem>;
       const shadowBody = (await shadowResponse.json()) as ApiResponse<DeviceShadow>;
+      const topicsBody = (await topicsResponse.json()) as ApiResponse<DeviceTopic[]>;
 
       if (!deviceResponse.ok || deviceBody.code !== 0 || !deviceBody.data) {
         setError(deviceBody.message);
@@ -71,8 +83,14 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
         return;
       }
 
+      if (!topicsResponse.ok || topicsBody.code !== 0 || !topicsBody.data) {
+        setError(topicsBody.message);
+        return;
+      }
+
       setDevice(deviceBody.data);
       setShadow(shadowBody.data);
+      setTopics(topicsBody.data);
       setDesiredText(JSON.stringify(shadowBody.data.desired, null, 2));
     } catch {
       setError("请求失败，请确认 Web 服务状态。");
@@ -310,6 +328,51 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
       </section>
 
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 px-5 py-4">
+          <h2 className="text-base font-semibold text-slate-950">Topic 列表</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            设备可发布或订阅的内置 MQTT Topic。
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[920px] border-collapse text-left text-sm">
+            <thead className="bg-slate-50 text-xs font-medium text-slate-500">
+              <tr>
+                <th className="px-5 py-3">名称</th>
+                <th className="px-4 py-3">方向</th>
+                <th className="px-4 py-3">权限</th>
+                <th className="px-4 py-3">Topic</th>
+                <th className="px-5 py-3">说明</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {topics.map((topic) => (
+                <tr className="align-top hover:bg-slate-50" key={topic.key}>
+                  <td className="px-5 py-4 font-medium text-slate-950">
+                    {topic.name}
+                  </td>
+                  <td className="px-4 py-4">
+                    <TopicBadge value={topic.direction} />
+                  </td>
+                  <td className="px-4 py-4">
+                    <OperationBadge value={topic.operation} />
+                  </td>
+                  <td className="px-4 py-4">
+                    <code className="break-all rounded-md bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700">
+                      {topic.topic}
+                    </code>
+                  </td>
+                  <td className="px-5 py-4 text-slate-500">
+                    {topic.description}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <form onSubmit={saveDesired}>
           <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -356,6 +419,44 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
         </form>
       </section>
     </div>
+  );
+}
+
+function TopicBadge({ value }: { value: string }) {
+  const label = value === "cloud_to_device" ? "平台到设备" : "设备到平台";
+  const className =
+    value === "cloud_to_device"
+      ? "bg-indigo-50 text-indigo-700"
+      : "bg-emerald-50 text-emerald-700";
+
+  return (
+    <span
+      className={[
+        "inline-flex rounded-md px-2 py-1 text-xs font-medium",
+        className
+      ].join(" ")}
+    >
+      {label}
+    </span>
+  );
+}
+
+function OperationBadge({ value }: { value: string }) {
+  const label = value === "subscribe" ? "订阅" : "发布";
+  const className =
+    value === "subscribe"
+      ? "bg-blue-50 text-blue-700"
+      : "bg-amber-50 text-amber-700";
+
+  return (
+    <span
+      className={[
+        "inline-flex rounded-md px-2 py-1 text-xs font-medium",
+        className
+      ].join(" ")}
+    >
+      {label}
+    </span>
   );
 }
 

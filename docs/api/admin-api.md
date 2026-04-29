@@ -838,6 +838,44 @@ HTTP 状态码：`200`
 
 `desired` 必须是 JSON 对象。每次成功更新会将 `version` 递增 1。
 
+### `GET /api/v1/devices/{device_id}/topics`
+
+查询设备内置 MQTT Topic 列表。需要 `device:read` 权限。
+普通用户访问别人创建的设备返回 `404001`。
+
+成功响应中的 `data` 是数组：
+
+```json
+[
+  {
+    "key": "property-post",
+    "name": "属性上报",
+    "direction": "device_to_cloud",
+    "operation": "publish",
+    "topic": "/sys/pk_demo/dk_demo/thing/property/post",
+    "description": "设备发布当前属性值，平台写入 reported 状态。"
+  },
+  {
+    "key": "service-invoke",
+    "name": "服务调用",
+    "direction": "cloud_to_device",
+    "operation": "subscribe",
+    "topic": "/sys/pk_demo/dk_demo/thing/service/+/invoke",
+    "description": "设备订阅平台下发的服务调用指令。"
+  }
+]
+```
+
+当前内置 Topic：
+
+| 名称 | 方向 | 权限 | Topic |
+| --- | --- | --- | --- |
+| 属性上报 | 设备到平台 | publish | `/sys/{product_key}/{device_key}/thing/property/post` |
+| 事件上报 | 设备到平台 | publish | `/sys/{product_key}/{device_key}/thing/event/post` |
+| 日志上报 | 设备到平台 | publish | `/sys/{product_key}/{device_key}/thing/log/post` |
+| 服务调用 | 平台到设备 | subscribe | `/sys/{product_key}/{device_key}/thing/service/+/invoke` |
+| 服务回执 | 设备到平台 | publish | `/sys/{product_key}/{device_key}/thing/service/{identifier}/reply` |
+
 ### `GET /api/v1/device-groups`
 
 查询设备分组列表。需要 `device:read` 权限。
@@ -970,6 +1008,7 @@ EMQX WebHook 回调。当前处理 `client.connected` 和 `client.disconnected`�
 | `POST /api/v1/devices/{device_id}/secret` | 返回新密钥，旧密钥哈希被替换 |
 | `GET /api/v1/devices/{device_id}/shadow` | 返回 reported、desired、version 和 updated_at |
 | `PATCH /api/v1/devices/{device_id}/shadow` | 更新 desired 并递增 version |
+| `GET /api/v1/devices/{device_id}/topics` | 返回设备内置 MQTT Topic 列表 |
 | `GET /api/v1/device-groups` | 返回设备分组列表 |
 | `POST /api/v1/device-groups` | 可创建同产品分组并添加设备成员 |
 | `POST /api/internal/emqx/auth` | 有效 MQTT `device_secret` 返回 `allow`，错误密钥或禁用设备返回 `deny` |

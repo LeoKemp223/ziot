@@ -51,6 +51,13 @@ function mapDevice(device: any, plainSecret?: string) {
   };
 }
 
+function deviceTopic(
+  device: { product: { product_key: string }; device_key: string },
+  suffix: string
+) {
+  return `/sys/${device.product.product_key}/${device.device_key}/${suffix}`;
+}
+
 function ownerFilter(input: AccessScope) {
   return input.canAccessAll || !input.userId ? {} : { created_by: input.userId };
 }
@@ -125,6 +132,73 @@ export async function getDevice(
   }
 
   return mapDevice(device);
+}
+
+export async function listDeviceTopics(
+  db: Db,
+  input: {
+    orgId: string;
+    userId?: string;
+    canAccessAll?: boolean;
+    deviceId: string;
+  }
+) {
+  const device = await db.device.findFirst({
+    where: {
+      id: input.deviceId,
+      org_id: input.orgId,
+      deleted_at: null,
+      ...ownerFilter(input)
+    },
+    include: { product: true }
+  });
+
+  if (!device) {
+    throw serviceError(404001, "device not found");
+  }
+
+  return [
+    {
+      key: "property-post",
+      name: "属性上报",
+      direction: "device_to_cloud",
+      operation: "publish",
+      topic: deviceTopic(device, "thing/property/post"),
+      description: "设备发布当前属性值，平台写入 reported 状态。"
+    },
+    {
+      key: "event-post",
+      name: "事件上报",
+      direction: "device_to_cloud",
+      operation: "publish",
+      topic: deviceTopic(device, "thing/event/post"),
+      description: "设备发布业务事件。"
+    },
+    {
+      key: "log-post",
+      name: "日志上报",
+      direction: "device_to_cloud",
+      operation: "publish",
+      topic: deviceTopic(device, "thing/log/post"),
+      description: "设备发布运行日志。"
+    },
+    {
+      key: "service-invoke",
+      name: "服务调用",
+      direction: "cloud_to_device",
+      operation: "subscribe",
+      topic: deviceTopic(device, "thing/service/+/invoke"),
+      description: "设备订阅平台下发的服务调用指令。"
+    },
+    {
+      key: "service-reply",
+      name: "服务回执",
+      direction: "device_to_cloud",
+      operation: "publish",
+      topic: deviceTopic(device, "thing/service/{identifier}/reply"),
+      description: "设备发布服务调用执行结果，identifier 对应物模型服务标识。"
+    }
+  ];
 }
 
 export async function createDevice(

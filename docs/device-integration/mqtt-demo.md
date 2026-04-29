@@ -61,6 +61,18 @@ DATABASE_URL=postgresql://ziot:ziot@localhost:5432/ziot pnpm --filter @ziot/db s
 /sys/{product_key}/{device_key}/thing/property/post
 ```
 
+事件上报：
+
+```text
+/sys/{product_key}/{device_key}/thing/event/post
+```
+
+日志上报：
+
+```text
+/sys/{product_key}/{device_key}/thing/log/post
+```
+
 服务调用订阅：
 
 ```text
@@ -71,6 +83,12 @@ DATABASE_URL=postgresql://ziot:ziot@localhost:5432/ziot pnpm --filter @ziot/db s
 
 ```text
 /sys/{product_key}/{device_key}/thing/service/{identifier}/reply
+```
+
+控制台设备详情页会展示当前设备的完整 Topic 列表。也可以调用：
+
+```bash
+curl http://localhost:3000/api/v1/devices/{device_id}/topics
 ```
 
 ## Python Demo

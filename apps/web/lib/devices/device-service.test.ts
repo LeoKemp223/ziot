@@ -4,6 +4,7 @@ import {
   addDeviceToGroup,
   createDevice,
   getDevice,
+  listDeviceTopics,
   listDevices,
   resetDeviceSecret,
   updateDevice,
@@ -211,6 +212,58 @@ describe("device service", () => {
       },
       include: { product: true }
     });
+  });
+
+  it("lists built-in MQTT topics for a scoped device", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device())
+      }
+    };
+
+    const result = await listDeviceTopics(db, {
+      orgId: "org_default",
+      userId: "usr_member",
+      canAccessAll: false,
+      deviceId: "dev_demo"
+    });
+
+    expect(db.device.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: "dev_demo",
+        org_id: "org_default",
+        deleted_at: null,
+        created_by: "usr_member"
+      },
+      include: { product: true }
+    });
+    expect(result).toEqual([
+      expect.objectContaining({
+        key: "property-post",
+        operation: "publish",
+        topic: "/sys/pk_demo/dk_demo/thing/property/post"
+      }),
+      expect.objectContaining({
+        key: "event-post",
+        operation: "publish",
+        topic: "/sys/pk_demo/dk_demo/thing/event/post"
+      }),
+      expect.objectContaining({
+        key: "log-post",
+        operation: "publish",
+        topic: "/sys/pk_demo/dk_demo/thing/log/post"
+      }),
+      expect.objectContaining({
+        key: "service-invoke",
+        operation: "subscribe",
+        topic: "/sys/pk_demo/dk_demo/thing/service/+/invoke"
+      }),
+      expect.objectContaining({
+        key: "service-reply",
+        operation: "publish",
+        topic: "/sys/pk_demo/dk_demo/thing/service/{identifier}/reply"
+      })
+    ]);
   });
 
   it("updates device status to disabled", async () => {
