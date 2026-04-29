@@ -885,6 +885,73 @@ HTTP 状态码：`200`
 | 控制下发 / 服务调用 | 平台到设备 | subscribe | `/sys/{product_key}/{device_key}/thing/service/+/invoke` |
 | 服务回执 | 设备到平台 | publish | `/sys/{product_key}/{device_key}/thing/service/{identifier}/reply` |
 
+### `POST /api/v1/devices/{device_id}/commands`
+
+向单个设备下发控制指令。需要 `device:control` 权限。
+普通用户只能控制自己创建的设备。
+
+属性设置下发：
+
+```json
+{
+  "kind": "property_set",
+  "params": {
+    "power": true,
+    "target_temperature": 24
+  },
+  "timeout_ms": 15000
+}
+```
+
+服务调用下发：
+
+```json
+{
+  "kind": "service",
+  "identifier": "setSwitch",
+  "params": {
+    "power": true
+  },
+  "timeout_ms": 15000
+}
+```
+
+平台会创建 `device_commands` 记录，并通过 EMQX Dashboard API 发布 MQTT 消息：
+
+- `property_set`: `/sys/{product_key}/{device_key}/thing/property/set`
+- `service`: `/sys/{product_key}/{device_key}/thing/service/{identifier}/invoke`
+
+成功响应：
+
+```json
+{
+  "id": "cmd_xxx",
+  "device_id": "dev_demo",
+  "identifier": "setSwitch",
+  "params": {
+    "power": true
+  },
+  "status": "sent",
+  "request_id": "cmd_xxx",
+  "result": null,
+  "timeout_at": "2026-04-29T08:00:15.000Z",
+  "sent_at": "2026-04-29T08:00:00.000Z",
+  "replied_at": null,
+  "created_at": "2026-04-29T08:00:00.000Z"
+}
+```
+
+服务调用回执由设备发布到 `/thing/service/{identifier}/reply`，EMQX rule 会把回执转发到 Web，平台按 `id` 或 `request_id` 更新命令状态为 `success` / `failed`。
+
+### `GET /api/v1/devices/{device_id}/commands`
+
+查询当前设备最近 20 条控制指令。需要 `device:read` 权限。
+查询时会把已超过 `timeout_at` 的 `pending` / `sent` / `delivered` 命令懒更新为 `timeout`。
+
+### `GET /api/v1/commands/{command_id}`
+
+查询单条控制指令。需要 `device:read` 权限。
+
 ### `GET /api/v1/device-groups`
 
 查询设备分组列表。需要 `device:read` 权限。
@@ -975,6 +1042,7 @@ EMQX HTTP 授权回调。请求体示例：
 - 发布到本设备的服务回复 Topic。
 - 发布到本设备的 OTA 进度/结果 Topic。
 - 订阅本设备的属性设置、服务调用和 OTA 通知 Topic。
+- Web 下发服务调用后，设备发布到本设备服务回执 Topic，EMQX rule 转发回执并更新命令状态。
 
 跨设备 Topic、未知 Topic 或禁用设备返回 `deny`。
 
@@ -1018,6 +1086,9 @@ EMQX WebHook 回调。当前处理 `client.connected` 和 `client.disconnected`�
 | `GET /api/v1/devices/{device_id}/shadow` | 返回 reported、desired、version 和 updated_at |
 | `PATCH /api/v1/devices/{device_id}/shadow` | 更新 desired 并递增 version |
 | `GET /api/v1/devices/{device_id}/topics` | 返回设备内置 MQTT Topic 列表 |
+| `POST /api/v1/devices/{device_id}/commands` | 返回命令记录并通过 EMQX 发布下发消息 |
+| `GET /api/v1/devices/{device_id}/commands` | 返回设备最近命令记录 |
+| `GET /api/v1/commands/{command_id}` | 返回单条命令记录 |
 | `GET /api/v1/device-groups` | 返回设备分组列表 |
 | `POST /api/v1/device-groups` | 可创建同产品分组并添加设备成员 |
 | `POST /api/internal/emqx/auth` | 有效 MQTT `device_secret` 返回 `allow`，错误密钥或禁用设备返回 `deny` |

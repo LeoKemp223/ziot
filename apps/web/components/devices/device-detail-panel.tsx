@@ -36,6 +36,21 @@ type DeviceTopic = {
   description: string;
 };
 
+type DeviceCommand = {
+  id: string;
+  identifier: string;
+  params: unknown;
+  status: string;
+  request_id: string;
+  result: unknown;
+  error_code: string | null;
+  error_message: string | null;
+  timeout_at: string;
+  sent_at: string | null;
+  replied_at: string | null;
+  created_at: string;
+};
+
 type ApiResponse<T> = {
   code: number;
   message: string;
@@ -50,7 +65,13 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
   const [device, setDevice] = useState<DeviceItem | null>(null);
   const [shadow, setShadow] = useState<DeviceShadow | null>(null);
   const [topics, setTopics] = useState<DeviceTopic[]>([]);
+  const [commands, setCommands] = useState<DeviceCommand[]>([]);
   const [desiredText, setDesiredText] = useState("{}");
+  const [commandKind, setCommandKind] = useState<"property_set" | "service">(
+    "service"
+  );
+  const [commandIdentifier, setCommandIdentifier] = useState("setSwitch");
+  const [commandParamsText, setCommandParamsText] = useState("{}");
   const [secret, setSecret] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -64,14 +85,23 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
     setError("");
 
     try {
-      const [deviceResponse, shadowResponse, topicsResponse] = await Promise.all([
+      const [
+        deviceResponse,
+        shadowResponse,
+        topicsResponse,
+        commandsResponse
+      ] = await Promise.all([
         fetch(`/api/v1/devices/${deviceId}`),
         fetch(`/api/v1/devices/${deviceId}/shadow`),
-        fetch(`/api/v1/devices/${deviceId}/topics`)
+        fetch(`/api/v1/devices/${deviceId}/topics`),
+        fetch(`/api/v1/devices/${deviceId}/commands`)
       ]);
       const deviceBody = (await deviceResponse.json()) as ApiResponse<DeviceItem>;
       const shadowBody = (await shadowResponse.json()) as ApiResponse<DeviceShadow>;
       const topicsBody = (await topicsResponse.json()) as ApiResponse<DeviceTopic[]>;
+      const commandsBody = (await commandsResponse.json()) as ApiResponse<
+        DeviceCommand[]
+      >;
 
       if (!deviceResponse.ok || deviceBody.code !== 0 || !deviceBody.data) {
         setError(deviceBody.message);
@@ -88,9 +118,15 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
         return;
       }
 
+      if (!commandsResponse.ok || commandsBody.code !== 0 || !commandsBody.data) {
+        setError(commandsBody.message);
+        return;
+      }
+
       setDevice(deviceBody.data);
       setShadow(shadowBody.data);
       setTopics(topicsBody.data);
+      setCommands(commandsBody.data);
       setDesiredText(JSON.stringify(shadowBody.data.desired, null, 2));
     } catch {
       setError("请求失败，请确认 Web 服务状态。");
@@ -98,6 +134,44 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
       if (showLoading) {
         setLoading(false);
       }
+    }
+  }
+
+  async function sendCommand(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const params = JSON.parse(commandParamsText) as unknown;
+      const response = await fetch(`/api/v1/devices/${deviceId}/commands`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          kind: commandKind,
+          ...(commandKind === "service" ? { identifier: commandIdentifier } : {}),
+          params,
+          timeout_ms: 15000
+        })
+      });
+      const body = (await response.json()) as ApiResponse<DeviceCommand>;
+
+      if (!response.ok || body.code !== 0 || !body.data) {
+        setError(body.message);
+        return;
+      }
+
+      setCommands((current) => [body.data as DeviceCommand, ...current].slice(0, 20));
+      setMessage("控制指令已下发。");
+    } catch (sendError) {
+      setError(
+        sendError instanceof SyntaxError
+          ? "控制参数 JSON 格式不正确。"
+          : "控制指令下发失败，请稍后重试。"
+      );
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -328,6 +402,134 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
       </section>
 
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <form onSubmit={sendCommand}>
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-slate-950">
+                控制下发
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                向当前设备下发属性设置或服务调用指令。
+              </p>
+            </div>
+            <button
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+              disabled={saving}
+              type="submit"
+            >
+              {saving ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              下发
+            </button>
+          </div>
+          <div className="grid gap-4 px-5 py-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <div className="space-y-4">
+              <Field label="类型">
+                <select
+                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  onChange={(event) =>
+                    setCommandKind(
+                      event.currentTarget.value === "property_set"
+                        ? "property_set"
+                        : "service"
+                    )
+                  }
+                  value={commandKind}
+                >
+                  <option value="service">控制下发 / 服务调用</option>
+                  <option value="property_set">属性设置下发</option>
+                </select>
+              </Field>
+              {commandKind === "service" ? (
+                <Field label="服务标识">
+                  <input
+                    className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                    onChange={(event) =>
+                      setCommandIdentifier(event.currentTarget.value)
+                    }
+                    placeholder="setSwitch"
+                    value={commandIdentifier}
+                  />
+                </Field>
+              ) : null}
+            </div>
+            <Field label="参数 JSON">
+              <textarea
+                className="min-h-[156px] w-full rounded-md border border-slate-200 bg-slate-950 p-4 font-mono text-sm leading-6 text-slate-100 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                onChange={(event) => setCommandParamsText(event.currentTarget.value)}
+                spellCheck={false}
+                value={commandParamsText}
+              />
+            </Field>
+          </div>
+        </form>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 px-5 py-4">
+          <h2 className="text-base font-semibold text-slate-950">命令记录</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            最近 20 条控制指令及设备回执状态。
+          </p>
+        </div>
+        {commands.length === 0 ? (
+          <div className="p-8 text-sm text-slate-500">暂无命令记录。</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+              <thead className="bg-slate-50 text-xs font-medium text-slate-500">
+                <tr>
+                  <th className="px-5 py-3">指令</th>
+                  <th className="px-4 py-3">状态</th>
+                  <th className="px-4 py-3">参数</th>
+                  <th className="px-4 py-3">结果</th>
+                  <th className="px-5 py-3">创建时间</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {commands.map((command) => (
+                  <tr className="align-top hover:bg-slate-50" key={command.id}>
+                    <td className="px-5 py-4">
+                      <div className="font-medium text-slate-950">
+                        {command.identifier}
+                      </div>
+                      <div className="mt-1 font-mono text-xs text-slate-400">
+                        {command.request_id}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <CommandStatusBadge value={command.status} />
+                      {command.error_message ? (
+                        <div className="mt-1 max-w-[220px] text-xs text-rose-600">
+                          {command.error_message}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-4">
+                      <pre className="max-h-28 overflow-auto rounded-md bg-slate-50 p-2 font-mono text-xs text-slate-600">
+                        {JSON.stringify(command.params, null, 2)}
+                      </pre>
+                    </td>
+                    <td className="px-4 py-4">
+                      <pre className="max-h-28 overflow-auto rounded-md bg-slate-50 p-2 font-mono text-xs text-slate-600">
+                        {JSON.stringify(command.result ?? {}, null, 2)}
+                      </pre>
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap text-slate-500">
+                      {formatDateTime(command.created_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
           <h2 className="text-base font-semibold text-slate-950">Topic 列表</h2>
           <p className="mt-1 text-sm text-slate-500">
@@ -419,6 +621,30 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
         </form>
       </section>
     </div>
+  );
+}
+
+function CommandStatusBadge({ value }: { value: string }) {
+  const meta =
+    value === "success"
+      ? { label: "成功", className: "bg-emerald-50 text-emerald-700" }
+      : value === "failed"
+        ? { label: "失败", className: "bg-rose-50 text-rose-700" }
+        : value === "timeout"
+          ? { label: "超时", className: "bg-amber-50 text-amber-700" }
+          : value === "sent"
+            ? { label: "已发送", className: "bg-blue-50 text-blue-700" }
+            : { label: value, className: "bg-slate-100 text-slate-600" };
+
+  return (
+    <span
+      className={[
+        "inline-flex rounded-md px-2 py-1 text-xs font-medium",
+        meta.className
+      ].join(" ")}
+    >
+      {meta.label}
+    </span>
   );
 }
 

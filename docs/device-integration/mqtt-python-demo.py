@@ -65,6 +65,7 @@ def on_connect(client, userdata, flags, reason_code, properties=None):
 def on_message(client, userdata, message):
     payload_text = message.payload.decode("utf-8", errors="replace")
     print(f"downlink topic={message.topic} payload={payload_text}")
+    request_id = str(int(time.time() * 1000))
 
     if message.topic == PROPERTY_SET_TOPIC:
         try:
@@ -75,10 +76,18 @@ def on_message(client, userdata, message):
             publish_property(client)
         return
 
+    try:
+        body = json.loads(payload_text)
+        if isinstance(body, dict):
+            request_id = str(body.get("request_id") or body.get("id") or request_id)
+    except json.JSONDecodeError:
+        pass
+
     identifier = service_identifier(message.topic)
     reply_topic = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/service/{identifier}/reply"
     reply = {
-        "id": str(int(time.time() * 1000)),
+        "id": request_id,
+        "request_id": request_id,
         "code": 0,
         "data": {},
     }

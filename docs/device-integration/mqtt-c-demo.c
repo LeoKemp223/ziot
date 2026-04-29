@@ -264,7 +264,7 @@ static int publish_text(int sock, const char *topic_text, const char *payload)
 static int publish_property(int sock, const struct demo_config *config)
 {
     char topic[256];
-    char payload[256];
+    char payload[512];
     long long now_ms = (long long)time(NULL) * 1000;
 
     build_topic(
@@ -326,17 +326,79 @@ static void service_identifier(
     identifier[len] = '\0';
 }
 
+static int extract_json_string(
+    const unsigned char *payload,
+    int payload_len,
+    const char *key,
+    char *value,
+    size_t size)
+{
+    char text[512];
+    char pattern[64];
+    const char *start;
+    const char *end;
+    size_t len;
+
+    if (size == 0 || payload_len <= 0) {
+        return 0;
+    }
+
+    len = (size_t)payload_len;
+    if (len >= sizeof(text)) {
+        len = sizeof(text) - 1;
+    }
+    memcpy(text, payload, len);
+    text[len] = '\0';
+
+    snprintf(pattern, sizeof(pattern), "\"%s\":\"", key);
+    start = strstr(text, pattern);
+    if (!start) {
+        return 0;
+    }
+
+    start += strlen(pattern);
+    end = strchr(start, '"');
+    if (!end || end <= start) {
+        return 0;
+    }
+
+    len = (size_t)(end - start);
+    if (len >= size) {
+        len = size - 1;
+    }
+    memcpy(value, start, len);
+    value[len] = '\0';
+    return 1;
+}
+
 static int reply_service_command(
     int sock,
     const struct demo_config *config,
-    const char *command_topic)
+    const char *command_topic,
+    const unsigned char *request_payload,
+    int request_payload_len)
 {
     char identifier[128];
     char reply_topic[256];
-    char payload[128];
+    char request_id[128];
+    char payload[512];
     long long now_ms = (long long)time(NULL) * 1000;
 
     service_identifier(config, command_topic, identifier, sizeof(identifier));
+    if (!extract_json_string(
+            request_payload,
+            request_payload_len,
+            "request_id",
+            request_id,
+            sizeof(request_id)) &&
+        !extract_json_string(
+            request_payload,
+            request_payload_len,
+            "id",
+            request_id,
+            sizeof(request_id))) {
+        snprintf(request_id, sizeof(request_id), "%lld", now_ms);
+    }
     snprintf(
         reply_topic,
         sizeof(reply_topic),
@@ -344,7 +406,12 @@ static int reply_service_command(
         config->product_key,
         config->device_key,
         identifier);
-    snprintf(payload, sizeof(payload), "{\"id\":\"%lld\",\"code\":0,\"data\":{}}", now_ms);
+    snprintf(
+        payload,
+        sizeof(payload),
+        "{\"id\":\"%s\",\"request_id\":\"%s\",\"code\":0,\"data\":{}}",
+        request_id,
+        request_id);
 
     if (publish_text(sock, reply_topic, payload) != 0) {
         return -1;
@@ -407,7 +474,7 @@ static int handle_publish(int sock, const struct demo_config *config, unsigned c
         return publish_property(sock, config);
     }
 
-    return reply_service_command(sock, config, topic_text);
+    return reply_service_command(sock, config, topic_text, payload, payload_len);
 }
 
 static void send_disconnect(int sock)

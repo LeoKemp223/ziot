@@ -31,6 +31,7 @@ const memberPermissionCodes = new Set([
   "product:write",
   "device:read",
   "device:write",
+  "device:control",
   "ota:read",
   "ota:write",
   "ota:execute",

@@ -152,3 +152,15 @@ MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo D
 ```
 
 两个 demo 都会在连接成功后订阅属性设置和服务调用 Topic，并上报一条属性数据。收到属性设置后，会再次上报属性；收到服务调用后，会自动向对应的 reply Topic 回复 `code=0`。
+
+## 控制下发测试
+
+保持 Python 或 C demo 运行，然后在控制台打开设备详情页，使用“控制下发”面板发送服务调用：
+
+```json
+{
+  "power": true
+}
+```
+
+服务标识可以使用 `setSwitch`。demo 收到 `/thing/service/setSwitch/invoke` 后会发布 `/thing/service/setSwitch/reply`，命令记录会更新为成功。
