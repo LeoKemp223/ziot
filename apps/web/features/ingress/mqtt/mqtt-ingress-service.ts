@@ -122,10 +122,12 @@ function topicMatchesOwnDevice(
 }
 
 function canSubscribe(topic: string, username: MqttUsername): boolean {
+  const ownPropertySetTopic = `/sys/${username.productKey}/${username.deviceKey}/thing/property/set`;
   const ownServicePrefix = `/sys/${username.productKey}/${username.deviceKey}/thing/service/`;
   const ownOtaPrefix = `/ota/${username.productKey}/${username.deviceKey}/upgrade/`;
 
   return (
+    topic === ownPropertySetTopic ||
     topic === `${ownServicePrefix}+/invoke` ||
     topic === `${ownServicePrefix}#` ||
     topic === `${ownOtaPrefix}notify` ||

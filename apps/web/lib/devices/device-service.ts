@@ -167,6 +167,14 @@ export async function listDeviceTopics(
       description: "设备发布当前属性值，平台写入 reported 状态。"
     },
     {
+      key: "property-set",
+      name: "属性设置下发",
+      direction: "cloud_to_device",
+      operation: "subscribe",
+      topic: deviceTopic(device, "thing/property/set"),
+      description: "设备订阅平台下发的属性设置请求。"
+    },
+    {
       key: "event-post",
       name: "事件上报",
       direction: "device_to_cloud",
@@ -184,11 +192,11 @@ export async function listDeviceTopics(
     },
     {
       key: "service-invoke",
-      name: "服务调用",
+      name: "控制下发 / 服务调用",
       direction: "cloud_to_device",
       operation: "subscribe",
       topic: deviceTopic(device, "thing/service/+/invoke"),
-      description: "设备订阅平台下发的服务调用指令。"
+      description: "设备订阅平台下发的服务或动作类控制指令。"
     },
     {
       key: "service-reply",

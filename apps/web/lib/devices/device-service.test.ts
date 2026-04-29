@@ -244,6 +244,11 @@ describe("device service", () => {
         topic: "/sys/pk_demo/dk_demo/thing/property/post"
       }),
       expect.objectContaining({
+        key: "property-set",
+        operation: "subscribe",
+        topic: "/sys/pk_demo/dk_demo/thing/property/set"
+      }),
+      expect.objectContaining({
         key: "event-post",
         operation: "publish",
         topic: "/sys/pk_demo/dk_demo/thing/event/post"

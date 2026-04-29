@@ -856,12 +856,20 @@ HTTP 状态码：`200`
     "description": "设备发布当前属性值，平台写入 reported 状态。"
   },
   {
+    "key": "property-set",
+    "name": "属性设置下发",
+    "direction": "cloud_to_device",
+    "operation": "subscribe",
+    "topic": "/sys/pk_demo/dk_demo/thing/property/set",
+    "description": "设备订阅平台下发的属性设置请求。"
+  },
+  {
     "key": "service-invoke",
-    "name": "服务调用",
+    "name": "控制下发 / 服务调用",
     "direction": "cloud_to_device",
     "operation": "subscribe",
     "topic": "/sys/pk_demo/dk_demo/thing/service/+/invoke",
-    "description": "设备订阅平台下发的服务调用指令。"
+    "description": "设备订阅平台下发的服务或动作类控制指令。"
   }
 ]
 ```
@@ -871,9 +879,10 @@ HTTP 状态码：`200`
 | 名称 | 方向 | 权限 | Topic |
 | --- | --- | --- | --- |
 | 属性上报 | 设备到平台 | publish | `/sys/{product_key}/{device_key}/thing/property/post` |
+| 属性设置下发 | 平台到设备 | subscribe | `/sys/{product_key}/{device_key}/thing/property/set` |
 | 事件上报 | 设备到平台 | publish | `/sys/{product_key}/{device_key}/thing/event/post` |
 | 日志上报 | 设备到平台 | publish | `/sys/{product_key}/{device_key}/thing/log/post` |
-| 服务调用 | 平台到设备 | subscribe | `/sys/{product_key}/{device_key}/thing/service/+/invoke` |
+| 控制下发 / 服务调用 | 平台到设备 | subscribe | `/sys/{product_key}/{device_key}/thing/service/+/invoke` |
 | 服务回执 | 设备到平台 | publish | `/sys/{product_key}/{device_key}/thing/service/{identifier}/reply` |
 
 ### `GET /api/v1/device-groups`
@@ -965,7 +974,7 @@ EMQX HTTP 授权回调。请求体示例：
 - 发布到本设备的属性、事件、日志上报 Topic。
 - 发布到本设备的服务回复 Topic。
 - 发布到本设备的 OTA 进度/结果 Topic。
-- 订阅本设备的服务调用和 OTA 通知 Topic。
+- 订阅本设备的属性设置、服务调用和 OTA 通知 Topic。
 
 跨设备 Topic、未知 Topic 或禁用设备返回 `deny`。
 

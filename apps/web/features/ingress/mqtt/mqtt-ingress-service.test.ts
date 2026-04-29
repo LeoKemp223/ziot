@@ -127,6 +127,14 @@ describe("mqtt ingress service", () => {
       authorizeMqttAction(db, {
         username: "pk_demo:dk_demo",
         action: "subscribe",
+        topic: "/sys/pk_demo/dk_demo/thing/property/set"
+      })
+    ).resolves.toEqual({ result: "allow" });
+
+    await expect(
+      authorizeMqttAction(db, {
+        username: "pk_demo:dk_demo",
+        action: "subscribe",
         topic: "/sys/pk_demo/dk_demo/thing/service/+/invoke"
       })
     ).resolves.toEqual({ result: "allow" });

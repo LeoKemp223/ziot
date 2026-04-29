@@ -11,6 +11,15 @@ describe("topics", () => {
     });
   });
 
+  it("parses property set topics", () => {
+    expect(parseTopic("/sys/pk_001/dk_001/thing/property/set")).toEqual({
+      namespace: "sys",
+      productKey: "pk_001",
+      deviceKey: "dk_001",
+      messageType: "property.set"
+    });
+  });
+
   it("parses service reply topics", () => {
     expect(parseTopic("/sys/pk_001/dk_001/thing/service/setSwitch/reply"))
       .toEqual({

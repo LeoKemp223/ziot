@@ -27,6 +27,15 @@ export function parseTopic(topic: string): ParsedTopic | null {
       };
     }
 
+    if (parts.length === 6 && parts[4] === "property" && parts[5] === "set") {
+      return {
+        namespace: "sys",
+        productKey: parts[1] ?? "",
+        deviceKey: parts[2] ?? "",
+        messageType: "property.set"
+      };
+    }
+
     if (parts.length === 6 && parts[4] === "event" && parts[5] === "post") {
       return {
         namespace: "sys",

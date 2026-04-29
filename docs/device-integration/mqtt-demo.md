@@ -73,7 +73,13 @@ DATABASE_URL=postgresql://ziot:ziot@localhost:5432/ziot pnpm --filter @ziot/db s
 /sys/{product_key}/{device_key}/thing/log/post
 ```
 
-服务调用订阅：
+属性设置下发订阅：
+
+```text
+/sys/{product_key}/{device_key}/thing/property/set
+```
+
+控制下发 / 服务调用订阅：
 
 ```text
 /sys/{product_key}/{device_key}/thing/service/+/invoke
