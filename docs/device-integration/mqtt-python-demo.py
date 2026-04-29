@@ -17,6 +17,7 @@ USERNAME = f"{PRODUCT_KEY}:{DEVICE_KEY}"
 PASSWORD = DEVICE_SECRET
 
 SERVICE_INVOKE_TOPIC = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/service/+/invoke"
+PROPERTY_SET_TOPIC = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/property/set"
 PROPERTY_POST_TOPIC = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/property/post"
 
 
@@ -34,17 +35,11 @@ def service_identifier(topic):
     return "unknown"
 
 
-def on_connect(client, userdata, flags, reason_code, properties=None):
-    if reason_code != 0 and str(reason_code) != "Success":
-        print(f"connect failed reason_code={reason_code}")
-        return
-
-    print(f"connected username={USERNAME}")
-    client.subscribe(SERVICE_INVOKE_TOPIC, qos=1)
-
+def publish_property(client, params=None):
     payload = {
         "id": str(int(time.time() * 1000)),
-        "params": {
+        "params": params
+        or {
             "temperature": 23.6,
             "humidity": 58,
         },
@@ -53,9 +48,32 @@ def on_connect(client, userdata, flags, reason_code, properties=None):
     print(f"published property topic={PROPERTY_POST_TOPIC}")
 
 
+def on_connect(client, userdata, flags, reason_code, properties=None):
+    if reason_code != 0 and str(reason_code) != "Success":
+        print(f"connect failed reason_code={reason_code}")
+        return
+
+    print(f"connected username={USERNAME}")
+    client.subscribe(SERVICE_INVOKE_TOPIC, qos=1)
+    print(f"subscribed topic={SERVICE_INVOKE_TOPIC}")
+    client.subscribe(PROPERTY_SET_TOPIC, qos=1)
+    print(f"subscribed topic={PROPERTY_SET_TOPIC}")
+
+    publish_property(client)
+
+
 def on_message(client, userdata, message):
     payload_text = message.payload.decode("utf-8", errors="replace")
-    print(f"command topic={message.topic} payload={payload_text}")
+    print(f"downlink topic={message.topic} payload={payload_text}")
+
+    if message.topic == PROPERTY_SET_TOPIC:
+        try:
+            body = json.loads(payload_text)
+            params = body.get("params") if isinstance(body, dict) else None
+            publish_property(client, params if isinstance(params, dict) else None)
+        except json.JSONDecodeError:
+            publish_property(client)
+        return
 
     identifier = service_identifier(message.topic)
     reply_topic = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/service/{identifier}/reply"

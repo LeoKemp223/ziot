@@ -151,4 +151,4 @@ gcc docs/device-integration/mqtt-c-demo.c \
 MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-mqtt-c-demo
 ```
 
-两个 demo 都会在连接成功后订阅服务调用 Topic，并上报一条属性数据。收到服务调用后，会自动向对应的 reply Topic 回复 `code=0`。
+两个 demo 都会在连接成功后订阅属性设置和服务调用 Topic，并上报一条属性数据。收到属性设置后，会再次上报属性；收到服务调用后，会自动向对应的 reply Topic 回复 `code=0`。

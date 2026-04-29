@@ -177,11 +177,10 @@ static int send_connect(int sock, const struct demo_config *config)
     return 0;
 }
 
-static int subscribe_commands(int sock, const struct demo_config *config)
+static int subscribe_topic(int sock, const char *topic_text)
 {
     unsigned char buffer[MQTT_BUFFER_SIZE];
     MQTTString topic = MQTTString_initializer;
-    char topic_text[256];
     int req_qos = 0;
     int len;
     int packet_type;
@@ -189,13 +188,7 @@ static int subscribe_commands(int sock, const struct demo_config *config)
     int subcount = 0;
     int granted_qos = 0;
 
-    build_topic(
-        topic_text,
-        sizeof(topic_text),
-        config->product_key,
-        config->device_key,
-        "thing/service/+/invoke");
-    topic.cstring = topic_text;
+    topic.cstring = (char *)topic_text;
 
     len = MQTTSerialize_subscribe(buffer, sizeof(buffer), 0, 1, 1, &topic, &req_qos);
     if (len <= 0 || send_all(sock, buffer, len) != len) {
@@ -216,6 +209,31 @@ static int subscribe_commands(int sock, const struct demo_config *config)
 
     printf("subscribed topic=%s qos=%d\n", topic_text, granted_qos);
     return 0;
+}
+
+static int subscribe_downlinks(int sock, const struct demo_config *config)
+{
+    char property_set_topic[256];
+    char service_invoke_topic[256];
+
+    build_topic(
+        property_set_topic,
+        sizeof(property_set_topic),
+        config->product_key,
+        config->device_key,
+        "thing/property/set");
+    build_topic(
+        service_invoke_topic,
+        sizeof(service_invoke_topic),
+        config->product_key,
+        config->device_key,
+        "thing/service/+/invoke");
+
+    if (subscribe_topic(sock, property_set_topic) != 0) {
+        return -1;
+    }
+
+    return subscribe_topic(sock, service_invoke_topic);
 }
 
 static int publish_text(int sock, const char *topic_text, const char *payload)
@@ -336,6 +354,20 @@ static int reply_service_command(
     return 0;
 }
 
+static int is_property_set_topic(const struct demo_config *config, const char *topic_text)
+{
+    char property_set_topic[256];
+
+    build_topic(
+        property_set_topic,
+        sizeof(property_set_topic),
+        config->product_key,
+        config->device_key,
+        "thing/property/set");
+
+    return strcmp(topic_text, property_set_topic) == 0;
+}
+
 static int handle_publish(int sock, const struct demo_config *config, unsigned char *buffer)
 {
     unsigned char dup = 0;
@@ -362,13 +394,17 @@ static int handle_publish(int sock, const struct demo_config *config, unsigned c
     }
 
     mqtt_string_to_c(&topic, topic_text, sizeof(topic_text));
-    printf("command topic=%s payload=%.*s\n", topic_text, payload_len, payload);
+    printf("downlink topic=%s payload=%.*s\n", topic_text, payload_len, payload);
 
     if (qos == 1) {
         len = MQTTSerialize_ack(buffer, MQTT_BUFFER_SIZE, PUBACK, 0, packetid);
         if (len <= 0 || send_all(sock, buffer, len) != len) {
             return -1;
         }
+    }
+
+    if (is_property_set_topic(config, topic_text)) {
+        return publish_property(sock, config);
     }
 
     return reply_service_command(sock, config, topic_text);
@@ -405,7 +441,7 @@ int main(void)
     }
 
     if (send_connect(active_socket, &config) != 0 ||
-        subscribe_commands(active_socket, &config) != 0 ||
+        subscribe_downlinks(active_socket, &config) != 0 ||
         publish_property(active_socket, &config) != 0) {
         close(active_socket);
         return 1;
