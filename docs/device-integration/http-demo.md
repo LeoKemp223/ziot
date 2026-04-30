@@ -6,7 +6,7 @@ HTTP 设备接入用于不保持 MQTT 长连接的设备。默认示例使用 se
 | --- | --- |
 | Base URL | `http://localhost:3000` |
 | Product Key | `pk_demo` |
-| Device Key | `dk_mqtt_demo` |
+| Device Key | `dk_http_demo` |
 | Device Secret | `DeviceSecret123` |
 
 ## 认证头
@@ -107,7 +107,7 @@ pnpm --filter @ziot/device-simulator http
 指定设备参数：
 
 ```bash
-HTTP_DEVICE_API_URL=http://localhost:3000 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 pnpm --filter @ziot/device-simulator http
+HTTP_DEVICE_API_URL=http://localhost:3000 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_http_demo DEVICE_SECRET=DeviceSecret123 pnpm --filter @ziot/device-simulator http
 ```
 
 模拟器会执行一次属性上报，拉取待处理命令并逐条回复成功；如果存在当前 OTA 任务，还会依次上报下载、安装和成功结果。
@@ -125,7 +125,7 @@ python3 docs/device-integration/http-python-demo.py
 指定设备参数：
 
 ```bash
-HTTP_DEVICE_API_URL=http://localhost:3000 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/http-python-demo.py
+HTTP_DEVICE_API_URL=http://localhost:3000 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_http_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/http-python-demo.py
 ```
 
 ## C Demo
@@ -153,7 +153,7 @@ gcc docs/device-integration/http-c-demo.c -lcrypto -o /tmp/ziot-http-c-demo
 指定设备参数：
 
 ```bash
-HTTP_DEVICE_API_URL=http://localhost:3000 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-http-c-demo
+HTTP_DEVICE_API_URL=http://localhost:3000 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_http_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-http-c-demo
 ```
 
 Python 和 C demo 都会执行一次属性上报，然后拉取待处理命令并逐条回复成功。C demo 为轻量示例，仅支持本地明文 `http://`，不支持 `https://`。

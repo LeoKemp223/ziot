@@ -1,0 +1,130 @@
+# Private Deployment Guide
+
+This guide starts the ZiOT MVP on one private Docker Compose host.
+
+## Host Profile
+
+- 2 CPU cores, 4 GB RAM, 70 GB disk.
+- Docker Engine with Compose v2.
+- Node.js and pnpm only needed for local development commands outside Compose.
+- Keep EMQX Dashboard, PostgreSQL, Redis, and MinIO Console on a private network.
+
+## Start The Stack
+
+```bash
+docker compose -f deploy/docker-compose.yml up -d
+```
+
+Run database migration and seed data:
+
+```bash
+DATABASE_URL=postgresql://ziot:ziot@localhost:5432/ziot pnpm --filter @ziot/db prisma:generate
+DATABASE_URL=postgresql://ziot:ziot@localhost:5432/ziot pnpm --filter @ziot/db seed
+```
+
+Configure EMQX rule-engine callbacks:
+
+```bash
+scripts/setup-emqx-webhook.sh
+```
+
+Default admin account:
+
+| Field | Value |
+| --- | --- |
+| Account | `admin@example.com` |
+| Password | `Admin123456` |
+
+Default operator account:
+
+| Field | Value |
+| --- | --- |
+| Account | `operator@example.com` |
+| Password | `Operator123456` |
+
+Open the console:
+
+```text
+http://localhost:3000
+```
+
+## Environment
+
+Set production secrets before exposing the service:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection URL |
+| `REDIS_URL` | Redis connection URL |
+| `JWT_SECRET` | Session token signing secret |
+| `PUBLIC_APP_URL` | Public console URL |
+| `EMQX_API_URL` | EMQX management API URL reachable by web |
+| `EMQX_DASHBOARD_USERNAME` | EMQX API user |
+| `EMQX_DASHBOARD_PASSWORD` | EMQX API password |
+| `MINIO_ENDPOINT` | MinIO/S3 endpoint |
+| `MINIO_BUCKET` | Firmware bucket |
+| `MINIO_ACCESS_KEY` | Object storage access key |
+| `MINIO_SECRET_KEY` | Object storage secret key |
+
+## HTTPS Reverse Proxy
+
+Use `deploy/nginx/nginx.conf` as the HTTPS reverse proxy sample. Replace
+`ziot.example.com` and mount certificates at:
+
+```text
+/etc/nginx/certs/fullchain.pem
+/etc/nginx/certs/privkey.pem
+```
+
+Only expose:
+
+- `80` and `443` for the web console and API.
+- `1883` for MQTT if devices connect directly to this host.
+
+Keep `18083` bound to `127.0.0.1` or reachable only through VPN/SSH tunnel.
+
+## Health Checks
+
+Compose includes health checks for:
+
+- PostgreSQL: `pg_isready`
+- Redis: `redis-cli ping`
+- EMQX: `emqx ctl status`
+- MinIO: `mc ready local`
+- Web: `GET /api/v1/health`
+- Worker: process check for the worker dev process
+
+Check status:
+
+```bash
+docker compose -f deploy/docker-compose.yml ps
+```
+
+## Smoke Test
+
+After the stack is up and EMQX webhooks are configured:
+
+```bash
+pnpm seed:demo
+pnpm smoke
+```
+
+The smoke test covers admin login, invitation registration, product/device
+creation, MQTT connect and property report, command control, HTTP property
+report, and OTA progress.
+
+## Backup
+
+Create a PostgreSQL custom-format backup:
+
+```bash
+scripts/backup-db.sh
+```
+
+Restore from a backup:
+
+```bash
+scripts/restore-db.sh backups/postgres/ziot-YYYYMMDDTHHMMSSZ.dump
+```
+
+See `docs/deployment/backup-restore.md` for details.

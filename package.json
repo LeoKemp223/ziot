@@ -10,7 +10,12 @@
     "test:watch": "vitest",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "seed:demo": "pnpm --filter @ziot/db exec tsx ../../scripts/seed-demo-data.ts",
+    "smoke": "pnpm --filter @ziot/device-simulator exec tsx ../../scripts/run-smoke-tests.ts",
+    "smoke:lightweight": "SMOKE_MQTT_CONNECTIONS=100 SMOKE_MESSAGES_PER_SECOND=5 SMOKE_DURATION_SECONDS=300 SMOKE_COMMANDS=20 pnpm --filter @ziot/device-simulator exec tsx ../../scripts/run-pressure-smoke.ts",
+    "pressure:mvp": "SMOKE_MQTT_CONNECTIONS=300 SMOKE_MESSAGES_PER_SECOND=15 SMOKE_DURATION_SECONDS=900 SMOKE_COMMANDS=50 pnpm --filter @ziot/device-simulator exec tsx ../../scripts/run-pressure-smoke.ts",
+    "pressure:capacity": "SMOKE_MQTT_CONNECTIONS=500 SMOKE_MESSAGES_PER_SECOND=20 SMOKE_DURATION_SECONDS=900 SMOKE_COMMANDS=0 pnpm --filter @ziot/device-simulator exec tsx ../../scripts/run-pressure-smoke.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

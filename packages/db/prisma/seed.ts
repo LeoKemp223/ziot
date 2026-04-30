@@ -40,6 +40,7 @@ const memberPermissionCodes = new Set([
 
 async function main() {
   const password_hash = await bcrypt.hash("Admin123456", 10);
+  const operator_password_hash = await bcrypt.hash("Operator123456", 10);
 
   await prisma.organization.upsert({
     where: { id: "org_default" },
@@ -58,6 +59,19 @@ async function main() {
       account: "admin@example.com",
       password_hash,
       display_name: "平台管理员"
+    }
+  });
+
+  await prisma.user.upsert({
+    where: { account: "operator@example.com" },
+    update: {
+      display_name: "普通操作员"
+    },
+    create: {
+      id: "usr_operator",
+      account: "operator@example.com",
+      password_hash: operator_password_hash,
+      display_name: "普通操作员"
     }
   });
 
@@ -108,6 +122,23 @@ async function main() {
       user_id: "usr_admin",
       org_id: "org_default",
       role_id: adminRole.id
+    }
+  });
+
+  await prisma.userOrgRole.upsert({
+    where: {
+      user_id_org_id_role_id: {
+        user_id: "usr_operator",
+        org_id: "org_default",
+        role_id: memberRole.id
+      }
+    },
+    update: {},
+    create: {
+      id: "uor_operator_default",
+      user_id: "usr_operator",
+      org_id: "org_default",
+      role_id: memberRole.id
     }
   });
 

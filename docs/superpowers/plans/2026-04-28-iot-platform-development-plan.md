@@ -815,25 +815,25 @@ Acceptance:
 - Create: `scripts/seed-demo-data.ts`
 - Create: `scripts/run-smoke-tests.ts`
 
-- [ ] Add Nginx HTTPS reverse proxy sample config.
-- [ ] Add web, worker, EMQX, PostgreSQL, Redis, and MinIO health checks.
-- [ ] Add lightweight Docker Compose resource limits for 2 CPU cores and 4 GB RAM.
-- [ ] Add PostgreSQL lightweight config with `shared_buffers=256MB`, `work_mem=4MB`, `maintenance_work_mem=128MB`, and `max_connections=30`.
-- [ ] Add Redis lightweight config with `maxmemory=256mb` and `maxmemory-policy=allkeys-lru`.
-- [ ] Add Docker log rotation config with 50MB max file size and 3 retained files.
-- [ ] Add EMQX lightweight config and keep Dashboard restricted to internal network or VPN.
-- [ ] Add database backup script and restore instructions.
-- [ ] Add seed demo data script for one organization, one product, one MQTT device, one HTTP device, and one operator user.
-- [ ] Add smoke test script for registration, login, product creation, device creation, MQTT connect, property report, command control, HTTP report, and OTA progress.
-- [ ] Write API integration guide in `docs/api/`.
-- [ ] Write device MQTT and HTTP integration guide in `docs/device-integration/`.
-- [ ] Write private deployment guide in `docs/deployment/`.
-- [ ] Write lightweight sizing guide for 2 CPU cores, 4 GB RAM, and 70 GB disk.
-- [ ] Run local smoke tests.
+- [x] Add Nginx HTTPS reverse proxy sample config.
+- [x] Add web, worker, EMQX, PostgreSQL, Redis, and MinIO health checks.
+- [x] Add lightweight Docker Compose resource limits for 2 CPU cores and 4 GB RAM.
+- [x] Add PostgreSQL lightweight config with `shared_buffers=256MB`, `work_mem=4MB`, `maintenance_work_mem=128MB`, and `max_connections=30`.
+- [x] Add Redis lightweight config with `maxmemory=256mb` and `maxmemory-policy=allkeys-lru`.
+- [x] Add Docker log rotation config with 50MB max file size and 3 retained files.
+- [x] Add EMQX lightweight config and keep Dashboard restricted to internal network or VPN.
+- [x] Add database backup script and restore instructions.
+- [x] Add seed demo data script for one organization, one product, one MQTT device, one HTTP device, and one operator user.
+- [x] Add smoke test script for registration, login, product creation, device creation, MQTT connect, property report, command control, HTTP report, and OTA progress.
+- [x] Write API integration guide in `docs/api/`.
+- [x] Write device MQTT and HTTP integration guide in `docs/device-integration/`.
+- [x] Write private deployment guide in `docs/deployment/`.
+- [x] Write lightweight sizing guide for 2 CPU cores, 4 GB RAM, and 70 GB disk.
+- [x] Run local smoke tests.
 - [ ] Run lightweight pressure smoke: 100 MQTT connections, 5 messages per second for 5 minutes, and 20 sync commands.
 - [ ] Run MVP acceptance pressure test: 300 MQTT connections, 15 messages per second for 15 minutes, and 50 sync commands.
 - [ ] Run non-blocking capacity exploration: 500 MQTT connections and 20 messages per second, recording bottlenecks without blocking MVP release if the acceptance pressure test passes.
-- [ ] Commit: `chore: add lightweight deployment hardening`.
+- [x] Commit: `chore: add lightweight deployment hardening`.
 
 Acceptance:
 
