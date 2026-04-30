@@ -42,9 +42,6 @@ export function ConsoleHeader() {
         >
           <PanelLeft className="h-4 w-4" />
         </button>
-        <div className="text-sm font-semibold text-slate-950">
-          ZIOT Console
-        </div>
       </div>
       <div className="flex items-center gap-2">
         <a
