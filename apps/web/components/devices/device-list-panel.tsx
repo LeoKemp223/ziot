@@ -25,8 +25,21 @@ type ApiResponse<T> = {
   data?: T;
 };
 
+type Pagination = {
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+};
+
 type ProductsResponse = ApiResponse<{
   items: ProductDto[];
+  pagination: Pagination;
+}>;
+
+type DevicesResponse = ApiResponse<{
+  items: DeviceItem[];
+  pagination: Pagination;
 }>;
 
 export function DeviceCreateForm() {
@@ -43,7 +56,7 @@ export function DeviceCreateForm() {
     setError("");
 
     try {
-      const response = await fetch("/api/v1/products", {
+      const response = await fetch("/api/v1/products?page_size=100", {
         headers: { accept: "application/json" }
       });
       const body = (await response.json()) as ProductsResponse;
@@ -227,28 +240,42 @@ export function DeviceListPanel() {
   const [devices, setDevices] = useState<DeviceItem[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    page_size: 20,
+    total: 0,
+    total_pages: 1
+  });
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
-  async function loadData(showLoading = true, productId = selectedProductId) {
+  async function loadData(
+    showLoading = true,
+    productId = selectedProductId,
+    page = pagination.page
+  ) {
     if (showLoading) {
       setLoading(true);
     }
     setError("");
 
-    const query = productId
-      ? `?product_id=${encodeURIComponent(productId)}`
-      : "";
+    const params = new URLSearchParams({
+      page: String(page),
+      page_size: String(pagination.page_size)
+    });
+    if (productId) {
+      params.set("product_id", productId);
+    }
 
     try {
       const [devicesResponse, productsResponse] = await Promise.all([
-        fetch(`/api/v1/devices${query}`),
-        fetch("/api/v1/products", {
+        fetch(`/api/v1/devices?${params.toString()}`),
+        fetch("/api/v1/products?page_size=100", {
           headers: { accept: "application/json" }
         })
       ]);
-      const devicesBody = (await devicesResponse.json()) as ApiResponse<DeviceItem[]>;
+      const devicesBody = (await devicesResponse.json()) as DevicesResponse;
       const productsBody = (await productsResponse.json()) as ProductsResponse;
 
       if (!devicesResponse.ok || devicesBody.code !== 0 || !devicesBody.data) {
@@ -261,7 +288,8 @@ export function DeviceListPanel() {
         return;
       }
 
-      setDevices(devicesBody.data);
+      setDevices(devicesBody.data.items);
+      setPagination(devicesBody.data.pagination);
       setProducts(productsBody.data.items);
     } catch {
       setError("请求失败，请确认 Web 服务状态。");
@@ -307,7 +335,13 @@ export function DeviceListPanel() {
         return;
       }
 
-      await loadData();
+      await loadData(
+        true,
+        selectedProductId,
+        devices.length === 1 && pagination.page > 1
+          ? pagination.page - 1
+          : pagination.page
+      );
     } catch {
       setError("删除设备失败，请稍后重试。");
     } finally {
@@ -332,7 +366,7 @@ export function DeviceListPanel() {
         return;
       }
 
-      await loadData();
+      await loadData(true, selectedProductId, pagination.page);
     } catch {
       setError("更新设备失败，请稍后重试。");
     } finally {
@@ -341,13 +375,13 @@ export function DeviceListPanel() {
   }
 
   useEffect(() => {
-    void loadData();
+    void loadData(true, selectedProductId, 1);
 
     const timer = window.setInterval(() => {
       void loadData(false);
     }, 5000);
     const refreshDevices = () => {
-      void loadData();
+      void loadData(true, selectedProductId, 1);
     };
     window.addEventListener("ziot:devices:changed", refreshDevices);
 
@@ -367,7 +401,10 @@ export function DeviceListPanel() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <select
             className="h-8 min-w-[220px] rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-            onChange={(event) => setSelectedProductId(event.currentTarget.value)}
+            onChange={(event) => {
+              setPagination((current) => ({ ...current, page: 1 }));
+              setSelectedProductId(event.currentTarget.value);
+            }}
             value={selectedProductId}
           >
             <option value="">全部产品</option>
@@ -380,7 +417,7 @@ export function DeviceListPanel() {
           <button
             className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-60"
             disabled={loading}
-            onClick={() => void loadData()}
+            onClick={() => void loadData(true, selectedProductId, pagination.page)}
             type="button"
           >
             <RefreshCw
@@ -389,7 +426,7 @@ export function DeviceListPanel() {
             刷新
           </button>
           <div className="rounded-md bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-            {devices.length} 台设备
+            {pagination.total} 台设备
           </div>
         </div>
       </div>
@@ -495,7 +532,49 @@ export function DeviceListPanel() {
           </table>
         </div>
       )}
+      <PaginationBar
+        disabled={loading}
+        onPageChange={(page) => void loadData(true, selectedProductId, page)}
+        pagination={pagination}
+      />
     </section>
+  );
+}
+
+function PaginationBar({
+  disabled,
+  onPageChange,
+  pagination
+}: {
+  disabled: boolean;
+  onPageChange: (page: number) => void;
+  pagination: Pagination;
+}) {
+  return (
+    <div className="flex items-center justify-between border-t border-slate-200 px-5 py-4">
+      <div className="text-sm text-slate-500">
+        第 {pagination.page} / {pagination.total_pages} 页，共{" "}
+        {pagination.total} 条
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          className="h-8 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+          disabled={disabled || pagination.page <= 1}
+          onClick={() => onPageChange(pagination.page - 1)}
+          type="button"
+        >
+          上一页
+        </button>
+        <button
+          className="h-8 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+          disabled={disabled || pagination.page >= pagination.total_pages}
+          onClick={() => onPageChange(pagination.page + 1)}
+          type="button"
+        >
+          下一页
+        </button>
+      </div>
+    </div>
   );
 }
 

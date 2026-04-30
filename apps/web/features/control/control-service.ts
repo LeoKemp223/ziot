@@ -518,21 +518,39 @@ export async function listDeviceCommands(
   input: AccessScope & {
     orgId: string;
     deviceId: string;
+    page?: number;
+    pageSize?: number;
   }
 ) {
   await expireTimedOutCommands(db);
   await findDeviceForControl(db, input);
+  const page = Math.max(1, Math.floor(Number(input.page ?? 1)) || 1);
+  const pageSize = Math.min(
+    100,
+    Math.max(1, Math.floor(Number(input.pageSize ?? 20)) || 20)
+  );
+  const where = {
+    org_id: input.orgId,
+    device_id: input.deviceId
+  };
+  const total = await db.deviceCommand.count({ where });
   const commands = await db.deviceCommand.findMany({
-    where: {
-      org_id: input.orgId,
-      device_id: input.deviceId
-    },
+    where,
     orderBy: { created_at: "desc" },
-    take: 20,
+    skip: (page - 1) * pageSize,
+    take: pageSize,
     include: { device: { include: { product: true } } }
   });
 
-  return commands.map((command: any) => mapCommand(command));
+  return {
+    items: commands.map((command: any) => mapCommand(command)),
+    pagination: {
+      page,
+      page_size: pageSize,
+      total,
+      total_pages: Math.max(1, Math.ceil(total / pageSize))
+    }
+  };
 }
 
 export async function getCommand(

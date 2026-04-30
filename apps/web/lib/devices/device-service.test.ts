@@ -165,6 +165,7 @@ describe("device service", () => {
   it("scopes device lists to the creator when access is not organization-wide", async () => {
     const db = {
       device: {
+        count: vi.fn().mockResolvedValue(1),
         findMany: vi.fn().mockResolvedValue([device({ created_by: "usr_member" })])
       }
     };
@@ -175,8 +176,17 @@ describe("device service", () => {
       canAccessAll: false
     });
 
+    expect(db.device.count).toHaveBeenCalledWith({
+      where: {
+        org_id: "org_default",
+        deleted_at: null,
+        created_by: "usr_member"
+      }
+    });
     expect(db.device.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
+        skip: 0,
+        take: 20,
         where: {
           org_id: "org_default",
           deleted_at: null,

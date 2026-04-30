@@ -228,6 +228,7 @@ describe("control service", () => {
       },
       deviceCommand: {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        count: vi.fn().mockResolvedValue(1),
         findMany: vi.fn().mockResolvedValue([command({ status: "timeout" })]),
         findFirst: vi.fn().mockResolvedValue(command({ status: "timeout" }))
       }

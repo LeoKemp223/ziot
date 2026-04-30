@@ -34,16 +34,39 @@ type DeviceCommand = {
   created_at: string;
 };
 
+type Pagination = {
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+};
+
 type ApiResponse<T> = {
   code: number;
   message: string;
   data?: T;
 };
 
+type DevicesResponse = ApiResponse<{
+  items: DeviceItem[];
+  pagination: Pagination;
+}>;
+
+type CommandsResponse = ApiResponse<{
+  items: DeviceCommand[];
+  pagination: Pagination;
+}>;
+
 export function ControlConsolePanel() {
   const [devices, setDevices] = useState<DeviceItem[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [commands, setCommands] = useState<DeviceCommand[]>([]);
+  const [commandPagination, setCommandPagination] = useState<Pagination>({
+    page: 1,
+    page_size: 20,
+    total: 0,
+    total_pages: 1
+  });
   const [serviceOptions, setServiceOptions] = useState<
     Array<{ identifier: string; name: string }>
   >([]);
@@ -65,15 +88,17 @@ export function ControlConsolePanel() {
     setError("");
 
     try {
-      const response = await fetch("/api/v1/devices", { cache: "no-store" });
-      const body = (await response.json()) as ApiResponse<DeviceItem[]>;
+      const response = await fetch("/api/v1/devices?page_size=100", {
+        cache: "no-store"
+      });
+      const body = (await response.json()) as DevicesResponse;
 
       if (!response.ok || body.code !== 0 || !body.data) {
         setError(body.message);
         return;
       }
 
-      const loadedDevices = body.data;
+      const loadedDevices = body.data.items;
       setDevices(loadedDevices);
       setSelectedDeviceId((current) => current || loadedDevices[0]?.id || "");
     } catch {
@@ -83,24 +108,36 @@ export function ControlConsolePanel() {
     }
   }
 
-  async function loadCommands(deviceId = selectedDeviceId) {
+  async function loadCommands(deviceId = selectedDeviceId, page = commandPagination.page) {
     if (!deviceId) {
       setCommands([]);
+      setCommandPagination((current) => ({
+        ...current,
+        page: 1,
+        total: 0,
+        total_pages: 1
+      }));
       return;
     }
 
     try {
-      const response = await fetch(`/api/v1/devices/${deviceId}/commands`, {
-        cache: "no-store"
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(commandPagination.page_size)
       });
-      const body = (await response.json()) as ApiResponse<DeviceCommand[]>;
+      const response = await fetch(
+        `/api/v1/devices/${deviceId}/commands?${params.toString()}`,
+        { cache: "no-store" }
+      );
+      const body = (await response.json()) as CommandsResponse;
 
       if (!response.ok || body.code !== 0 || !body.data) {
         setError(body.message);
         return;
       }
 
-      setCommands(body.data);
+      setCommands(body.data.items);
+      setCommandPagination(body.data.pagination);
     } catch {
       setError("加载命令记录失败。");
     }
@@ -169,7 +206,7 @@ export function ControlConsolePanel() {
         return;
       }
 
-      setCommands((current) => [body.data as DeviceCommand, ...current].slice(0, 20));
+      await loadCommands(selectedDeviceId, 1);
       setMessage("控制指令已下发。");
     } catch (sendError) {
       setError(
@@ -187,7 +224,7 @@ export function ControlConsolePanel() {
   }, []);
 
   useEffect(() => {
-    void loadCommands(selectedDeviceId);
+    void loadCommands(selectedDeviceId, 1);
   }, [selectedDeviceId]);
 
   useEffect(() => {
@@ -308,7 +345,7 @@ export function ControlConsolePanel() {
           </div>
           <button
             className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50"
-            onClick={() => void loadCommands()}
+            onClick={() => void loadCommands(selectedDeviceId, commandPagination.page)}
             type="button"
           >
             <RefreshCw className="h-4 w-4" />
@@ -354,7 +391,49 @@ export function ControlConsolePanel() {
             </table>
           </div>
         )}
+        <PaginationBar
+          disabled={!selectedDeviceId}
+          onPageChange={(page) => void loadCommands(selectedDeviceId, page)}
+          pagination={commandPagination}
+        />
       </section>
+    </div>
+  );
+}
+
+function PaginationBar({
+  disabled,
+  onPageChange,
+  pagination
+}: {
+  disabled: boolean;
+  onPageChange: (page: number) => void;
+  pagination: Pagination;
+}) {
+  return (
+    <div className="flex items-center justify-between border-t border-slate-200 px-5 py-4">
+      <div className="text-sm text-slate-500">
+        第 {pagination.page} / {pagination.total_pages} 页，共{" "}
+        {pagination.total} 条
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          className="h-8 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+          disabled={disabled || pagination.page <= 1}
+          onClick={() => onPageChange(pagination.page - 1)}
+          type="button"
+        >
+          上一页
+        </button>
+        <button
+          className="h-8 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+          disabled={disabled || pagination.page >= pagination.total_pages}
+          onClick={() => onPageChange(pagination.page + 1)}
+          type="button"
+        >
+          下一页
+        </button>
+      </div>
     </div>
   );
 }

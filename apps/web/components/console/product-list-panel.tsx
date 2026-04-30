@@ -15,7 +15,15 @@ type ProductsResponse = {
   message: string;
   data?: {
     items: ProductDto[];
+    pagination: Pagination;
   };
+};
+
+type Pagination = {
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
 };
 
 type ProductMutationResponse = {
@@ -45,10 +53,16 @@ export function ProductListPanel() {
     id: string;
     name: string;
   } | null>(null);
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    page_size: 20,
+    total: 0,
+    total_pages: 1
+  });
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
 
-  async function loadProducts() {
+  async function loadProducts(page = pagination.page) {
     setState((current) => ({
       status: "loading",
       products: current.products,
@@ -56,7 +70,11 @@ export function ProductListPanel() {
     }));
 
     try {
-      const response = await fetch("/api/v1/products", {
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(pagination.page_size)
+      });
+      const response = await fetch(`/api/v1/products?${params.toString()}`, {
         headers: { accept: "application/json" }
       });
       const body = (await response.json()) as ProductsResponse;
@@ -78,6 +96,7 @@ export function ProductListPanel() {
         products: body.data.items,
         error: null
       });
+      setPagination(body.data.pagination);
       setActionError("");
     } catch {
       setState({
@@ -150,10 +169,11 @@ export function ProductListPanel() {
         throw new Error(body.message || "删除产品失败。");
       }
 
-      setState((current) => ({
-        ...current,
-        products: current.products.filter((item) => item.id !== body.data?.id)
-      }));
+      await loadProducts(
+        state.products.length === 1 && pagination.page > 1
+          ? pagination.page - 1
+          : pagination.page
+      );
 
       if (editingProduct?.id === product.id) {
         setEditingProduct(null);
@@ -171,11 +191,14 @@ export function ProductListPanel() {
     const timer = window.setTimeout(() => {
       void loadProducts();
     }, 0);
-    window.addEventListener("ziot:products:changed", loadProducts);
+    const refreshProducts = () => {
+      void loadProducts(1);
+    };
+    window.addEventListener("ziot:products:changed", refreshProducts);
 
     return () => {
       window.clearTimeout(timer);
-      window.removeEventListener("ziot:products:changed", loadProducts);
+      window.removeEventListener("ziot:products:changed", refreshProducts);
     };
   }, []);
 
@@ -202,7 +225,7 @@ export function ProductListPanel() {
             刷新
           </button>
           <div className="rounded-md bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-            {state.products.length} 个产品
+            {pagination.total} 个产品
           </div>
         </div>
       </div>
@@ -394,7 +417,49 @@ export function ProductListPanel() {
           </table>
         </div>
       )}
+      <PaginationBar
+        disabled={state.status === "loading"}
+        onPageChange={(page) => void loadProducts(page)}
+        pagination={pagination}
+      />
     </section>
+  );
+}
+
+function PaginationBar({
+  disabled,
+  onPageChange,
+  pagination
+}: {
+  disabled: boolean;
+  onPageChange: (page: number) => void;
+  pagination: Pagination;
+}) {
+  return (
+    <div className="flex items-center justify-between border-t border-slate-200 px-5 py-4">
+      <div className="text-sm text-slate-500">
+        第 {pagination.page} / {pagination.total_pages} 页，共{" "}
+        {pagination.total} 条
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          className="h-8 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+          disabled={disabled || pagination.page <= 1}
+          onClick={() => onPageChange(pagination.page - 1)}
+          type="button"
+        >
+          上一页
+        </button>
+        <button
+          className="h-8 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+          disabled={disabled || pagination.page >= pagination.total_pages}
+          onClick={() => onPageChange(pagination.page + 1)}
+          type="button"
+        >
+          下一页
+        </button>
+      </div>
+    </div>
   );
 }
 

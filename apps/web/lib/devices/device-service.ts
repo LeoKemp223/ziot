@@ -63,6 +63,22 @@ function ownerFilter(input: AccessScope) {
   return input.canAccessAll || !input.userId ? {} : { created_by: input.userId };
 }
 
+function clampPage(value: number | undefined): number {
+  if (!Number.isFinite(value) || value === undefined) {
+    return 1;
+  }
+
+  return Math.max(1, Math.floor(value));
+}
+
+function clampPageSize(value: number | undefined): number {
+  if (!Number.isFinite(value) || value === undefined) {
+    return 20;
+  }
+
+  return Math.min(100, Math.max(1, Math.floor(value)));
+}
+
 async function findProductForScope(
   db: Db,
   input: AccessScope & {
@@ -93,21 +109,39 @@ export async function listDevices(
     userId?: string;
     canAccessAll?: boolean;
     productId?: string;
+    page?: number;
+    pageSize?: number;
   }
 ) {
   await compensateOnlineStatuses(db, input.orgId);
-  const devices = await db.device.findMany({
-    where: {
-      org_id: input.orgId,
-      deleted_at: null,
-      ...ownerFilter(input),
-      ...(input.productId ? { product_id: input.productId } : {})
-    },
-    orderBy: { created_at: "desc" },
-    include: { product: true }
-  });
+  const page = clampPage(input.page);
+  const pageSize = clampPageSize(input.pageSize);
+  const where = {
+    org_id: input.orgId,
+    deleted_at: null,
+    ...ownerFilter(input),
+    ...(input.productId ? { product_id: input.productId } : {})
+  };
+  const [total, devices] = await Promise.all([
+    db.device.count({ where }),
+    db.device.findMany({
+      where,
+      orderBy: { created_at: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: { product: true }
+    })
+  ]);
 
-  return devices.map((device: any) => mapDevice(device));
+  return {
+    items: devices.map((device: any) => mapDevice(device)),
+    pagination: {
+      page,
+      page_size: pageSize,
+      total,
+      total_pages: Math.max(1, Math.ceil(total / pageSize))
+    }
+  };
 }
 
 export async function getDevice(

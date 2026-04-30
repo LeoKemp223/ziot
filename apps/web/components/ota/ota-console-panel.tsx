@@ -65,7 +65,7 @@ export function OtaConsolePanel() {
 
     try {
       const [productsResponse, firmwaresResponse, tasksResponse] = await Promise.all([
-        fetch("/api/v1/products", { cache: "no-store" }),
+        fetch("/api/v1/products?page_size=100", { cache: "no-store" }),
         fetch("/api/v1/firmwares", { cache: "no-store" }),
         fetch("/api/v1/ota/tasks", { cache: "no-store" })
       ]);
