@@ -90,14 +90,6 @@ export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
           );
         })}
       </nav>
-      <div className="border-t border-white/10 p-4">
-        <div className="rounded-md bg-white/6 p-3">
-          <div className="text-xs text-zinc-500">当前组织</div>
-          <div className="mt-1 truncate text-sm font-medium text-white">
-            默认组织
-          </div>
-        </div>
-      </div>
     </aside>
   );
 }

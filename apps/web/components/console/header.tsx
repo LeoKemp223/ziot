@@ -7,12 +7,7 @@ import { usePathname } from "next/navigation";
 type MeResponse = {
   code: number;
   data?: {
-    current_org_id: string;
     display_name: string;
-    organizations: Array<{
-      id: string;
-      name: string;
-    }>;
   };
 };
 
@@ -31,18 +26,6 @@ export function ConsoleHeader() {
       })
       .catch(() => {});
   }, []);
-
-  async function switchOrganization(orgId: string) {
-    const response = await fetch("/api/v1/me", {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ current_org_id: orgId })
-    });
-
-    if (response.ok) {
-      window.location.reload();
-    }
-  }
 
   async function logout() {
     await fetch("/api/v1/auth/logout", { method: "POST" });
@@ -85,20 +68,6 @@ export function ConsoleHeader() {
           <BookOpen className="h-4 w-4" />
           接入文档
         </a>
-        {me ? (
-          <select
-            aria-label="切换组织"
-            className="hidden h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100 md:block"
-            onChange={(event) => void switchOrganization(event.currentTarget.value)}
-            value={me.current_org_id}
-          >
-            {me.organizations.map((org) => (
-              <option key={org.id} value={org.id}>
-                {org.name}
-              </option>
-            ))}
-          </select>
-        ) : null}
         <button
           aria-label="通知"
           className="relative flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-600"
