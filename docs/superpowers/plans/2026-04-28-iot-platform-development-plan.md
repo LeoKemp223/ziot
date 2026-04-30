@@ -830,7 +830,7 @@ Acceptance:
 - [x] Write private deployment guide in `docs/deployment/`.
 - [x] Write lightweight sizing guide for 2 CPU cores, 4 GB RAM, and 70 GB disk.
 - [x] Run local smoke tests.
-- [ ] Run lightweight pressure smoke: 100 MQTT connections, 5 messages per second for 5 minutes, and 20 sync commands.
+- [x] Run lightweight pressure smoke: 100 MQTT connections, 5 messages per second for 5 minutes, and 20 sync commands.
 - [ ] Run MVP acceptance pressure test: 300 MQTT connections, 15 messages per second for 15 minutes, and 50 sync commands.
 - [ ] Run non-blocking capacity exploration: 500 MQTT connections and 20 messages per second, recording bottlenecks without blocking MVP release if the acceptance pressure test passes.
 - [x] Commit: `chore: add lightweight deployment hardening`.
