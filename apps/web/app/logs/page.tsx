@@ -2,6 +2,7 @@ import { ConsoleHeader } from "@/components/console/header";
 import { ConsoleSidebar } from "@/components/console/sidebar";
 import { navItems } from "@/components/console/dashboard-data";
 import { AuditLogPanel } from "@/components/logs/audit-log-panel";
+import { OperationsLogPanel } from "@/components/logs/operations-log-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,9 @@ export default function LogsPage() {
                   查看用户登录、资源变更、设备控制和 OTA 操作审计。
                 </p>
               </div>
+            </div>
+            <div className="mt-6">
+              <OperationsLogPanel />
             </div>
             <div className="mt-6">
               <AuditLogPanel />

@@ -7,6 +7,10 @@ import {
   signHmacSha256,
   type MqttUsername
 } from "@ziot/domain";
+import {
+  markDeviceOfflineInCache,
+  markDeviceOnlineInCache
+} from "@/lib/devices/online-status";
 
 type Db = { [key: string]: any };
 
@@ -299,6 +303,12 @@ export async function recordMqttWebhookEvent(
           last_offline_at: now
         }
   });
+
+  if (isConnected) {
+    await markDeviceOnlineInCache(device.id);
+  } else {
+    await markDeviceOfflineInCache(device.id);
+  }
 
   await db.deviceLog.create({
     data: {

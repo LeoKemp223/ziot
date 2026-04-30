@@ -4,6 +4,7 @@
     "noEmit": true,
     "paths": {
       "@ziot/config": ["../../packages/config/src"],
+      "@ziot/db": ["../../packages/db/src/client.ts"],
       "@ziot/domain": ["../../packages/domain/src"]
     }
   },

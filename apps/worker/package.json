@@ -12,6 +12,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ziot/db": "workspace:*",
+    "@ziot/domain": "workspace:*",
     "bullmq": "^5.65.1",
     "ioredis": "^5.8.2",
     "tsx": "^4.21.0",

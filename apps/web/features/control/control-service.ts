@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import Redis from "ioredis";
 
 type Db = { [key: string]: any };
 type AccessScope = {
@@ -7,7 +8,7 @@ type AccessScope = {
 };
 
 type ControlError = Error & {
-  code: 400001 | 403001 | 404001 | 500001;
+  code: 400001 | 403001 | 404001 | 409001 | 500001;
 };
 
 type CommandKind = "property_set" | "service";
@@ -16,6 +17,16 @@ type CreateCommandInput = AccessScope & {
   orgId: string;
   userId: string;
   deviceId: string;
+  kind: CommandKind;
+  identifier?: string;
+  params: unknown;
+  timeoutMs?: number;
+};
+
+type BatchCommandInput = AccessScope & {
+  orgId: string;
+  userId: string;
+  groupId: string;
   kind: CommandKind;
   identifier?: string;
   params: unknown;
@@ -33,6 +44,28 @@ function controlError(code: ControlError["code"], message: string): ControlError
 
 function id(prefix: string): string {
   return `${prefix}_${randomUUID().replaceAll("-", "").slice(0, 16)}`;
+}
+
+let redisClient: Redis | null = null;
+
+function getRedisClient() {
+  const redisUrl = process.env.REDIS_URL;
+
+  if (!redisUrl) {
+    return null;
+  }
+
+  redisClient ??= new Redis(redisUrl, {
+    lazyConnect: true,
+    maxRetriesPerRequest: 1,
+    enableOfflineQueue: false
+  });
+
+  return redisClient;
+}
+
+function commandStatusChannel(commandId: string) {
+  return `command:status:${commandId}`;
 }
 
 function ownerFilter(input: AccessScope) {
@@ -101,6 +134,10 @@ async function expireTimedOutCommands(db: Db) {
       error_message: "command timed out"
     }
   });
+}
+
+export async function expireStaleCommands(db: Db) {
+  return expireTimedOutCommands(db);
 }
 
 async function findDeviceForControl(
@@ -266,6 +303,185 @@ export async function createDeviceCommand(db: Db, input: CreateCommandInput) {
   return mapCommand(sentCommand);
 }
 
+async function publishCommandStatus(commandId: string, status: string) {
+  const redis = getRedisClient();
+
+  if (!redis) {
+    return;
+  }
+
+  await redis
+    .publish(commandStatusChannel(commandId), JSON.stringify({ command_id: commandId, status }))
+    .catch(() => undefined);
+}
+
+export async function waitForCommandTerminal(
+  db: Db,
+  input: AccessScope & {
+    orgId: string;
+    commandId: string;
+    timeoutMs: number;
+  }
+) {
+  const startedAt = Date.now();
+  const terminal = new Set(["success", "failed", "timeout", "cancelled"]);
+  const redis = getRedisClient();
+
+  if (redis) {
+    const subscriber = redis.duplicate({
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false
+    });
+    const channel = commandStatusChannel(input.commandId);
+
+    try {
+      await subscriber.subscribe(channel);
+      const result = await Promise.race([
+        new Promise<void>((resolveWait) => {
+          subscriber.on("message", (_channel, message) => {
+            try {
+              const body = JSON.parse(message) as { status?: string };
+              if (body.status && terminal.has(body.status)) {
+                resolveWait();
+              }
+            } catch {
+              resolveWait();
+            }
+          });
+        }),
+        new Promise<void>((resolveTimeout) =>
+          setTimeout(resolveTimeout, Math.min(input.timeoutMs, 120_000))
+        )
+      ]);
+      void result;
+    } catch {
+      await new Promise((resolveWait) =>
+        setTimeout(resolveWait, Math.min(input.timeoutMs, 120_000))
+      );
+    } finally {
+      await subscriber.disconnect();
+    }
+  } else {
+    while (Date.now() - startedAt < input.timeoutMs) {
+      const command = await getCommand(db, input);
+      if (terminal.has(command.status)) {
+        return command;
+      }
+      await new Promise((resolveWait) => setTimeout(resolveWait, 500));
+    }
+  }
+
+  return getCommand(db, input);
+}
+
+export async function createSyncDeviceCommand(db: Db, input: CreateCommandInput) {
+  const command = await createDeviceCommand(db, input);
+
+  return waitForCommandTerminal(db, {
+    orgId: input.orgId,
+    userId: input.userId,
+    commandId: command.id,
+    timeoutMs: normalizeTimeout(input.timeoutMs),
+    ...(input.canAccessAll !== undefined ? { canAccessAll: input.canAccessAll } : {})
+  });
+}
+
+function servicesFromThingModel(product: any): string[] {
+  const thingModel = product?.thing_model;
+
+  if (
+    typeof thingModel !== "object" ||
+    thingModel === null ||
+    !Array.isArray((thingModel as any).services)
+  ) {
+    return [];
+  }
+
+  return (thingModel as any).services
+    .map((service: any) => String(service.identifier ?? ""))
+    .filter(Boolean);
+}
+
+export async function createGroupCommands(db: Db, input: BatchCommandInput) {
+  assertJsonObject(input.params, "params");
+
+  if (input.kind === "service") {
+    assertIdentifier((input.identifier ?? "").trim());
+  }
+
+  const group = await db.deviceGroup.findFirst({
+    where: {
+      id: input.groupId,
+      org_id: input.orgId,
+      deleted_at: null,
+      ...ownerFilter(input)
+    },
+    include: {
+      product: true,
+      members: {
+        include: {
+          device: { include: { product: true } }
+        }
+      }
+    }
+  });
+
+  if (!group) {
+    throw controlError(404001, "device group not found");
+  }
+
+  const devices = group.members
+    .map((member: any) => member.device)
+    .filter((device: any) => device && !device.deleted_at);
+
+  if (devices.length === 0) {
+    throw controlError(400001, "device group is empty");
+  }
+
+  if (
+    devices.some(
+      (device: any) => (device.product_id ?? device.product?.id) !== group.product_id
+    )
+  ) {
+    throw controlError(409001, "device group contains multiple products");
+  }
+
+  if (input.kind === "service") {
+    const services = servicesFromThingModel(group.product);
+    const identifier = (input.identifier ?? "").trim();
+
+    if (services.length > 0 && !services.includes(identifier)) {
+      throw controlError(400001, "service is not defined on product thing model");
+    }
+  }
+
+  const commands = [];
+
+  for (const device of devices) {
+    commands.push(
+      await createDeviceCommand(db, {
+        orgId: input.orgId,
+        userId: input.userId,
+        deviceId: device.id,
+        kind: input.kind,
+        ...(input.canAccessAll !== undefined
+          ? { canAccessAll: input.canAccessAll }
+          : {}),
+        ...(input.identifier ? { identifier: input.identifier } : {}),
+        params: input.params,
+        ...(input.timeoutMs ? { timeoutMs: input.timeoutMs } : {})
+      })
+    );
+  }
+
+  return {
+    group_id: input.groupId,
+    total: commands.length,
+    commands
+  };
+}
+
 export async function listDeviceCommands(
   db: Db,
   input: AccessScope & {
@@ -369,6 +585,8 @@ export async function recordCommandReply(db: Db, input: CommandReplyInput) {
     },
     include: { device: { include: { product: true } } }
   });
+
+  await publishCommandStatus(updated.id, updated.status);
 
   return mapCommand(updated);
 }

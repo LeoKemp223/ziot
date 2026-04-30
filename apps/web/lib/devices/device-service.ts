@@ -1,5 +1,6 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
+import { compensateOnlineStatuses } from "./online-status";
 
 type Db = { [key: string]: any };
 type AccessScope = {
@@ -94,6 +95,7 @@ export async function listDevices(
     productId?: string;
   }
 ) {
+  await compensateOnlineStatuses(db, input.orgId);
   const devices = await db.device.findMany({
     where: {
       org_id: input.orgId,
@@ -117,6 +119,7 @@ export async function getDevice(
     deviceId: string;
   }
 ) {
+  await compensateOnlineStatuses(db, input.orgId);
   const device = await db.device.findFirst({
     where: {
       id: input.deviceId,

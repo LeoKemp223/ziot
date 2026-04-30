@@ -558,10 +558,10 @@ Verification status on 2026-04-28:
 - [x] Configure EMQX HTTP auth and ACL in `deploy/emqx` for local Docker Compose.
 - [x] Verify local EMQX callbacks use Docker service names and do not depend on `host.docker.internal`.
 - [x] Make WebHook handlers do only device status update and lifecycle log write before returning.
-- [ ] Add BullMQ retry handling for WebHook events.
-- [ ] Implement Redis online status cache.
+- [x] Add BullMQ retry handling for WebHook events.
+- [x] Implement Redis online status cache.
 - [x] Update device online, offline, last heartbeat, and device log records from WebHook events.
-- [ ] Add online status compensation using Redis online state and last heartbeat time.
+- [x] Add online status compensation using Redis online state and last heartbeat time.
 - [x] Create MQTT simulator that can connect, publish property payload, subscribe command Topic, and reply.
 - [x] Add C and Python MQTT device demos in `docs/device-integration/`.
 - [x] Add service tests for successful auth, wrong password, disabled device, wrong Topic publish, and cross-device subscription.
@@ -606,21 +606,21 @@ Verification status on 2026-04-29:
 - Modify: `apps/web/app/api/internal/emqx/webhook/route.ts`
 - Modify: `apps/web/features/devices/`
 
-- [ ] Define BullMQ jobs for property report, event report, and device log report.
-- [ ] Push MQTT report events into BullMQ.
-- [ ] Implement worker consumer for property reports.
-- [ ] Update device shadow `reported` when properties are accepted.
-- [ ] Implement worker consumer for event reports.
-- [ ] Implement worker consumer for device logs.
-- [ ] Implement device log list API with filters for org, product, device, type, level, time range, and keyword.
-- [ ] Implement command log list API with filters for org, product, device, status, time range, and keyword.
-- [ ] Implement OTA log list API with filters for org, product, device, task, status, time range, and keyword.
-- [ ] Implement device log, command log, and OTA log pages.
-- [ ] Implement device detail log tab.
-- [ ] Add retention job config for 7-day device logs, with a configurable maximum of 15 days for lightweight deployments.
-- [ ] Add tests for payload validation, oversized payload rejection, shadow version increment, and log filtering.
-- [ ] Run: `pnpm test -- --run telemetry logs`.
-- [ ] Commit: `feat: add telemetry ingestion and logs`.
+- [x] Define BullMQ jobs for property report, event report, and device log report.
+- [x] Push MQTT report events into BullMQ.
+- [x] Implement worker consumer for property reports.
+- [x] Update device shadow `reported` when properties are accepted.
+- [x] Implement worker consumer for event reports.
+- [x] Implement worker consumer for device logs.
+- [x] Implement device log list API with filters for org, product, device, type, level, time range, and keyword.
+- [x] Implement command log list API with filters for org, product, device, status, time range, and keyword.
+- [x] Implement OTA log list API with filters for org, product, device, task, status, time range, and keyword.
+- [x] Implement device log, command log, and OTA log pages.
+- [x] Implement device detail log tab.
+- [x] Add retention job config for 7-day device logs, with a configurable maximum of 15 days for lightweight deployments.
+- [x] Add tests for payload validation, oversized payload rejection, shadow version increment, and log filtering.
+- [x] Run: `pnpm test -- --run telemetry logs`.
+- [x] Commit: `feat: add telemetry ingestion and logs`.
 
 Acceptance:
 
@@ -645,22 +645,22 @@ Acceptance:
 - Create: `apps/worker/src/control/expire-commands.ts`
 - Modify: `packages/device-simulator/mqtt-simulator/`
 
-- [ ] Implement command creation with states `pending`, `sent`, `delivered`, `success`, `failed`, `timeout`, and `cancelled`.
-- [ ] Implement async command API `POST /api/v1/devices/{device_id}/commands`.
-- [ ] Implement sync command API `POST /api/v1/devices/{device_id}/commands:sync`.
-- [ ] Ensure sync command route uses Node.js runtime, not Edge runtime.
-- [ ] Implement same-product batch command API `POST /api/v1/device-groups/{group_id}/commands`.
-- [ ] Reject batch control when the group contains devices from different products or when requested service is not defined on the product thing model.
-- [ ] Publish MQTT command to `/sys/{productKey}/{deviceKey}/thing/service/{identifier}/invoke`.
-- [ ] Consume service reply Topic and update command status.
-- [ ] Use Redis to wait for sync command replies.
-- [ ] Implement worker timeout processor for stale commands.
-- [ ] Implement SSE event `command.status.changed`; do not implement WebSocket in MVP.
-- [ ] Implement control panel from thing model service definitions.
-- [ ] Implement command record list and command detail.
-- [ ] Add tests for sync success, sync timeout, async success, async timeout, offline device, duplicate reply, and unauthorized control.
-- [ ] Run: `pnpm test -- --run control`.
-- [ ] Commit: `feat: add device control lifecycle`.
+- [x] Implement command creation with states `pending`, `sent`, `delivered`, `success`, `failed`, `timeout`, and `cancelled`.
+- [x] Implement async command API `POST /api/v1/devices/{device_id}/commands`.
+- [x] Implement sync command API `POST /api/v1/devices/{device_id}/commands:sync`.
+- [x] Ensure sync command route uses Node.js runtime, not Edge runtime.
+- [x] Implement same-product batch command API `POST /api/v1/device-groups/{group_id}/commands`.
+- [x] Reject batch control when the group contains devices from different products or when requested service is not defined on the product thing model.
+- [x] Publish MQTT command to `/sys/{productKey}/{deviceKey}/thing/service/{identifier}/invoke`.
+- [x] Consume service reply Topic and update command status.
+- [x] Use Redis to wait for sync command replies.
+- [x] Implement worker timeout processor for stale commands.
+- [x] Implement SSE event `command.status.changed`; do not implement WebSocket in MVP.
+- [x] Implement control panel from thing model service definitions.
+- [x] Implement command record list and command detail.
+- [x] Add tests for sync success, sync timeout, async success, async timeout, offline device, duplicate reply, and unauthorized control.
+- [x] Run: `pnpm test -- --run control`.
+- [x] Commit: `feat: add device control lifecycle`.
 
 Acceptance:
 

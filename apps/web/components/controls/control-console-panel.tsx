@@ -5,11 +5,22 @@ import { RefreshCw, Send } from "lucide-react";
 
 type DeviceItem = {
   id: string;
+  product_id: string;
   product_name: string;
   product_key: string;
   device_key: string;
   name: string;
   online_status: string;
+};
+
+type ProductItem = {
+  id: string;
+  thing_model: {
+    services?: Array<{
+      identifier?: string;
+      name?: string;
+    }>;
+  };
 };
 
 type DeviceCommand = {
@@ -33,6 +44,9 @@ export function ControlConsolePanel() {
   const [devices, setDevices] = useState<DeviceItem[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [commands, setCommands] = useState<DeviceCommand[]>([]);
+  const [serviceOptions, setServiceOptions] = useState<
+    Array<{ identifier: string; name: string }>
+  >([]);
   const [kind, setKind] = useState<"service" | "property_set">("service");
   const [identifier, setIdentifier] = useState("setSwitch");
   const [paramsText, setParamsText] = useState("{}");
@@ -92,6 +106,38 @@ export function ControlConsolePanel() {
     }
   }
 
+  async function loadServiceOptions(device: DeviceItem | null) {
+    if (!device) {
+      setServiceOptions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/v1/products/${device.product_id}`, {
+        cache: "no-store"
+      });
+      const body = (await response.json()) as ApiResponse<ProductItem>;
+
+      if (!response.ok || body.code !== 0 || !body.data) {
+        setServiceOptions([]);
+        return;
+      }
+
+      const services = Array.isArray(body.data.thing_model?.services)
+        ? body.data.thing_model.services
+            .map((service) => ({
+              identifier: String(service.identifier ?? ""),
+              name: String(service.name ?? service.identifier ?? "")
+            }))
+            .filter((service) => service.identifier)
+        : [];
+      setServiceOptions(services);
+      setIdentifier((current) => current || services[0]?.identifier || "setSwitch");
+    } catch {
+      setServiceOptions([]);
+    }
+  }
+
   async function submitCommand(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
@@ -143,6 +189,10 @@ export function ControlConsolePanel() {
   useEffect(() => {
     void loadCommands(selectedDeviceId);
   }, [selectedDeviceId]);
+
+  useEffect(() => {
+    void loadServiceOptions(selectedDevice);
+  }, [selectedDevice]);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
@@ -196,11 +246,25 @@ export function ControlConsolePanel() {
             </Field>
             {kind === "service" ? (
               <Field label="服务标识">
-                <input
-                  className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-                  onChange={(event) => setIdentifier(event.currentTarget.value)}
-                  value={identifier}
-                />
+                {serviceOptions.length > 0 ? (
+                  <select
+                    className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                    onChange={(event) => setIdentifier(event.currentTarget.value)}
+                    value={identifier}
+                  >
+                    {serviceOptions.map((service) => (
+                      <option key={service.identifier} value={service.identifier}>
+                        {service.name || service.identifier}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                    onChange={(event) => setIdentifier(event.currentTarget.value)}
+                    value={identifier}
+                  />
+                )}
               </Field>
             ) : null}
             <Field label="参数 JSON">

@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  createGroupCommands,
   createDeviceCommand,
+  createSyncDeviceCommand,
   getCommand,
   listDeviceCommands,
   recordCommandReply
@@ -67,6 +69,7 @@ function mockEmqxFetch() {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe("control service", () => {
@@ -238,5 +241,178 @@ describe("control service", () => {
     });
 
     expect(db.deviceCommand.updateMany).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects disabled devices before publishing", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device({ status: "disabled" }))
+      }
+    };
+
+    await expect(
+      createDeviceCommand(db, {
+        orgId: "org_default",
+        userId: "usr_admin",
+        canAccessAll: true,
+        deviceId: "dev_demo",
+        kind: "service",
+        identifier: "setSwitch",
+        params: {}
+      })
+    ).rejects.toMatchObject({
+      code: 403001,
+      message: "device is disabled"
+    });
+  });
+
+  it("returns an existing terminal result for duplicate replies", async () => {
+    const db = {
+      deviceCommand: {
+        findUnique: vi.fn().mockResolvedValue(command({ status: "success" })),
+        findUniqueOrThrow: vi
+          .fn()
+          .mockResolvedValue(command({ status: "success", result: { ok: true } })),
+        update: vi.fn()
+      }
+    };
+
+    const result = await recordCommandReply(db, {
+      topic: "/sys/pk_demo/dk_demo/thing/service/setSwitch/reply",
+      payload: {
+        id: "cmd_demo",
+        code: 0,
+        data: { ok: true }
+      }
+    });
+
+    expect(result.status).toBe("success");
+    expect(db.deviceCommand.update).not.toHaveBeenCalled();
+  });
+
+  it("waits for sync command success", async () => {
+    vi.stubEnv("REDIS_URL", "");
+    mockEmqxFetch();
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device())
+      },
+      deviceCommand: {
+        create: vi.fn().mockResolvedValue(command({ status: "pending" })),
+        update: vi.fn().mockResolvedValue(command({ status: "sent" })),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findFirst: vi.fn().mockResolvedValue(command({ status: "success" }))
+      },
+      deviceShadow: {
+        update: vi.fn()
+      }
+    };
+
+    const result = await createSyncDeviceCommand(db, {
+      orgId: "org_default",
+      userId: "usr_admin",
+      canAccessAll: true,
+      deviceId: "dev_demo",
+      kind: "service",
+      identifier: "setSwitch",
+      params: {},
+      timeoutMs: 1000
+    });
+
+    expect(result.status).toBe("success");
+  });
+
+  it("returns timeout status for sync command timeout", async () => {
+    vi.stubEnv("REDIS_URL", "");
+    mockEmqxFetch();
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device())
+      },
+      deviceCommand: {
+        create: vi.fn().mockResolvedValue(command({ status: "pending" })),
+        update: vi.fn().mockResolvedValue(command({ status: "sent" })),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findFirst: vi.fn().mockResolvedValue(command({ status: "timeout" }))
+      },
+      deviceShadow: {
+        update: vi.fn()
+      }
+    };
+
+    const result = await createSyncDeviceCommand(db, {
+      orgId: "org_default",
+      userId: "usr_admin",
+      canAccessAll: true,
+      deviceId: "dev_demo",
+      kind: "service",
+      identifier: "setSwitch",
+      params: {},
+      timeoutMs: 1000
+    });
+
+    expect(result.status).toBe("timeout");
+  });
+
+  it("creates batch commands for a same-product group", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({ token: "token_demo" })
+      });
+    vi.stubGlobal("fetch", fetchMock);
+    const db = {
+      deviceGroup: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "grp_demo",
+          org_id: "org_default",
+          product_id: "prd_demo",
+          product: {
+            id: "prd_demo",
+            product_key: "pk_demo",
+            thing_model: {
+              services: [{ identifier: "setSwitch" }]
+            }
+          },
+          members: [
+            { device: device({ id: "dev_1" }) },
+            { device: device({ id: "dev_2" }) }
+          ]
+        })
+      },
+      device: {
+        findFirst: vi
+          .fn()
+          .mockResolvedValueOnce(device({ id: "dev_1" }))
+          .mockResolvedValueOnce(device({ id: "dev_2" }))
+      },
+      deviceCommand: {
+        create: vi
+          .fn()
+          .mockResolvedValueOnce(command({ id: "cmd_1", device_id: "dev_1" }))
+          .mockResolvedValueOnce(command({ id: "cmd_2", device_id: "dev_2" })),
+        update: vi
+          .fn()
+          .mockResolvedValueOnce(command({ id: "cmd_1", device_id: "dev_1" }))
+          .mockResolvedValueOnce(command({ id: "cmd_2", device_id: "dev_2" }))
+      },
+      deviceShadow: {
+        update: vi.fn()
+      }
+    };
+
+    const result = await createGroupCommands(db, {
+      orgId: "org_default",
+      userId: "usr_admin",
+      canAccessAll: true,
+      groupId: "grp_demo",
+      kind: "service",
+      identifier: "setSwitch",
+      params: {}
+    });
+
+    expect(result.total).toBe(2);
+    expect(db.deviceCommand.create).toHaveBeenCalledTimes(2);
   });
 });

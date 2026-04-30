@@ -5,6 +5,9 @@ import {
   recordMqttReport,
   recordMqttWebhookEvent
 } from "@/features/ingress/mqtt/mqtt-ingress-service";
+import {
+  enqueueTelemetryReport
+} from "@/features/ingress/telemetry/telemetry-queue";
 import { recordCommandReply } from "@/features/control/control-service";
 import { recordOtaProgress } from "@/features/ota/ota-service";
 
@@ -23,10 +26,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (typeof body.topic === "string" && body.topic.includes("/thing/")) {
-      const decision = await recordMqttReport(prisma, {
+      const queued = await enqueueTelemetryReport({
         topic: body.topic,
         payload: body.payload
-      });
+      }).catch(() => false);
+      const decision = queued
+        ? { result: "allow" }
+        : await recordMqttReport(prisma, {
+            topic: body.topic,
+            payload: body.payload
+          });
 
       return NextResponse.json(decision);
     }
