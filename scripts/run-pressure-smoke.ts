@@ -278,6 +278,11 @@ async function main() {
   }
   console.log(`published messages=${totalMessages}`);
 
+  await api("/api/v1/auth/refresh", {
+    method: "POST",
+    jar
+  });
+
   for (let index = 0; index < Math.min(COMMANDS, devices.length); index += 1) {
     const command = await api<{ id: string }>(
       `/api/v1/devices/${devices[index].id}/commands`,

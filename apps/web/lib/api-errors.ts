@@ -24,6 +24,10 @@ export function apiErrorResponse(
       ? "internal server error"
       : maybeError.message ?? "request failed";
 
+  if (code === 500001) {
+    console.error("api internal error", error);
+  }
+
   return NextResponse.json(apiError(code, message, requestId), {
     status: httpStatusByCode[code]
   });

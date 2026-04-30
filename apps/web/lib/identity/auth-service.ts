@@ -259,7 +259,13 @@ export async function verifyAccessToken(token: string): Promise<{
   userId: string;
   currentOrgId?: string;
 }> {
-  const { payload } = await jwtVerify(token, getJwtSecret());
+  let payload: Awaited<ReturnType<typeof jwtVerify>>["payload"];
+
+  try {
+    payload = (await jwtVerify(token, getJwtSecret())).payload;
+  } catch {
+    throw serviceError(401001, "invalid session");
+  }
 
   if (!payload.sub) {
     throw serviceError(401001, "invalid session");

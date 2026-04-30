@@ -47,6 +47,7 @@ function id(prefix: string): string {
 }
 
 let redisClient: Redis | null = null;
+let cachedEmqxToken: { apiUrl: string; token: string; expiresAt: number } | null = null;
 
 function getRedisClient() {
   const redisUrl = process.env.REDIS_URL;
@@ -188,6 +189,15 @@ async function emqxToken() {
   const apiUrl = process.env.EMQX_API_URL ?? "http://localhost:18083";
   const username = process.env.EMQX_DASHBOARD_USERNAME ?? "admin";
   const password = process.env.EMQX_DASHBOARD_PASSWORD ?? "public123";
+
+  if (
+    cachedEmqxToken &&
+    cachedEmqxToken.apiUrl === apiUrl &&
+    cachedEmqxToken.expiresAt > Date.now()
+  ) {
+    return { apiUrl, token: cachedEmqxToken.token };
+  }
+
   const response = await fetch(`${apiUrl}/api/v5/login`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -204,28 +214,46 @@ async function emqxToken() {
     throw controlError(500001, "failed to login emqx");
   }
 
+  cachedEmqxToken = {
+    apiUrl,
+    token: body.token,
+    expiresAt: Date.now() + 10 * 60 * 1000
+  };
+
   return { apiUrl, token: body.token };
 }
 
 async function publishMqtt(topic: string, payload: unknown) {
-  const { apiUrl, token } = await emqxToken();
-  const response = await fetch(`${apiUrl}/api/v5/publish`, {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${token}`,
-      "content-type": "application/json"
-    },
-    body: JSON.stringify({
-      topic,
-      payload: JSON.stringify(payload),
-      qos: 1,
-      retain: false
-    })
-  });
+  let lastError = "failed to publish mqtt command";
 
-  if (!response.ok) {
-    throw controlError(500001, "failed to publish mqtt command");
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { apiUrl, token } = await emqxToken();
+    const response = await fetch(`${apiUrl}/api/v5/publish`, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        topic,
+        payload: JSON.stringify(payload),
+        qos: 1,
+        retain: false
+      })
+    });
+
+    if (response.ok) {
+      return;
+    }
+
+    lastError = await response.text().catch(() => "failed to publish mqtt command");
+    if (response.status === 401 || response.status === 403) {
+      cachedEmqxToken = null;
+    }
+    await new Promise((resolveWait) => setTimeout(resolveWait, 300 * (attempt + 1)));
   }
+
+  throw controlError(500001, lastError || "failed to publish mqtt command");
 }
 
 export async function createDeviceCommand(db: Db, input: CreateCommandInput) {
@@ -281,12 +309,15 @@ export async function createDeviceCommand(db: Db, input: CreateCommandInput) {
     throw error;
   }
 
-  const sentCommand = await db.deviceCommand.update({
-    where: { id: command.id },
+  await db.deviceCommand.updateMany({
+    where: { id: command.id, status: "pending" },
     data: {
       status: "sent",
       sent_at: new Date()
-    },
+    }
+  });
+  const sentCommand = await db.deviceCommand.findUniqueOrThrow({
+    where: { id: command.id },
     include: { device: { include: { product: true } } }
   });
 

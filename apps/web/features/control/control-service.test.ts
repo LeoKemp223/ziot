@@ -81,7 +81,8 @@ describe("control service", () => {
       },
       deviceCommand: {
         create: vi.fn().mockResolvedValue(command({ status: "pending" })),
-        update: vi.fn().mockResolvedValue(command())
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findUniqueOrThrow: vi.fn().mockResolvedValue(command())
       },
       deviceShadow: {
         update: vi.fn()
@@ -123,7 +124,10 @@ describe("control service", () => {
         create: vi.fn().mockResolvedValue(
           command({ identifier: "property.set", status: "pending" })
         ),
-        update: vi.fn().mockResolvedValue(command({ identifier: "property.set" }))
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findUniqueOrThrow: vi
+          .fn()
+          .mockResolvedValue(command({ identifier: "property.set" }))
       },
       deviceShadow: {
         update: vi.fn().mockResolvedValue({})
@@ -299,8 +303,8 @@ describe("control service", () => {
       },
       deviceCommand: {
         create: vi.fn().mockResolvedValue(command({ status: "pending" })),
-        update: vi.fn().mockResolvedValue(command({ status: "sent" })),
         updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findUniqueOrThrow: vi.fn().mockResolvedValue(command({ status: "sent" })),
         findFirst: vi.fn().mockResolvedValue(command({ status: "success" }))
       },
       deviceShadow: {
@@ -331,8 +335,8 @@ describe("control service", () => {
       },
       deviceCommand: {
         create: vi.fn().mockResolvedValue(command({ status: "pending" })),
-        update: vi.fn().mockResolvedValue(command({ status: "sent" })),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findUniqueOrThrow: vi.fn().mockResolvedValue(command({ status: "sent" })),
         findFirst: vi.fn().mockResolvedValue(command({ status: "timeout" }))
       },
       deviceShadow: {
@@ -392,7 +396,8 @@ describe("control service", () => {
           .fn()
           .mockResolvedValueOnce(command({ id: "cmd_1", device_id: "dev_1" }))
           .mockResolvedValueOnce(command({ id: "cmd_2", device_id: "dev_2" })),
-        update: vi
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findUniqueOrThrow: vi
           .fn()
           .mockResolvedValueOnce(command({ id: "cmd_1", device_id: "dev_1" }))
           .mockResolvedValueOnce(command({ id: "cmd_2", device_id: "dev_2" }))
