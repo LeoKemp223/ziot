@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, LogOut, PanelLeft, Search } from "lucide-react";
+import { BookOpen, Bell, LogOut, PanelLeft, Search } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 type MeResponse = {
   code: number;
@@ -17,6 +18,8 @@ type MeResponse = {
 
 export function ConsoleHeader() {
   const [me, setMe] = useState<MeResponse["data"] | null>(null);
+  const pathname = usePathname();
+  const docsActive = pathname === "/integration-docs";
 
   useEffect(() => {
     void fetch("/api/v1/me")
@@ -69,6 +72,19 @@ export function ConsoleHeader() {
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <a
+          aria-current={docsActive ? "page" : undefined}
+          className={[
+            "hidden h-9 items-center gap-2 rounded-md border px-3 text-sm font-medium transition md:inline-flex",
+            docsActive
+              ? "border-blue-200 bg-blue-50 text-blue-700"
+              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          ].join(" ")}
+          href="/integration-docs"
+        >
+          <BookOpen className="h-4 w-4" />
+          接入文档
+        </a>
         {me ? (
           <select
             aria-label="切换组织"
