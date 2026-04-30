@@ -1,14 +1,14 @@
 import { ConsoleHeader } from "@/components/console/header";
 import { ConsoleSidebar } from "@/components/console/sidebar";
 import { navItems } from "@/components/console/dashboard-data";
-import { DashboardPanel } from "@/components/dashboard/dashboard-panel";
+import { ControlConsolePanel } from "@/components/controls/control-console-panel";
 
 export const dynamic = "force-dynamic";
 
-export default function HomePage() {
+export default function ControlsPage() {
   const items = navItems.map((item) => ({
     ...item,
-    active: item.href === "/"
+    active: item.href === "/controls"
   }));
 
   return (
@@ -18,18 +18,14 @@ export default function HomePage() {
         <ConsoleHeader />
         <div className="flex-1 overflow-auto px-4 py-6 md:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold text-slate-950">
-                  控制台概览
-                </h1>
-                <p className="mt-1 text-sm text-slate-500">
-                  查看当前组织设备在线、数据上报、控制命令和 OTA 运行状态。
-                </p>
-              </div>
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-950">设备控制</h1>
+              <p className="mt-1 text-sm text-slate-500">
+                面向单台设备下发服务调用或属性设置，并查看命令回执。
+              </p>
             </div>
             <div className="mt-6">
-              <DashboardPanel />
+              <ControlConsolePanel />
             </div>
           </div>
         </div>

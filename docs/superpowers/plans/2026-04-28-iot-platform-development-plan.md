@@ -785,15 +785,15 @@ Acceptance:
 - Modify: `apps/web/app/(console)/ota/tasks/page.tsx`
 - Modify: `apps/web/features/notifications/`
 
-- [ ] Implement dashboard summary API for total devices, online devices, today reports, today commands, OTA running tasks, and recent errors.
-- [ ] Implement dashboard page with ECharts.
-- [ ] Implement settings pages for organization info, MQTT access config, object storage config display, and security settings display.
-- [ ] Complete product, device, command, OTA, log, and audit navigation links.
-- [ ] Add empty states, loading states, error states, and permission-denied states.
-- [ ] Add read-only UI assertions for all write buttons.
-- [ ] Run: `pnpm test -- --run dashboard`.
-- [ ] Run: `pnpm --filter @ziot/web exec playwright test`.
-- [ ] Commit: `feat: add dashboard settings and ui completion`.
+- [x] Implement dashboard summary API for total devices, online devices, today reports, today commands, OTA running tasks, and recent errors.
+- [x] Implement dashboard page with ECharts.
+- [x] Implement settings pages for organization info, MQTT access config, object storage config display, and security settings display.
+- [x] Complete product, device, command, OTA, log, and audit navigation links.
+- [x] Add empty states, loading states, error states, and permission-denied states.
+- [x] Add read-only UI assertions for all write buttons.
+- [x] Run: `pnpm test -- --run dashboard`.
+- [x] Run: `pnpm --filter @ziot/web exec playwright test`.
+- [x] Commit: `feat: add dashboard settings and ui completion`.
 
 Acceptance:
 

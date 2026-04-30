@@ -1264,7 +1264,27 @@ MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web
 /ota/{product_key}/{device_key}/upgrade/result
 ```
 
-## 11. 审计日志 API
+## 11. Dashboard API
+
+### `GET /api/v1/dashboard/summary`
+
+查询当前组织首页概览。需要具备 `product:read`、`device:read`、`ota:read` 或 `log:read` 中任一权限。普通用户只统计自己创建的产品、设备及关联数据；组织管理员统计全组织数据。
+
+返回字段：
+
+| 字段 | 说明 |
+| --- | --- |
+| `total_devices` | 设备总数 |
+| `online_devices` | 在线设备数 |
+| `online_rate` | 在线率百分比 |
+| `today_reports` | 今日设备上报数量 |
+| `today_commands` | 今日控制命令数量 |
+| `running_ota_tasks` | 运行中的 OTA 任务数量 |
+| `recent_errors` | 最近 warn/error 设备日志 |
+| `traffic` | 近 12 小时上报与命令趋势 |
+| `generated_at` | 统计生成时间 |
+
+## 12. 审计日志 API
 
 ### `GET /api/v1/audit-logs`
 
@@ -1286,7 +1306,7 @@ MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web
 
 审计记录覆盖登录、产品创建/更新/删除、设备创建/更新/删除、设备密钥重置、设备控制、固件创建/上传/发布/废弃、OTA 创建/启动/取消和邀请码创建/禁用。
 
-## 12. 已验证用例
+## 13. 已验证用例
 
 2026-04-28 本地验证过以下用例：
 
@@ -1330,6 +1350,7 @@ MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web
 | `POST /device-api/v1/properties` | HTTP 设备属性上报更新 reported 影子并写入上报记录 |
 | `GET /device-api/v1/commands/pending` | HTTP 设备可拉取待处理命令 |
 | `POST /device-api/v1/commands/{request_id}/reply` | HTTP 设备可回复命令结果 |
+| `GET /api/v1/dashboard/summary` | 返回设备、上报、命令、OTA 和最近错误概览 |
 | `GET /api/v1/audit-logs` | 可按用户、动作、资源、IP 和时间范围查询审计日志 |
 | 数据库直查 | `products`、`devices`、`device_groups`、`device_shadows` 表可查到对应数据 |
 
@@ -1347,4 +1368,5 @@ docs/dev-logs/2026-04-28-local-db-and-product-api.md
 | --- | --- |
 | 控制 API | 已实现 |
 | OTA API | 已实现 |
+| Dashboard API | 已实现 |
 | 日志 API | 审计日志已实现，设备日志页待补充 |
