@@ -57,7 +57,7 @@ export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
   }, []);
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col bg-[#141414] text-zinc-300 lg:flex">
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-[#141414] text-zinc-300 lg:flex">
       <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-sm font-semibold text-white">
           Z
