@@ -22,7 +22,7 @@ function payloadBytes(payload: unknown) {
 
 export function assertTelemetryPayloadSize(payload: unknown) {
   if (payloadBytes(payload) > maxTelemetryPayloadBytes) {
-    throw Object.assign(new Error("telemetry payload too large"), { code: 400001 });
+    throw Object.assign(new Error("上报数据超出大小限制"), { code: 400001 });
   }
 }
 

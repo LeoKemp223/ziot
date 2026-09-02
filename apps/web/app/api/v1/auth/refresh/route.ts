@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value;
 
     if (!refreshToken) {
-      throw Object.assign(new Error("invalid refresh token"), { code: 401001 });
+      throw Object.assign(new Error("无效的刷新令牌"), { code: 401001 });
     }
 
     const session = await refreshSession(

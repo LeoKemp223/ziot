@@ -38,6 +38,7 @@ export type InvitationSumAggregateOutputType = {
 
 export type InvitationMinAggregateOutputType = {
   id: string | null
+  code: string | null
   code_hash: string | null
   org_id: string | null
   role_id: string | null
@@ -51,6 +52,7 @@ export type InvitationMinAggregateOutputType = {
 
 export type InvitationMaxAggregateOutputType = {
   id: string | null
+  code: string | null
   code_hash: string | null
   org_id: string | null
   role_id: string | null
@@ -64,6 +66,7 @@ export type InvitationMaxAggregateOutputType = {
 
 export type InvitationCountAggregateOutputType = {
   id: number
+  code: number
   code_hash: number
   org_id: number
   role_id: number
@@ -89,6 +92,7 @@ export type InvitationSumAggregateInputType = {
 
 export type InvitationMinAggregateInputType = {
   id?: true
+  code?: true
   code_hash?: true
   org_id?: true
   role_id?: true
@@ -102,6 +106,7 @@ export type InvitationMinAggregateInputType = {
 
 export type InvitationMaxAggregateInputType = {
   id?: true
+  code?: true
   code_hash?: true
   org_id?: true
   role_id?: true
@@ -115,6 +120,7 @@ export type InvitationMaxAggregateInputType = {
 
 export type InvitationCountAggregateInputType = {
   id?: true
+  code?: true
   code_hash?: true
   org_id?: true
   role_id?: true
@@ -215,6 +221,7 @@ export type InvitationGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inter
 
 export type InvitationGroupByOutputType = {
   id: string
+  code: string | null
   code_hash: string
   org_id: string
   role_id: string
@@ -251,6 +258,7 @@ export type InvitationWhereInput = {
   OR?: Prisma.InvitationWhereInput[]
   NOT?: Prisma.InvitationWhereInput | Prisma.InvitationWhereInput[]
   id?: Prisma.StringFilter<"Invitation"> | string
+  code?: Prisma.StringNullableFilter<"Invitation"> | string | null
   code_hash?: Prisma.StringFilter<"Invitation"> | string
   org_id?: Prisma.StringFilter<"Invitation"> | string
   role_id?: Prisma.StringFilter<"Invitation"> | string
@@ -268,6 +276,7 @@ export type InvitationWhereInput = {
 
 export type InvitationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  code?: Prisma.SortOrderInput | Prisma.SortOrder
   code_hash?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
   role_id?: Prisma.SortOrder
@@ -289,6 +298,7 @@ export type InvitationWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.InvitationWhereInput | Prisma.InvitationWhereInput[]
   OR?: Prisma.InvitationWhereInput[]
   NOT?: Prisma.InvitationWhereInput | Prisma.InvitationWhereInput[]
+  code?: Prisma.StringNullableFilter<"Invitation"> | string | null
   org_id?: Prisma.StringFilter<"Invitation"> | string
   role_id?: Prisma.StringFilter<"Invitation"> | string
   max_uses?: Prisma.IntFilter<"Invitation"> | number
@@ -305,6 +315,7 @@ export type InvitationWhereUniqueInput = Prisma.AtLeast<{
 
 export type InvitationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  code?: Prisma.SortOrderInput | Prisma.SortOrder
   code_hash?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
   role_id?: Prisma.SortOrder
@@ -326,6 +337,7 @@ export type InvitationScalarWhereWithAggregatesInput = {
   OR?: Prisma.InvitationScalarWhereWithAggregatesInput[]
   NOT?: Prisma.InvitationScalarWhereWithAggregatesInput | Prisma.InvitationScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Invitation"> | string
+  code?: Prisma.StringNullableWithAggregatesFilter<"Invitation"> | string | null
   code_hash?: Prisma.StringWithAggregatesFilter<"Invitation"> | string
   org_id?: Prisma.StringWithAggregatesFilter<"Invitation"> | string
   role_id?: Prisma.StringWithAggregatesFilter<"Invitation"> | string
@@ -339,6 +351,7 @@ export type InvitationScalarWhereWithAggregatesInput = {
 
 export type InvitationCreateInput = {
   id: string
+  code?: string | null
   code_hash: string
   max_uses: number
   used_count?: number
@@ -353,6 +366,7 @@ export type InvitationCreateInput = {
 
 export type InvitationUncheckedCreateInput = {
   id: string
+  code?: string | null
   code_hash: string
   org_id: string
   role_id: string
@@ -367,6 +381,7 @@ export type InvitationUncheckedCreateInput = {
 
 export type InvitationUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   max_uses?: Prisma.IntFieldUpdateOperationsInput | number
   used_count?: Prisma.IntFieldUpdateOperationsInput | number
@@ -381,6 +396,7 @@ export type InvitationUpdateInput = {
 
 export type InvitationUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   role_id?: Prisma.StringFieldUpdateOperationsInput | string
@@ -395,6 +411,7 @@ export type InvitationUncheckedUpdateInput = {
 
 export type InvitationCreateManyInput = {
   id: string
+  code?: string | null
   code_hash: string
   org_id: string
   role_id: string
@@ -408,6 +425,7 @@ export type InvitationCreateManyInput = {
 
 export type InvitationUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   max_uses?: Prisma.IntFieldUpdateOperationsInput | number
   used_count?: Prisma.IntFieldUpdateOperationsInput | number
@@ -418,6 +436,7 @@ export type InvitationUpdateManyMutationInput = {
 
 export type InvitationUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   role_id?: Prisma.StringFieldUpdateOperationsInput | string
@@ -441,6 +460,7 @@ export type InvitationOrderByRelationAggregateInput = {
 
 export type InvitationCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  code?: Prisma.SortOrder
   code_hash?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
   role_id?: Prisma.SortOrder
@@ -459,6 +479,7 @@ export type InvitationAvgOrderByAggregateInput = {
 
 export type InvitationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  code?: Prisma.SortOrder
   code_hash?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
   role_id?: Prisma.SortOrder
@@ -472,6 +493,7 @@ export type InvitationMaxOrderByAggregateInput = {
 
 export type InvitationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  code?: Prisma.SortOrder
   code_hash?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
   role_id?: Prisma.SortOrder
@@ -647,6 +669,7 @@ export type InvitationUpdateOneRequiredWithoutUsagesNestedInput = {
 
 export type InvitationCreateWithoutOrganizationInput = {
   id: string
+  code?: string | null
   code_hash: string
   max_uses: number
   used_count?: number
@@ -660,6 +683,7 @@ export type InvitationCreateWithoutOrganizationInput = {
 
 export type InvitationUncheckedCreateWithoutOrganizationInput = {
   id: string
+  code?: string | null
   code_hash: string
   role_id: string
   max_uses: number
@@ -702,6 +726,7 @@ export type InvitationScalarWhereInput = {
   OR?: Prisma.InvitationScalarWhereInput[]
   NOT?: Prisma.InvitationScalarWhereInput | Prisma.InvitationScalarWhereInput[]
   id?: Prisma.StringFilter<"Invitation"> | string
+  code?: Prisma.StringNullableFilter<"Invitation"> | string | null
   code_hash?: Prisma.StringFilter<"Invitation"> | string
   org_id?: Prisma.StringFilter<"Invitation"> | string
   role_id?: Prisma.StringFilter<"Invitation"> | string
@@ -715,6 +740,7 @@ export type InvitationScalarWhereInput = {
 
 export type InvitationCreateWithoutCreatorInput = {
   id: string
+  code?: string | null
   code_hash: string
   max_uses: number
   used_count?: number
@@ -728,6 +754,7 @@ export type InvitationCreateWithoutCreatorInput = {
 
 export type InvitationUncheckedCreateWithoutCreatorInput = {
   id: string
+  code?: string | null
   code_hash: string
   org_id: string
   role_id: string
@@ -767,6 +794,7 @@ export type InvitationUpdateManyWithWhereWithoutCreatorInput = {
 
 export type InvitationCreateWithoutRoleInput = {
   id: string
+  code?: string | null
   code_hash: string
   max_uses: number
   used_count?: number
@@ -780,6 +808,7 @@ export type InvitationCreateWithoutRoleInput = {
 
 export type InvitationUncheckedCreateWithoutRoleInput = {
   id: string
+  code?: string | null
   code_hash: string
   org_id: string
   max_uses: number
@@ -819,6 +848,7 @@ export type InvitationUpdateManyWithWhereWithoutRoleInput = {
 
 export type InvitationCreateWithoutUsagesInput = {
   id: string
+  code?: string | null
   code_hash: string
   max_uses: number
   used_count?: number
@@ -832,6 +862,7 @@ export type InvitationCreateWithoutUsagesInput = {
 
 export type InvitationUncheckedCreateWithoutUsagesInput = {
   id: string
+  code?: string | null
   code_hash: string
   org_id: string
   role_id: string
@@ -861,6 +892,7 @@ export type InvitationUpdateToOneWithWhereWithoutUsagesInput = {
 
 export type InvitationUpdateWithoutUsagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   max_uses?: Prisma.IntFieldUpdateOperationsInput | number
   used_count?: Prisma.IntFieldUpdateOperationsInput | number
@@ -874,6 +906,7 @@ export type InvitationUpdateWithoutUsagesInput = {
 
 export type InvitationUncheckedUpdateWithoutUsagesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   role_id?: Prisma.StringFieldUpdateOperationsInput | string
@@ -887,6 +920,7 @@ export type InvitationUncheckedUpdateWithoutUsagesInput = {
 
 export type InvitationCreateManyOrganizationInput = {
   id: string
+  code?: string | null
   code_hash: string
   role_id: string
   max_uses: number
@@ -899,6 +933,7 @@ export type InvitationCreateManyOrganizationInput = {
 
 export type InvitationUpdateWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   max_uses?: Prisma.IntFieldUpdateOperationsInput | number
   used_count?: Prisma.IntFieldUpdateOperationsInput | number
@@ -912,6 +947,7 @@ export type InvitationUpdateWithoutOrganizationInput = {
 
 export type InvitationUncheckedUpdateWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   role_id?: Prisma.StringFieldUpdateOperationsInput | string
   max_uses?: Prisma.IntFieldUpdateOperationsInput | number
@@ -925,6 +961,7 @@ export type InvitationUncheckedUpdateWithoutOrganizationInput = {
 
 export type InvitationUncheckedUpdateManyWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   role_id?: Prisma.StringFieldUpdateOperationsInput | string
   max_uses?: Prisma.IntFieldUpdateOperationsInput | number
@@ -937,6 +974,7 @@ export type InvitationUncheckedUpdateManyWithoutOrganizationInput = {
 
 export type InvitationCreateManyCreatorInput = {
   id: string
+  code?: string | null
   code_hash: string
   org_id: string
   role_id: string
@@ -949,6 +987,7 @@ export type InvitationCreateManyCreatorInput = {
 
 export type InvitationUpdateWithoutCreatorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   max_uses?: Prisma.IntFieldUpdateOperationsInput | number
   used_count?: Prisma.IntFieldUpdateOperationsInput | number
@@ -962,6 +1001,7 @@ export type InvitationUpdateWithoutCreatorInput = {
 
 export type InvitationUncheckedUpdateWithoutCreatorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   role_id?: Prisma.StringFieldUpdateOperationsInput | string
@@ -975,6 +1015,7 @@ export type InvitationUncheckedUpdateWithoutCreatorInput = {
 
 export type InvitationUncheckedUpdateManyWithoutCreatorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   role_id?: Prisma.StringFieldUpdateOperationsInput | string
@@ -987,6 +1028,7 @@ export type InvitationUncheckedUpdateManyWithoutCreatorInput = {
 
 export type InvitationCreateManyRoleInput = {
   id: string
+  code?: string | null
   code_hash: string
   org_id: string
   max_uses: number
@@ -999,6 +1041,7 @@ export type InvitationCreateManyRoleInput = {
 
 export type InvitationUpdateWithoutRoleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   max_uses?: Prisma.IntFieldUpdateOperationsInput | number
   used_count?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1012,6 +1055,7 @@ export type InvitationUpdateWithoutRoleInput = {
 
 export type InvitationUncheckedUpdateWithoutRoleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   max_uses?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1025,6 +1069,7 @@ export type InvitationUncheckedUpdateWithoutRoleInput = {
 
 export type InvitationUncheckedUpdateManyWithoutRoleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   code_hash?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   max_uses?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1068,6 +1113,7 @@ export type InvitationCountOutputTypeCountUsagesArgs<ExtArgs extends runtime.Typ
 
 export type InvitationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  code?: boolean
   code_hash?: boolean
   org_id?: boolean
   role_id?: boolean
@@ -1086,6 +1132,7 @@ export type InvitationSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
 
 export type InvitationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  code?: boolean
   code_hash?: boolean
   org_id?: boolean
   role_id?: boolean
@@ -1102,6 +1149,7 @@ export type InvitationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
 
 export type InvitationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  code?: boolean
   code_hash?: boolean
   org_id?: boolean
   role_id?: boolean
@@ -1118,6 +1166,7 @@ export type InvitationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
 
 export type InvitationSelectScalar = {
   id?: boolean
+  code?: boolean
   code_hash?: boolean
   org_id?: boolean
   role_id?: boolean
@@ -1129,7 +1178,7 @@ export type InvitationSelectScalar = {
   created_at?: boolean
 }
 
-export type InvitationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code_hash" | "org_id" | "role_id" | "max_uses" | "used_count" | "expires_at" | "status" | "created_by" | "created_at", ExtArgs["result"]["invitation"]>
+export type InvitationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "code_hash" | "org_id" | "role_id" | "max_uses" | "used_count" | "expires_at" | "status" | "created_by" | "created_at", ExtArgs["result"]["invitation"]>
 export type InvitationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   role?: boolean | Prisma.RoleDefaultArgs<ExtArgs>
@@ -1158,6 +1207,7 @@ export type $InvitationPayload<ExtArgs extends runtime.Types.Extensions.Internal
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    code: string | null
     code_hash: string
     org_id: string
     role_id: string
@@ -1595,6 +1645,7 @@ export interface Prisma__InvitationClient<T, Null = never, ExtArgs extends runti
  */
 export interface InvitationFieldRefs {
   readonly id: Prisma.FieldRef<"Invitation", 'String'>
+  readonly code: Prisma.FieldRef<"Invitation", 'String'>
   readonly code_hash: Prisma.FieldRef<"Invitation", 'String'>
   readonly org_id: Prisma.FieldRef<"Invitation", 'String'>
   readonly role_id: Prisma.FieldRef<"Invitation", 'String'>

@@ -35,7 +35,6 @@ export async function middleware(request: NextRequest) {
   if (
     publicPaths.some((path) => pathname.startsWith(path)) ||
     pathname.startsWith("/api/") ||
-    pathname.startsWith("/device-api/") ||
     pathname.startsWith("/uploads/") ||
     pathname.startsWith("/_next/")
   ) {

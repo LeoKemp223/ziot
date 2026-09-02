@@ -28,7 +28,7 @@ export async function PATCH(request: NextRequest) {
     const orgId = String(body.current_org_id ?? "");
 
     if (!currentUser.organizations.some((org) => org.id === orgId)) {
-      throw Object.assign(new Error("organization access denied"), {
+      throw Object.assign(new Error("没有组织访问权限"), {
         code: 403001
       });
     }

@@ -29,7 +29,7 @@ export async function POST(
     const user = await getCurrentUser(request);
 
     if (!user.permissions.includes("device:write")) {
-      throw Object.assign(new Error("permission denied"), { code: 403001 });
+      throw Object.assign(new Error("没有操作权限"), { code: 403001 });
     }
 
     const { deviceId } = await params;

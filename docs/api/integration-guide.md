@@ -23,7 +23,7 @@ POST /api/v1/auth/login
 content-type: application/json
 
 {
-  "account": "admin@example.com",
+  "account": "13800000001",
   "password": "Admin123456"
 }
 ```
@@ -62,14 +62,13 @@ store `Set-Cookie` values and send them back in the `Cookie` header.
 
 See `docs/api/admin-api.md` for detailed request examples.
 
-## Device APIs
+## Device Access
 
-Device HTTP APIs are under `/device-api/v1/*` and use product key, device key,
-device secret, timestamp, nonce, body SHA256, and HMAC signature headers.
+Devices connect over MQTT only (property/event/log reports, command invoke and
+reply, OTA notify/progress/result topics).
 
 See:
 
-- `docs/device-integration/http-demo.md`
 - `docs/device-integration/mqtt-demo.md`
 - `docs/device-integration/integration-guide.md`
 
@@ -79,5 +78,5 @@ See:
 pnpm smoke
 ```
 
-The script is the fastest way to verify that admin APIs, MQTT callbacks, HTTP
-device APIs, command control, and OTA progress work together.
+The script is the fastest way to verify that admin APIs, MQTT callbacks,
+command control, and OTA notify/result work together.

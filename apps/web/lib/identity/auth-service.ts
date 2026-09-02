@@ -72,6 +72,9 @@ const MEMBER_PERMISSION_CODES = [
   "log:read"
 ];
 
+// 邀请码字母表:去掉易混淆的 0/O/1/I,32 个字符正好可用单字节无偏取模
+const INVITATION_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
 function serviceError(
   code: IdentityError["code"],
   message: string
@@ -100,7 +103,14 @@ function addSeconds(seconds: number): Date {
 }
 
 function publicInvitationCode(): string {
-  return `inv_${randomBytes(18).toString("base64url")}`;
+  const bytes = randomBytes(7);
+  let code = "INV";
+
+  for (const byte of bytes) {
+    code += INVITATION_CODE_ALPHABET[byte % 32];
+  }
+
+  return code;
 }
 
 function opaqueRefreshToken(): string {
@@ -109,19 +119,19 @@ function opaqueRefreshToken(): string {
 
 function assertPassword(password: string) {
   if (password.length < 8 || password.length > 128) {
-    throw serviceError(400001, "password must be 8-128 characters");
+    throw serviceError(400001, "密码长度必须为 8-128 位");
   }
 }
 
 function assertAccount(account: string) {
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account)) {
-    throw serviceError(400001, "account must be a valid email");
+  if (!/^1[3-9]\d{9}$/.test(account)) {
+    throw serviceError(400001, "账号必须是有效的大陆手机号");
   }
 }
 
 function assertDisplayName(displayName: string) {
   if (!displayName || displayName.length > 128) {
-    throw serviceError(400001, "display_name must be 1-128 characters");
+    throw serviceError(400001, "显示名称长度必须为 1-128 位");
   }
 }
 
@@ -173,20 +183,20 @@ export async function toSessionUser(
   currentOrgId?: string
 ): Promise<SessionUser> {
   if (user.status !== "active") {
-    throw serviceError(403001, "user is disabled");
+    throw serviceError(403001, "用户已被禁用");
   }
 
   const organizations = groupOrganizations(user.user_org_roles ?? []);
 
   if (organizations.length === 0) {
-    throw serviceError(403001, "user has no organization access");
+    throw serviceError(403001, "用户没有组织访问权限");
   }
 
   const activeOrg =
     organizations.find((org) => org.id === currentOrgId) ?? organizations[0];
 
   if (!activeOrg) {
-    throw serviceError(403001, "user has no organization access");
+    throw serviceError(403001, "用户没有组织访问权限");
   }
 
   return {
@@ -210,7 +220,7 @@ export async function loadSessionUser(
   });
 
   if (!user) {
-    throw serviceError(401001, "invalid session");
+    throw serviceError(401001, "会话已失效，请重新登录");
   }
 
   return toSessionUser(user, currentOrgId);
@@ -264,11 +274,11 @@ export async function verifyAccessToken(token: string): Promise<{
   try {
     payload = (await jwtVerify(token, getJwtSecret())).payload;
   } catch {
-    throw serviceError(401001, "invalid session");
+    throw serviceError(401001, "会话已失效，请重新登录");
   }
 
   if (!payload.sub) {
-    throw serviceError(401001, "invalid session");
+    throw serviceError(401001, "会话已失效，请重新登录");
   }
 
   return {
@@ -328,7 +338,7 @@ export async function loginUser(
   });
 
   if (!user || !(await bcrypt.compare(input.password, user.password_hash))) {
-    throw serviceError(401001, "invalid account or password");
+    throw serviceError(401001, "账号或密码错误");
   }
 
   await db.user.update({
@@ -355,7 +365,7 @@ export async function refreshSession(
   });
 
   if (!record || record.revoked_at || record.expires_at <= new Date()) {
-    throw serviceError(401001, "invalid refresh token");
+    throw serviceError(401001, "无效的刷新令牌");
   }
 
   await db.refreshToken.update({
@@ -391,6 +401,7 @@ export async function registerWithInvitation(
 ): Promise<AuthSession> {
   const account = normalizeAccount(input.account);
   const displayName = input.display_name.trim();
+  const invitationCode = input.invitation_code.trim().toUpperCase();
 
   assertAccount(account);
   assertPassword(input.password);
@@ -399,7 +410,7 @@ export async function registerWithInvitation(
   const existingUser = await db.user.findUnique({ where: { account } });
 
   if (existingUser) {
-    throw serviceError(409001, "account already exists");
+    throw serviceError(409001, "账号已存在");
   }
 
   const invitations = await db.invitation.findMany({
@@ -414,23 +425,21 @@ export async function registerWithInvitation(
   const invitation = (
     await Promise.all(
       invitations.map(async (item: any) =>
-        (await bcrypt.compare(input.invitation_code, item.code_hash))
-          ? item
-          : null
+        (await bcrypt.compare(invitationCode, item.code_hash)) ? item : null
       )
     )
   ).find(Boolean);
 
   if (!invitation) {
-    throw serviceError(400001, "invalid invitation code");
+    throw serviceError(400001, "邀请码无效");
   }
 
   if (invitation.expires_at <= new Date()) {
-    throw serviceError(400001, "invitation expired");
+    throw serviceError(400001, "邀请码已过期");
   }
 
   if (invitation.used_count >= invitation.max_uses) {
-    throw serviceError(400001, "invitation has reached max uses");
+    throw serviceError(400001, "邀请码已达最大使用次数");
   }
 
   const passwordHash = await bcrypt.hash(input.password, 10);
@@ -477,20 +486,26 @@ export async function registerWithInvitation(
   return createSession(db, user, invitation.org_id);
 }
 
-export async function createInvitation(
+export async function createInvitations(
   db: Db,
   input: {
     orgId: string;
     roleId: string;
     createdBy: string;
+    count?: number;
     maxUses?: number;
     expiresAt?: Date;
   }
 ) {
   const maxUses = input.maxUses ?? 1;
+  const count = input.count ?? 1;
 
   if (!Number.isInteger(maxUses) || maxUses < 1 || maxUses > 100) {
-    throw serviceError(400001, "max_uses must be 1-100");
+    throw serviceError(400001, "最大使用次数必须在 1-100 之间");
+  }
+
+  if (!Number.isInteger(count) || count < 1 || count > 100) {
+    throw serviceError(400001, "创建数量必须在 1-100 之间");
   }
 
   const [org, role] = await Promise.all([
@@ -504,30 +519,37 @@ export async function createInvitation(
   ]);
 
   if (!org || !role) {
-    throw serviceError(404001, "organization or role not found");
+    throw serviceError(404001, "组织或角色不存在");
   }
 
-  const code = publicInvitationCode();
-  const invitation = await db.invitation.create({
-    data: {
-      id: id("inv"),
-      code_hash: await bcrypt.hash(code, 10),
-      org_id: input.orgId,
-      role_id: input.roleId,
-      max_uses: maxUses,
-      expires_at: input.expiresAt ?? addSeconds(7 * 24 * 60 * 60),
-      created_by: input.createdBy
-    },
-    include: {
-      organization: true,
-      role: true
-    }
-  });
+  const results = [];
 
-  return {
-    ...mapInvitation(invitation),
-    code
-  };
+  for (let index = 0; index < count; index += 1) {
+    const code = publicInvitationCode();
+    const invitation = await db.invitation.create({
+      data: {
+        id: id("inv"),
+        code,
+        code_hash: await bcrypt.hash(code, 10),
+        org_id: input.orgId,
+        role_id: input.roleId,
+        max_uses: maxUses,
+        expires_at: input.expiresAt ?? addSeconds(30 * 24 * 60 * 60),
+        created_by: input.createdBy
+      },
+      include: {
+        organization: true,
+        role: true
+      }
+    });
+
+    results.push({
+      ...mapInvitation(invitation),
+      code
+    });
+  }
+
+  return results;
 }
 
 export async function listInvitations(db: Db, orgId: string) {
@@ -562,7 +584,7 @@ export async function getInvitation(db: Db, orgId: string, invitationId: string)
   });
 
   if (!invitation) {
-    throw serviceError(404001, "invitation not found");
+    throw serviceError(404001, "邀请码不存在");
   }
 
   return {
@@ -696,6 +718,7 @@ export async function listUsers(db: Db, orgId: string) {
 function mapInvitation(invitation: any) {
   return {
     id: invitation.id,
+    code: invitation.code ?? null,
     org_id: invitation.org_id,
     organization_name: invitation.organization?.name ?? "",
     role_id: invitation.role_id,

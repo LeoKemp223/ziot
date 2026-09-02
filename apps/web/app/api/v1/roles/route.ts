@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       !user.permissions.includes("user:read") &&
       !user.permissions.includes("invite:write")
     ) {
-      throw Object.assign(new Error("permission denied"), { code: 403001 });
+      throw Object.assign(new Error("没有操作权限"), { code: 403001 });
     }
 
     return NextResponse.json(

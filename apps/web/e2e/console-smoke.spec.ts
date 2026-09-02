@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 async function login(page: import("@playwright/test").Page) {
   await page.goto("/login");
-  await page.getByPlaceholder("admin@example.com").fill("admin@example.com");
+  await page.getByPlaceholder("13800000001").fill("13800000001");
   await page.getByLabel("密码").fill("Admin123456");
   await page.getByRole("button", { name: "登录" }).click();
   await expect(page.getByRole("heading", { name: "控制台概览" })).toBeVisible();
@@ -20,7 +20,7 @@ test("console navigation reaches dashboard, control, logs and settings", async (
 
   await page.goto("/logs");
   await expect(page.getByRole("heading", { name: "日志中心" })).toBeVisible();
-  await expect(page.getByText("共")).toBeVisible();
+  await expect(page.getByText("条记录")).toBeVisible();
 
   await page.goto("/settings");
   await expect(page.getByRole("heading", { name: "系统设置" })).toBeVisible();

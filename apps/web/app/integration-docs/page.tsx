@@ -1,4 +1,4 @@
-import { BookOpen, CheckCircle2, Database, Globe2, KeyRound, RadioTower } from "lucide-react";
+import { BookOpen, KeyRound, RadioTower } from "lucide-react";
 import { ConsoleHeader } from "@/components/console/header";
 import { ConsoleSidebar } from "@/components/console/sidebar";
 import { navItems } from "@/components/console/dashboard-data";
@@ -48,24 +48,6 @@ const mqttTopics = [
   }
 ];
 
-const httpApis = [
-  { method: "POST", path: "/device-api/v1/properties", purpose: "属性上报" },
-  { method: "POST", path: "/device-api/v1/events", purpose: "事件上报" },
-  { method: "POST", path: "/device-api/v1/logs", purpose: "日志上报" },
-  { method: "GET", path: "/device-api/v1/commands/pending", purpose: "拉取待处理命令" },
-  {
-    method: "POST",
-    path: "/device-api/v1/commands/{request_id}/reply",
-    purpose: "回复命令执行结果"
-  },
-  { method: "GET", path: "/device-api/v1/ota/tasks/current", purpose: "查询当前 OTA 任务" },
-  {
-    method: "POST",
-    path: "/device-api/v1/ota/tasks/{task_id}/progress",
-    purpose: "上报 OTA 下载、安装和结果"
-  }
-];
-
 export default function IntegrationDocsPage() {
   const items = navItems.map((item) => ({
     ...item,
@@ -85,19 +67,12 @@ export default function IntegrationDocsPage() {
                   设备接入文档
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">
-                  MQTT 长连接设备和 HTTP 轮询设备的认证、上报、控制和 OTA 接入流程。
+                  MQTT 设备的认证、上报、控制和 OTA 接入流程。
                 </p>
               </div>
-              <a
-                className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-                href="/api/v1/devices"
-              >
-                <Database className="h-4 w-4" />
-                查看设备 API
-              </a>
             </div>
 
-            <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
               <SummaryCard
                 icon={<KeyRound className="h-5 w-5" />}
                 title="接入凭据"
@@ -106,12 +81,7 @@ export default function IntegrationDocsPage() {
               <SummaryCard
                 icon={<RadioTower className="h-5 w-5" />}
                 title="MQTT 接入"
-                text="适合需要在线状态、实时下发和持续上报的设备，通过 EMQX Broker 连接平台。"
-              />
-              <SummaryCard
-                icon={<Globe2 className="h-5 w-5" />}
-                title="HTTP 接入"
-                text="适合低频、无长连接或周期唤醒设备，通过设备 API 完成上报、拉取命令和 OTA 进度。"
+                text="设备通过 EMQX Broker 长连接接入平台，支持在线状态、实时下发、持续上报和 OTA。"
               />
             </div>
 
@@ -128,7 +98,7 @@ export default function IntegrationDocsPage() {
                 {[
                   "创建产品，确认 Product Key。",
                   "在产品下创建设备，记录 Device Key 和 Device Secret。",
-                  "根据设备能力选择 MQTT 或 HTTP 接入。",
+                  "设备通过 MQTT 连接平台 Broker。",
                   "运行 demo 验证属性上报、控制下发和 OTA 流程。"
                 ].map((step, index) => (
                   <div
@@ -253,115 +223,6 @@ MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo D
               </div>
             </section>
 
-            <section className="mt-6 rounded-lg border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 px-5 py-4">
-                <div className="flex items-center gap-2">
-                  <Globe2 className="h-5 w-5 text-emerald-600" />
-                  <h2 className="text-base font-semibold text-slate-950">
-                    HTTP 设备接入流程
-                  </h2>
-                </div>
-                <p className="mt-1 text-sm text-slate-500">
-                  HTTP 设备不保持长连接，由设备主动请求平台接口完成数据上报和命令轮询。
-                </p>
-              </div>
-              <div className="space-y-6 p-5">
-                <DocBlock title="1. 认证签名">
-                  <p className="text-sm text-slate-600">
-                    每次请求都需要携带设备标识、时间戳、nonce、body hash 和 HMAC-SHA256 签名。签名原文为：
-                  </p>
-                  <CodeBlock
-                    value={`method + "\\n" + path + "\\n" + timestamp + "\\n" + nonce + "\\n" + body_sha256`}
-                  />
-                  <KeyValueTable
-                    rows={[
-                      ["x-ziot-product-key", "产品 Product Key"],
-                      ["x-ziot-device-key", "设备 Device Key"],
-                      ["x-ziot-device-secret", "设备密钥，用于服务端校验 bcrypt hash"],
-                      ["x-ziot-timestamp", "毫秒时间戳，允许 5 分钟窗口"],
-                      ["x-ziot-nonce", "随机字符串，窗口内不可重复"],
-                      ["x-ziot-body-sha256", "原始请求 body 的 SHA256 hex"],
-                      ["x-ziot-signature", "HMAC-SHA256 hex 签名"]
-                    ]}
-                  />
-                </DocBlock>
-                <DocBlock title="2. 设备 API">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[820px] border-collapse text-left text-sm">
-                      <thead className="bg-slate-50 text-xs font-medium text-slate-500">
-                        <tr>
-                          <th className="px-4 py-3">方法</th>
-                          <th className="px-4 py-3">路径</th>
-                          <th className="px-4 py-3">用途</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {httpApis.map((api) => (
-                          <tr key={`${api.method}:${api.path}`}>
-                            <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-700">
-                              {api.method}
-                            </td>
-                            <td className="px-4 py-3 font-mono text-xs text-slate-700">
-                              {api.path}
-                            </td>
-                            <td className="px-4 py-3 text-slate-600">{api.purpose}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </DocBlock>
-                <DocBlock title="3. 请求 body 示例">
-                  <CodeBlock
-                    value={`// 属性上报
-{
-  "id": "report_1",
-  "params": {
-    "temperature": 23.6,
-    "humidity": 58
-  }
-}
-
-// 命令回复
-{
-  "code": 0,
-  "data": {
-    "ok": true
-  }
-}`}
-                  />
-                </DocBlock>
-                <DocBlock title="4. 轮询命令和 OTA">
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <Checklist
-                      title="命令轮询"
-                      items={[
-                        "周期请求 /device-api/v1/commands/pending。",
-                        "按 request_id 执行命令。",
-                        "调用 /device-api/v1/commands/{request_id}/reply 返回 code、data 或错误信息。"
-                      ]}
-                    />
-                    <Checklist
-                      title="OTA 任务"
-                      items={[
-                        "周期请求 /device-api/v1/ota/tasks/current。",
-                        "下载固件并校验 sha256。",
-                        "按 downloading、installing、success 或 failed 上报进度。"
-                      ]}
-                    />
-                  </div>
-                </DocBlock>
-                <DocBlock title="5. Demo 验证">
-                  <CodeBlock
-                    value={`HTTP_DEVICE_API_URL=http://localhost:3000 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_http_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/http-python-demo.py
-
-gcc docs/device-integration/http-c-demo.c -lcrypto -o /tmp/ziot-http-c-demo
-HTTP_DEVICE_API_URL=http://localhost:3000 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_http_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-http-c-demo`}
-                  />
-                </DocBlock>
-              </div>
-            </section>
-
             <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-start gap-3">
                 <BookOpen className="mt-0.5 h-5 w-5 text-slate-600" />
@@ -441,21 +302,5 @@ function CodeBlock({ value }: { value: string }) {
     <pre className="mt-3 overflow-x-auto rounded-md bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100">
       {value}
     </pre>
-  );
-}
-
-function Checklist({ items, title }: { items: string[]; title: string }) {
-  return (
-    <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-      <h4 className="text-sm font-semibold text-slate-950">{title}</h4>
-      <div className="mt-3 space-y-2">
-        {items.map((item) => (
-          <div className="flex items-start gap-2 text-sm text-slate-600" key={item}>
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-            <span>{item}</span>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }

@@ -12,7 +12,7 @@ describe("apiErrorResponse", () => {
     expect(response.status).toBe(500);
     expect(body).toEqual({
       code: 500001,
-      message: "internal server error",
+      message: "服务器内部错误",
       request_id: "req_test",
       data: null
     });

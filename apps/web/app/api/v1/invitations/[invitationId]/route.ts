@@ -28,7 +28,7 @@ export async function GET(
     const user = await getCurrentUser(request);
 
     if (!user.permissions.includes("invite:read")) {
-      throw Object.assign(new Error("permission denied"), { code: 403001 });
+      throw Object.assign(new Error("没有操作权限"), { code: 403001 });
     }
 
     const { invitationId } = await params;
@@ -53,13 +53,13 @@ export async function PATCH(
     const user = await getCurrentUser(request);
 
     if (!user.permissions.includes("invite:write")) {
-      throw Object.assign(new Error("permission denied"), { code: 403001 });
+      throw Object.assign(new Error("没有操作权限"), { code: 403001 });
     }
 
     const body = (await request.json()) as Record<string, unknown>;
 
     if (body.status !== "disabled") {
-      throw Object.assign(new Error("status must be disabled"), {
+      throw Object.assign(new Error("status 参数只支持 disabled"), {
         code: 400001
       });
     }

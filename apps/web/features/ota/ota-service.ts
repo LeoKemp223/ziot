@@ -43,7 +43,7 @@ function assertName(value: string, field = "name") {
   const name = value.trim();
 
   if (!name || name.length > 128) {
-    throw otaError(400001, `${field} must be 1-128 characters`);
+    throw otaError(400001, `${field}长度必须为 1-128 位`);
   }
 
   return name;
@@ -53,7 +53,7 @@ function assertSha256(value: string) {
   const sha256 = value.trim().toLowerCase();
 
   if (!/^[a-f0-9]{64}$/.test(sha256)) {
-    throw otaError(400001, "sha256 must be 64 lowercase hex characters");
+    throw otaError(400001, "sha256 必须为 64 位小写十六进制字符");
   }
 
   return sha256;
@@ -61,7 +61,7 @@ function assertSha256(value: string) {
 
 function normalizeFileSize(value: number) {
   if (!Number.isFinite(value) || value <= 0) {
-    throw otaError(400001, "file_size must be greater than 0");
+    throw otaError(400001, "固件大小必须大于 0");
   }
 
   return BigInt(Math.floor(value));
@@ -159,7 +159,7 @@ async function findProductForScope(
   });
 
   if (!product) {
-    throw otaError(404001, "product not found");
+    throw otaError(404001, "产品不存在");
   }
 
   return product;
@@ -179,7 +179,7 @@ async function findFirmwareForScope(
   });
 
   if (!firmware) {
-    throw otaError(404001, "firmware not found");
+    throw otaError(404001, "固件不存在");
   }
 
   return firmware;
@@ -203,7 +203,7 @@ async function findTaskForScope(
   });
 
   if (!task) {
-    throw otaError(404001, "ota task not found");
+    throw otaError(404001, "升级任务不存在");
   }
 
   return task;
@@ -244,7 +244,7 @@ export async function createFirmware(
   const fileUrl = input.fileUrl.trim();
 
   if (!fileUrl || fileUrl.length > 2048) {
-    throw otaError(400001, "file_url must be 1-2048 characters");
+    throw otaError(400001, "固件地址长度必须为 1-2048 位");
   }
 
   const existing = await db.firmware.findFirst({
@@ -255,7 +255,7 @@ export async function createFirmware(
   });
 
   if (existing) {
-    throw otaError(409001, "firmware version already exists");
+    throw otaError(409001, "固件版本已存在");
   }
 
   const firmware = await db.firmware.create({
@@ -352,7 +352,7 @@ async function resolveTargetDevices(
     const ids = Array.from(new Set(input.strategy.device_ids ?? []));
 
     if (ids.length === 0) {
-      throw otaError(400001, "device_ids is required");
+      throw otaError(400001, "必须提供设备列表");
     }
 
     return db.device.findMany({
@@ -371,7 +371,7 @@ async function resolveTargetDevices(
     const groupId = input.strategy.group_id;
 
     if (!groupId) {
-      throw otaError(400001, "group_id is required");
+      throw otaError(400001, "必须提供设备分组");
     }
 
     const group = await db.deviceGroup.findFirst({
@@ -385,7 +385,7 @@ async function resolveTargetDevices(
     });
 
     if (!group) {
-      throw otaError(404001, "device group not found");
+      throw otaError(404001, "设备分组不存在");
     }
 
     const members = await db.deviceGroupMember.findMany({
@@ -442,7 +442,7 @@ export async function createOtaTask(
   });
 
   if (firmware.status === "deprecated") {
-    throw otaError(409001, "firmware is deprecated");
+    throw otaError(409001, "固件已废弃");
   }
 
   const devices = await resolveTargetDevices(db, {
@@ -452,7 +452,7 @@ export async function createOtaTask(
   });
 
   if (devices.length === 0) {
-    throw otaError(400001, "target devices is empty");
+    throw otaError(400001, "目标设备为空");
   }
 
   const task = await db.otaTask.create({
@@ -510,13 +510,13 @@ async function emqxToken() {
   });
 
   if (!response.ok) {
-    throw otaError(500001, "failed to login emqx");
+    throw otaError(500001, "登录 EMQX 失败");
   }
 
   const body = (await response.json()) as { token?: string };
 
   if (!body.token) {
-    throw otaError(500001, "failed to login emqx");
+    throw otaError(500001, "登录 EMQX 失败");
   }
 
   return { apiUrl, token: body.token };
@@ -539,7 +539,7 @@ async function publishMqtt(topic: string, payload: unknown) {
   });
 
   if (!response.ok) {
-    throw otaError(500001, "failed to publish ota notification");
+    throw otaError(500001, "发布 OTA 通知失败");
   }
 }
 
@@ -550,7 +550,7 @@ export async function startOtaTask(
   const task = await findTaskForScope(db, input);
 
   if (!["created", "scheduled"].includes(task.status)) {
-    throw otaError(409001, "ota task cannot be started");
+    throw otaError(409001, "升级任务当前无法启动");
   }
 
   const now = new Date();
@@ -590,7 +590,7 @@ export async function cancelOtaTask(
   const task = await findTaskForScope(db, input);
 
   if (["finished", "cancelled"].includes(task.status)) {
-    throw otaError(409001, "ota task cannot be cancelled");
+    throw otaError(409001, "升级任务当前无法取消");
   }
 
   const now = new Date();
@@ -635,39 +635,6 @@ export async function listOtaRecords(
   return records.map((record: any) => mapRecord(record));
 }
 
-export async function getCurrentDeviceOtaTask(
-  db: Db,
-  input: { orgId: string; deviceId: string }
-) {
-  const record = await db.otaRecord.findFirst({
-    where: {
-      org_id: input.orgId,
-      device_id: input.deviceId,
-      status: { in: ["notified", "downloading", "installing"] },
-      task: { status: "running" }
-    },
-    orderBy: { updated_at: "asc" },
-    include: { task: { include: { firmware: true, product: true } } }
-  });
-
-  if (!record) {
-    return null;
-  }
-
-  return {
-    task_id: record.task_id,
-    record_id: record.id,
-    status: record.status,
-    progress: record.progress,
-    firmware: {
-      version: record.task.firmware.version,
-      file_url: record.task.firmware.file_url,
-      file_size: Number(record.task.firmware.file_size),
-      sha256: record.task.firmware.sha256
-    }
-  };
-}
-
 function normalizeProgress(input: unknown) {
   const progress = Number(input);
 
@@ -709,7 +676,7 @@ export async function recordOtaProgress(
   }
 
   if (!deviceId) {
-    throw otaError(404001, "device not found");
+    throw otaError(404001, "设备不存在");
   }
 
   const current = await db.otaRecord.findFirst({
@@ -722,11 +689,11 @@ export async function recordOtaProgress(
   });
 
   if (!current) {
-    throw otaError(404001, "ota record not found");
+    throw otaError(404001, "升级记录不存在");
   }
 
   if (current.status === "cancelled") {
-    throw otaError(409001, "ota record is cancelled");
+    throw otaError(409001, "升级记录已取消");
   }
 
   const progress = input.status === "success" ? 100 : normalizeProgress(input.progress);

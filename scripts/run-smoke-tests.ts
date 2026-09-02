@@ -10,7 +10,7 @@ const BASE_URL = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/$/
 const MQTT_BROKER_URL =
   process.env.MQTT_BROKER_URL ??
   `mqtt://${process.env.MQTT_HOST ?? "localhost"}:${process.env.MQTT_PORT ?? "1883"}`;
-const ADMIN_ACCOUNT = process.env.ADMIN_ACCOUNT ?? "admin@example.com";
+const ADMIN_ACCOUNT = process.env.ADMIN_ACCOUNT ?? "13800000001";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "Admin123456";
 const DEFAULT_TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS ?? "20000");
 
@@ -98,55 +98,6 @@ function sha256Hex(value: string) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-function signedDeviceHeaders(
-  method: string,
-  path: string,
-  body: string,
-  device: { productKey: string; deviceKey: string; deviceSecret: string }
-) {
-  const timestamp = String(Date.now());
-  const nonce = `smoke_${timestamp}_${crypto.randomBytes(8).toString("hex")}`;
-  const bodySha256 = sha256Hex(body);
-  const canonical = [method.toUpperCase(), path, timestamp, nonce, bodySha256].join("\n");
-  const signature = crypto
-    .createHmac("sha256", device.deviceSecret)
-    .update(canonical)
-    .digest("hex");
-
-  return {
-    "content-type": "application/json",
-    "x-ziot-product-key": device.productKey,
-    "x-ziot-device-key": device.deviceKey,
-    "x-ziot-device-secret": device.deviceSecret,
-    "x-ziot-timestamp": timestamp,
-    "x-ziot-nonce": nonce,
-    "x-ziot-body-sha256": bodySha256,
-    "x-ziot-signature": signature
-  };
-}
-
-async function deviceApi<T>(
-  method: string,
-  path: string,
-  device: { productKey: string; deviceKey: string; deviceSecret: string },
-  payload?: unknown
-) {
-  const body = payload === undefined ? "" : JSON.stringify(payload);
-  const response = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers: signedDeviceHeaders(method, path, body, device),
-    ...(body ? { body } : {})
-  });
-  const text = await response.text();
-  const envelope = text ? (JSON.parse(text) as Envelope<T>) : null;
-
-  if (!response.ok || envelope?.code !== 0) {
-    throw new Error(`${method} ${path} failed ${response.status}: ${text}`);
-  }
-
-  return envelope.data;
-}
-
 async function waitFor<T>(
   name: string,
   action: () => Promise<T | null | undefined | false>,
@@ -225,6 +176,7 @@ async function subscribeMqtt(client: any, topic: string) {
 
 async function main() {
   const stamp = Date.now();
+  const registerAccount = `139${String(stamp % 100_000_000).padStart(8, "0")}`;
   const adminJar: CookieJar = new Map();
   const operatorJar: CookieJar = new Map();
 
@@ -249,22 +201,26 @@ async function main() {
     throw new Error("no role available for registration smoke test");
   }
 
-  const invitation = await api<{ code: string }>("/api/v1/invitations", {
+  const invitations = await api<Array<{ code: string }>>("/api/v1/invitations", {
     method: "POST",
     jar: adminJar,
     json: {
       role_id: memberRole.id,
+      count: 2,
       max_uses: 1
     }
   });
+  if (invitations.length !== 2) {
+    throw new Error(`invitation batch expected 2 codes, got ${invitations.length}`);
+  }
   await api("/api/v1/auth/register", {
     method: "POST",
     jar: operatorJar,
     json: {
-      account: `smoke_${stamp}@example.com`,
+      account: registerAccount,
       password: "Smoke123456",
       display_name: "Smoke Operator",
-      invitation_code: invitation.code
+      invitation_code: invitations[0]?.code ?? ""
     }
   });
   logStep("invitation registration");
@@ -278,13 +234,7 @@ async function main() {
     json: {
       name: `Smoke Product ${stamp}`,
       product_key: `pk_smoke_${stamp}`,
-      protocols: ["mqtt", "http"],
-      thing_model: {
-        version: "1.0",
-        properties: [],
-        events: [],
-        services: []
-      }
+      protocols: ["mqtt"]
     }
   });
   logStep("product creation");
@@ -300,19 +250,6 @@ async function main() {
       product_id: product.id,
       name: `Smoke MQTT Device ${stamp}`,
       device_key: `dk_smoke_mqtt_${stamp}`
-    }
-  });
-  const httpDevice = await api<{
-    id: string;
-    device_key: string;
-    device_secret: string;
-  }>("/api/v1/devices", {
-    method: "POST",
-    jar: adminJar,
-    json: {
-      product_id: product.id,
-      name: `Smoke HTTP Device ${stamp}`,
-      device_key: `dk_smoke_http_${stamp}`
     }
   });
   logStep("device creation");
@@ -389,23 +326,6 @@ async function main() {
   });
   logStep("command control");
 
-  await deviceApi(
-    "POST",
-    "/device-api/v1/properties",
-    {
-      productKey: product.product_key,
-      deviceKey: httpDevice.device_key,
-      deviceSecret: httpDevice.device_secret
-    },
-    {
-      id: `http_${stamp}`,
-      params: {
-        voltage: 3.3
-      }
-    }
-  );
-  logStep("http property report");
-
   const firmware = await api<{ id: string }>("/api/v1/firmwares", {
     method: "POST",
     jar: adminJar,
@@ -417,6 +337,24 @@ async function main() {
       sha256: sha256Hex(`smoke-${stamp}`)
     }
   });
+
+  // 设备侧先订阅 OTA 通知,再启动任务,验证 notify -> result 的 MQTT 全链路
+  const otaNotifyTopic = `/ota/${product.product_key}/${mqttDevice.device_key}/upgrade/notify`;
+  await subscribeMqtt(mqttClient, otaNotifyTopic);
+  let otaNotifyTaskId = "";
+  mqttClient.on("message", (topic: string, payload: Buffer) => {
+    if (topic !== otaNotifyTopic) {
+      return;
+    }
+    try {
+      otaNotifyTaskId = String(
+        (JSON.parse(payload.toString()) as { task_id?: string }).task_id ?? ""
+      );
+    } catch {
+      otaNotifyTaskId = "";
+    }
+  });
+
   const otaTask = await api<{ id: string }>("/api/v1/ota/tasks", {
     method: "POST",
     jar: adminJar,
@@ -425,7 +363,7 @@ async function main() {
       name: `Smoke OTA ${stamp}`,
       strategy: {
         target_type: "devices",
-        device_ids: [httpDevice.id]
+        device_ids: [mqttDevice.id]
       }
     }
   });
@@ -433,30 +371,34 @@ async function main() {
     method: "POST",
     jar: adminJar
   });
-  const currentOta = await deviceApi<{ task_id: string }>(
-    "GET",
-    "/device-api/v1/ota/tasks/current",
-    {
-      productKey: product.product_key,
-      deviceKey: httpDevice.device_key,
-      deviceSecret: httpDevice.device_secret
-    }
+  const notifiedTaskId = await waitFor("ota notify", async () =>
+    otaNotifyTaskId ? otaNotifyTaskId : null
   );
-  await deviceApi(
-    "POST",
-    `/device-api/v1/ota/tasks/${currentOta.task_id}/progress`,
+  if (notifiedTaskId !== otaTask.id) {
+    throw new Error(
+      `ota notify task mismatch: ${notifiedTaskId} !== ${otaTask.id}`
+    );
+  }
+
+  await publishMqtt(
+    mqttClient,
+    `/ota/${product.product_key}/${mqttDevice.device_key}/upgrade/result`,
     {
-      productKey: product.product_key,
-      deviceKey: httpDevice.device_key,
-      deviceSecret: httpDevice.device_secret
-    },
-    {
-      status: "success",
-      progress: 100,
+      task_id: otaTask.id,
+      code: 0,
       firmware_version: `1.0.${stamp}`
     }
   );
-  logStep("ota progress");
+  await waitFor("ota task finished", async () => {
+    const task = await api<{ status: string; record_counts: { success: number } }>(
+      `/api/v1/ota/tasks/${otaTask.id}`,
+      { jar: adminJar }
+    );
+    return task.status === "finished" && task.record_counts.success > 0
+      ? task
+      : null;
+  });
+  logStep("ota notify + result");
 
   mqttClient.end(true);
   console.log("smoke tests passed");

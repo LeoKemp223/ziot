@@ -21,8 +21,8 @@ export function apiErrorResponse(
       : 500001;
   const message =
     code === 500001
-      ? "internal server error"
-      : maybeError.message ?? "request failed";
+      ? "服务器内部错误"
+      : maybeError.message ?? "请求失败";
 
   if (code === 500001) {
     console.error("api internal error", error);

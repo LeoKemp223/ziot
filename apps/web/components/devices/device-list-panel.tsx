@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { Eye, Pencil, Plus, Power, RefreshCw, Trash2, X } from "lucide-react";
+import { Copy, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { copyTextToClipboard } from "@/lib/clipboard";
 import type { ProductDto } from "@/lib/products/product-service";
 import { usePermissions } from "@/components/console/use-permissions";
 
@@ -43,6 +44,7 @@ type DevicesResponse = ApiResponse<{
 }>;
 
 export function DeviceCreateForm() {
+  const [secretCopied, setSecretCopied] = useState(false);
   const { isLoaded, hasPermission } = usePermissions();
   const [open, setOpen] = useState(false);
   const [products, setProducts] = useState<ProductDto[]>([]);
@@ -50,6 +52,15 @@ export function DeviceCreateForm() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [createdSecret, setCreatedSecret] = useState("");
+
+  async function copyCreatedSecret() {
+    const copied = await copyTextToClipboard(createdSecret);
+
+    setSecretCopied(copied);
+    if (copied) {
+      window.setTimeout(() => setSecretCopied(false), 2000);
+    }
+  }
 
   async function loadProducts() {
     setLoadingProducts(true);
@@ -80,6 +91,7 @@ export function DeviceCreateForm() {
     setPending(true);
     setError("");
     setCreatedSecret("");
+    setSecretCopied(false);
 
     const form = new FormData(formElement);
 
@@ -126,6 +138,7 @@ export function DeviceCreateForm() {
           onClick={() => {
             setError("");
             setCreatedSecret("");
+            setSecretCopied(false);
             setOpen(true);
           }}
           type="button"
@@ -141,63 +154,28 @@ export function DeviceCreateForm() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
           role="dialog"
         >
-          <form
-            className="w-full max-w-xl rounded-lg bg-white shadow-xl"
-            onSubmit={createDevice}
-          >
-            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-              <div>
-                <h2 className="text-base font-semibold text-slate-950">
-                  创建设备
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  设备密钥只在创建后显示一次。
-                </p>
-              </div>
-              <button
-                aria-label="关闭"
-                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                onClick={() => setOpen(false)}
-                type="button"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="space-y-4 px-5 py-5">
-              <label className="block">
-                <span className="text-sm font-medium text-slate-700">
-                  所属产品
-                </span>
-                <select
-                  className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-                  disabled={loadingProducts}
-                  name="product_id"
-                  required
+          {createdSecret ? (
+            <div className="w-full max-w-xl rounded-lg bg-white shadow-xl">
+              <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-950">
+                    设备已创建
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    设备密钥只在创建后显示一次，请妥善保存。
+                  </p>
+                </div>
+                <button
+                  aria-label="关闭"
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                  onClick={() => setOpen(false)}
+                  type="button"
                 >
-                  <option value="">
-                    {loadingProducts ? "正在加载产品..." : "选择产品"}
-                  </option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium text-slate-700">
-                  设备名称
-                </span>
-                <input
-                  className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-                  maxLength={128}
-                  name="name"
-                  placeholder="网关设备"
-                  required
-                />
-              </label>
-              {createdSecret ? (
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="px-5 py-5">
                 <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
                   <div className="text-xs font-medium text-emerald-700">
                     设备密钥
@@ -206,28 +184,105 @@ export function DeviceCreateForm() {
                     {createdSecret}
                   </div>
                 </div>
-              ) : null}
-              {error ? <div className="text-sm text-rose-600">{error}</div> : null}
-            </div>
+              </div>
 
-            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
-              <button
-                className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                onClick={() => setOpen(false)}
-                type="button"
-              >
-                关闭
-              </button>
-              <button
-                className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={pending || loadingProducts || products.length === 0}
-                type="submit"
-              >
-                {pending ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
-                创建
-              </button>
+              <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+                <button
+                  className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  onClick={() => void copyCreatedSecret()}
+                  type="button"
+                >
+                  <Copy className="h-4 w-4" />
+                  {secretCopied ? "已复制" : "复制密钥"}
+                </button>
+                <button
+                  className="inline-flex h-10 items-center rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800"
+                  onClick={() => setOpen(false)}
+                  type="button"
+                >
+                  关闭
+                </button>
+              </div>
             </div>
-          </form>
+          ) : (
+            <form
+              className="w-full max-w-xl rounded-lg bg-white shadow-xl"
+              onSubmit={createDevice}
+            >
+              <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-950">
+                    创建设备
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    设备密钥只在创建后显示一次。
+                  </p>
+                </div>
+                <button
+                  aria-label="关闭"
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                  onClick={() => setOpen(false)}
+                  type="button"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="space-y-4 px-5 py-5">
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700">
+                    所属产品
+                  </span>
+                  <select
+                    className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                    disabled={loadingProducts}
+                    name="product_id"
+                    required
+                  >
+                    <option value="">
+                      {loadingProducts ? "正在加载产品..." : "选择产品"}
+                    </option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700">
+                    设备名称
+                  </span>
+                  <input
+                    className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                    maxLength={128}
+                    name="name"
+                    placeholder="网关设备"
+                    required
+                  />
+                </label>
+                {error ? <div className="text-sm text-rose-600">{error}</div> : null}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+                <button
+                  className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  onClick={() => setOpen(false)}
+                  type="button"
+                >
+                  关闭
+                </button>
+                <button
+                  className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={pending || loadingProducts || products.length === 0}
+                  type="submit"
+                >
+                  {pending ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
+                  创建
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       ) : null}
     </>
@@ -249,6 +304,12 @@ export function DeviceListPanel() {
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [editingDevice, setEditingDevice] = useState<{
+    id: string;
+    name: string;
+    product_id: string;
+  } | null>(null);
+  const [deletingDevice, setDeletingDevice] = useState<DeviceItem | null>(null);
 
   async function loadData(
     showLoading = true,
@@ -300,24 +361,25 @@ export function DeviceListPanel() {
     }
   }
 
-  async function updateDeviceName(device: DeviceItem) {
-    const name = window.prompt("设备名称", device.name);
+  async function saveEditingDevice(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-    if (name === null || name.trim() === device.name) {
+    if (!editingDevice) {
       return;
     }
 
-    await mutateDevice(device.id, { name: name.trim() });
+    const form = new FormData(event.currentTarget);
+    const name = String(form.get("name") ?? "").trim();
+
+    if (name && name !== editingDevice.name) {
+      await mutateDevice(editingDevice.id, { name });
+    }
+
+    setEditingDevice(null);
   }
 
-  async function toggleDeviceStatus(device: DeviceItem) {
-    const nextStatus = device.status === "active" ? "disabled" : "active";
-
-    await mutateDevice(device.id, { status: nextStatus });
-  }
-
-  async function deleteDevice(device: DeviceItem) {
-    if (!window.confirm(`确认删除设备 ${device.name}？`)) {
+  async function deleteDevice() {
+    if (!deletingDevice) {
       return;
     }
 
@@ -325,7 +387,7 @@ export function DeviceListPanel() {
     setError("");
 
     try {
-      const response = await fetch(`/api/v1/devices/${device.id}`, {
+      const response = await fetch(`/api/v1/devices/${deletingDevice.id}`, {
         method: "DELETE"
       });
       const body = (await response.json()) as ApiResponse<{ id: string }>;
@@ -346,6 +408,7 @@ export function DeviceListPanel() {
       setError("删除设备失败，请稍后重试。");
     } finally {
       setPending(false);
+      setDeletingDevice(null);
     }
   }
 
@@ -392,7 +455,151 @@ export function DeviceListPanel() {
   }, [selectedProductId]);
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+    <>
+      {deletingDevice ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+          role="dialog"
+        >
+          <div className="w-full max-w-xl rounded-lg bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">
+                  删除设备
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  删除后设备进入回收状态，不可恢复。
+                </p>
+              </div>
+              <button
+                aria-label="关闭"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                onClick={() => setDeletingDevice(null)}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 px-5 py-5 text-sm text-slate-600">
+              <div>
+                确定删除设备
+                <span className="mx-1 font-medium text-slate-950">
+                  「{deletingDevice.name}」
+                </span>
+                ？
+              </div>
+              <div className="rounded-md bg-slate-50 px-3 py-2 font-mono text-xs text-slate-500">
+                {deletingDevice.product_name} / {deletingDevice.device_key}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button
+                className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setDeletingDevice(null)}
+                type="button"
+              >
+                取消
+              </button>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-md bg-rose-600 px-4 text-sm font-medium text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={pending}
+                onClick={() => void deleteDevice()}
+                type="button"
+              >
+                {pending ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
+                确认删除
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {editingDevice ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+          role="dialog"
+        >
+          <form
+            className="w-full max-w-xl rounded-lg bg-white shadow-xl"
+            onSubmit={saveEditingDevice}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">
+                  编辑设备
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  修改设备基础信息。
+                </p>
+              </div>
+              <button
+                aria-label="关闭"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                onClick={() => setEditingDevice(null)}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-5 py-5">
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">
+                  所属产品
+                </span>
+                <select
+                  className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 outline-none"
+                  disabled
+                  name="product_id"
+                >
+                  <option value={editingDevice.product_id}>
+                    {products.find((product) => product.id === editingDevice.product_id)
+                      ?.name ?? editingDevice.product_id}
+                  </option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">
+                  设备名称
+                </span>
+                <input
+                  className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  defaultValue={editingDevice.name}
+                  key={editingDevice.id}
+                  maxLength={128}
+                  name="name"
+                  placeholder="网关设备"
+                  required
+                />
+              </label>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button
+                className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setEditingDevice(null)}
+                type="button"
+              >
+                取消
+              </button>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={pending}
+                type="submit"
+              >
+                {pending ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
+                保存
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-base font-semibold text-slate-950">设备列表</h2>
@@ -486,37 +693,30 @@ export function DeviceListPanel() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex justify-end gap-2">
-                      <a
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
-                        href={`/devices/${device.id}`}
-                        title="详情"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </a>
                       {canWriteDevices ? (
                         <>
                           <button
                             className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
                             disabled={pending}
-                            onClick={() => void updateDeviceName(device)}
-                            title="修改"
+                            onClick={() =>
+                              setEditingDevice({
+                                id: device.id,
+                                name: device.name,
+                                product_id: device.product_id
+                              })
+                            }
+                            title="编辑"
                             type="button"
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
                           <button
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-200 text-amber-700 hover:bg-amber-50 disabled:opacity-60"
-                            disabled={pending}
-                            onClick={() => void toggleDeviceStatus(device)}
-                            title={device.status === "active" ? "禁用" : "启用"}
-                            type="button"
-                          >
-                            <Power className="h-4 w-4" />
-                          </button>
-                          <button
                             className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 text-rose-700 hover:bg-rose-50 disabled:opacity-60"
                             disabled={pending}
-                            onClick={() => void deleteDevice(device)}
+                            onClick={() => {
+                              setError("");
+                              setDeletingDevice(device);
+                            }}
                             title="删除"
                             type="button"
                           >
@@ -537,7 +737,8 @@ export function DeviceListPanel() {
         onPageChange={(page) => void loadData(true, selectedProductId, page)}
         pagination={pagination}
       />
-    </section>
+      </section>
+    </>
   );
 }
 

@@ -162,6 +162,7 @@ export type UserOrgRoleScalarFieldEnum = (typeof UserOrgRoleScalarFieldEnum)[key
 
 export const InvitationScalarFieldEnum = {
   id: 'id',
+  code: 'code',
   code_hash: 'code_hash',
   org_id: 'org_id',
   role_id: 'role_id',

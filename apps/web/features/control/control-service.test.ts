@@ -267,7 +267,7 @@ describe("control service", () => {
       })
     ).rejects.toMatchObject({
       code: 403001,
-      message: "device is disabled"
+      message: "设备已被禁用"
     });
   });
 
@@ -375,10 +375,7 @@ describe("control service", () => {
           product_id: "prd_demo",
           product: {
             id: "prd_demo",
-            product_key: "pk_demo",
-            thing_model: {
-              services: [{ identifier: "setSwitch" }]
-            }
+            product_key: "pk_demo"
           },
           members: [
             { device: device({ id: "dev_1" }) },

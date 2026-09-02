@@ -122,7 +122,7 @@ describe("device service", () => {
       })
     ).rejects.toMatchObject({
       code: 409001,
-      message: "device_key already exists in product"
+      message: "device_key 在该产品下已存在"
     });
     expect(db.device.create).not.toHaveBeenCalled();
   });
@@ -149,7 +149,7 @@ describe("device service", () => {
       })
     ).rejects.toMatchObject({
       code: 404001,
-      message: "product not found"
+      message: "产品不存在"
     });
     expect(db.product.findFirst).toHaveBeenCalledWith({
       where: {
@@ -212,7 +212,7 @@ describe("device service", () => {
       })
     ).rejects.toMatchObject({
       code: 404001,
-      message: "device not found"
+      message: "设备不存在"
     });
     expect(db.device.findFirst).toHaveBeenCalledWith({
       where: {
@@ -397,7 +397,7 @@ describe("device service", () => {
       })
     ).rejects.toMatchObject({
       code: 409001,
-      message: "device and group must belong to the same product"
+      message: "设备和分组必须属于同一产品"
     });
     expect(db.deviceGroupMember.upsert).not.toHaveBeenCalled();
   });

@@ -4,8 +4,7 @@ import {
   deleteProduct,
   getProduct,
   listProducts,
-  updateProduct,
-  updateProductThingModel
+  updateProduct
 } from "./product-service";
 
 const now = new Date("2026-04-28T08:00:00.000Z");
@@ -17,7 +16,7 @@ function product(overrides: Record<string, unknown> = {}) {
     created_by: "usr_admin",
     product_key: "pk_demo",
     name: "演示产品",
-    protocols: ["mqtt", "http"],
+    protocols: ["mqtt"],
     auth_type: "device_secret",
     data_format: "json",
     thing_model: {
@@ -102,7 +101,7 @@ describe("product service", () => {
     });
   });
 
-  it("creates a product with a validated default thing model", async () => {
+  it("creates a product with mqtt protocol and a placeholder thing model", async () => {
     const db = {
       product: {
         findUnique: vi.fn().mockResolvedValue(null),
@@ -160,10 +159,54 @@ describe("product service", () => {
 
     expect(db.product.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        product_key: expect.stringMatching(/^pk_[a-f0-9]{12}$/)
+        product_key: expect.stringMatching(/^pk_[a-f0-9]{12}$/),
+        protocols: ["mqtt"]
       }),
       include: { _count: { select: { devices: true } } }
     });
+  });
+
+  it("rejects creating a product with unsupported protocols", async () => {
+    const db = {
+      product: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn()
+      }
+    };
+
+    await expect(
+      createProduct(db, {
+        orgId: "org_default",
+        createdBy: "usr_admin",
+        name: "HTTP 产品",
+        protocols: ["mqtt", "http"]
+      })
+    ).rejects.toMatchObject({
+      code: 400001,
+      message: '不支持的协议 "http"，当前仅支持 "mqtt"'
+    });
+    expect(db.product.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects updating a product with unsupported protocols", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product()),
+        update: vi.fn()
+      }
+    };
+
+    await expect(
+      updateProduct(db, {
+        orgId: "org_default",
+        productId: "prd_demo",
+        protocols: ["http"]
+      })
+    ).rejects.toMatchObject({
+      code: 400001,
+      message: '不支持的协议 "http"，当前仅支持 "mqtt"'
+    });
+    expect(db.product.update).not.toHaveBeenCalled();
   });
 
   it("rejects duplicated product keys", async () => {
@@ -186,7 +229,7 @@ describe("product service", () => {
       })
     ).rejects.toMatchObject({
       code: 409001,
-      message: "product_key already exists"
+      message: "product_key 已存在"
     });
   });
 
@@ -257,7 +300,7 @@ describe("product service", () => {
       })
     ).rejects.toMatchObject({
       code: 404001,
-      message: "product not found"
+      message: "产品不存在"
     });
     expect(db.product.findFirst).toHaveBeenCalledWith({
       where: {
@@ -268,40 +311,6 @@ describe("product service", () => {
       },
       include: { _count: { select: { devices: true } } }
     });
-  });
-
-  it("updates a product thing model", async () => {
-    const thingModel = {
-      version: "1.0",
-      properties: [
-        {
-          identifier: "temperature",
-          name: "温度",
-          dataType: "number"
-        }
-      ],
-      events: [],
-      services: []
-    };
-    const db = {
-      product: {
-        findFirst: vi.fn().mockResolvedValue(product()),
-        update: vi.fn().mockResolvedValue(product({ thing_model: thingModel }))
-      }
-    };
-
-    const result = await updateProductThingModel(db, {
-      orgId: "org_default",
-      productId: "prd_demo",
-      thing_model: thingModel
-    });
-
-    expect(db.product.update).toHaveBeenCalledWith({
-      where: { id: "prd_demo" },
-      data: { thing_model: thingModel },
-      include: { _count: { select: { devices: true } } }
-    });
-    expect(result.properties[0]?.identifier).toBe("temperature");
   });
 
   it("rejects updates for missing products", async () => {
@@ -320,7 +329,7 @@ describe("product service", () => {
       })
     ).rejects.toMatchObject({
       code: 404001,
-      message: "product not found"
+      message: "产品不存在"
     });
     expect(db.product.update).not.toHaveBeenCalled();
   });
@@ -372,7 +381,7 @@ describe("product service", () => {
       })
     ).rejects.toMatchObject({
       code: 409001,
-      message: "product has active devices"
+      message: "产品下仍有设备，无法删除"
     });
     expect(db.product.update).not.toHaveBeenCalled();
   });

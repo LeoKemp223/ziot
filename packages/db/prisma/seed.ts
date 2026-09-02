@@ -52,24 +52,24 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { account: "admin@example.com" },
+    where: { account: "13800000001" },
     update: {},
     create: {
       id: "usr_admin",
-      account: "admin@example.com",
+      account: "13800000001",
       password_hash,
       display_name: "平台管理员"
     }
   });
 
   await prisma.user.upsert({
-    where: { account: "operator@example.com" },
+    where: { account: "13800000002" },
     update: {
       display_name: "普通操作员"
     },
     create: {
       id: "usr_operator",
-      account: "operator@example.com",
+      account: "13800000002",
       password_hash: operator_password_hash,
       display_name: "普通操作员"
     }
@@ -185,7 +185,7 @@ async function main() {
       created_by: "usr_admin",
       product_key: "pk_demo",
       name: "演示产品",
-      protocols: ["mqtt", "http"],
+      protocols: ["mqtt"],
       auth_type: "device_secret",
       data_format: "json",
       thing_model: {
@@ -198,8 +198,7 @@ async function main() {
   });
 
   for (const [id, device_key, name] of [
-    ["dev_mqtt_demo", "dk_mqtt_demo", "MQTT 演示设备"],
-    ["dev_http_demo", "dk_http_demo", "HTTP 演示设备"]
+    ["dev_mqtt_demo", "dk_mqtt_demo", "演示设备"]
   ] as const) {
     await prisma.device.upsert({
       where: {

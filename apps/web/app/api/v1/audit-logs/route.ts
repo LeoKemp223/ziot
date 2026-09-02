@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 
 function requirePermission(permissions: string[], permission: string) {
   if (!permissions.includes(permission)) {
-    throw Object.assign(new Error("permission denied"), { code: 403001 });
+    throw Object.assign(new Error("没有操作权限"), { code: 403001 });
   }
 }
 
@@ -22,7 +22,7 @@ function optionalDate(value: string | null) {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    throw Object.assign(new Error("invalid date filter"), { code: 400001 });
+    throw Object.assign(new Error("日期筛选参数无效"), { code: 400001 });
   }
 
   return date;

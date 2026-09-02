@@ -1,4 +1,3 @@
-import { Database } from "lucide-react";
 import { ConsoleHeader } from "@/components/console/header";
 import { ConsoleSidebar } from "@/components/console/sidebar";
 import { navItems } from "@/components/console/dashboard-data";
@@ -28,13 +27,6 @@ export default function OtaPage() {
                   管理固件版本、创建升级任务并查看设备升级进度。
                 </p>
               </div>
-              <a
-                className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-                href="/api/v1/ota/tasks"
-              >
-                <Database className="h-4 w-4" />
-                查看 API
-              </a>
             </div>
             <div className="mt-6">
               <OtaConsolePanel />

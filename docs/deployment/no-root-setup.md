@@ -17,7 +17,7 @@ mkdir -p "$RT"/{bin,debs,opt,emqx/data,emqx/log,redis/data,minio-data,postgres}
 
 | 组件 | 端口 | 凭证 | 数据位置 |
 | --- | --- | --- | --- |
-| Web 控制台 | 3000 | `admin@example.com` / `Admin123456` | — |
+| Web 控制台 | 3000 | `13800000001` / `Admin123456` | — |
 | PostgreSQL 14 | 127.0.0.1:55432 | 用户 `ziot`(trust 免密) | `$RT/postgres` |
 | Redis 6 | 127.0.0.1:6379 | 无 | `$RT/redis/data` |
 | EMQX 5.8.9 | 1883(MQTT)/ 18083(Dashboard) | Dashboard `admin` / `public123` | `$RT/emqx` |
@@ -203,7 +203,7 @@ DATABASE_URL=$DATABASE_URL REDIS_URL=redis://localhost:6379 \
 
 ```bash
 curl -s http://localhost:3000/api/v1/health        # {"status":"ok"...}
-pnpm smoke    # 10 步:健康/登录/邀请注册/产品/设备/MQTT连接/属性上报/控制/HTTP上报/OTA
+pnpm smoke    # 9 步:健康/登录/邀请注册/产品/设备/MQTT连接/属性上报/控制/OTA(notify+result)
 ```
 
 ## 8. 服务器重启后的拉起顺序
@@ -223,7 +223,8 @@ PG → Redis → MinIO → EMQX → web → worker(命令见上文各节;EMQX �
 | EMQX 建目录失败 | mkdir /var/lib/emqx 权限不够 | `node.data_dir` 指到用户目录 |
 | BullMQ 警告+丢任务 | eviction policy is allkeys-lru | redis.conf 改 `noeviction` |
 | pnpm 装完 prisma 不能用 | Ignored build scripts 警告 | package.json 配 `onlyBuiltDependencies` |
-| 登录 401 | invalid account or password | 字段是 `account`,不是 `email` |
+| 登录 401 | 账号或密码错误 | 字段是 `account`,不是 `email` |
+| 局域网访问页面点按钮无反应/URL 带表单参数 | Next 16 dev 拦截非 localhost 来源的 HMR,页面不水合 | `next.config.ts` 加 `allowedDevOrigins: ["<内网IP>"]` 并重启 dev server |
 | web 冷启动首个设备请求 500 | Stream isn't writeable | 已修(lazyConnect 客户端主动建连+内存降级);若部署旧代码需回移该补丁 |
 | 2 个单测失败 | auth-service 时间相关 | 存量问题,与部署无关 |
 

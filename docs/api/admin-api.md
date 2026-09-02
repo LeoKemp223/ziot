@@ -58,7 +58,7 @@ apps/web/.env.local
 | `400001` | 400 | 参数错误 |
 | `404001` | 404 | 资源不存在，例如产品不存在或已删除 |
 | `409001` | 409 | 资源冲突，例如 `product_key` 重复 |
-| `500001` | 500 | 系统错误，未知异常统一返回 `internal server error` |
+| `500001` | 500 | 系统错误，未知异常统一返回 `服务器内部错误` |
 
 ## 3. 临时组织上下文
 
@@ -123,7 +123,7 @@ curl http://localhost:3000/api/v1/health
 
 ```json
 {
-  "account": "admin@example.com",
+  "account": "13800000001",
   "password": "Admin123456"
 }
 ```
@@ -137,7 +137,7 @@ curl http://localhost:3000/api/v1/health
   "request_id": "req_xxx",
   "data": {
     "id": "usr_admin",
-    "account": "admin@example.com",
+    "account": "13800000001",
     "display_name": "平台管理员",
     "current_org_id": "org_default",
     "organizations": [
@@ -161,10 +161,10 @@ curl http://localhost:3000/api/v1/health
 
 ```json
 {
-  "account": "user@example.com",
+  "account": "13912345678",
   "password": "Password123",
   "display_name": "张三",
-  "invitation_code": "inv_xxx"
+  "invitation_code": "INVXXXXXXX"
 }
 ```
 
@@ -214,38 +214,59 @@ curl http://localhost:3000/api/v1/health
 ### `GET /api/v1/invitations`
 
 查询当前组织邀请码列表。需要 `invite:read` 或 `invite:write` 权限。
+列表项包含 `code` 明文字段(2026-09 起创建的邀请码才有值,历史记录为 `null`)。
 
 ### `POST /api/v1/invitations`
 
-创建邀请码。需要 `invite:write` 权限。
+批量创建邀请码。需要 `invite:write` 权限。
 
 请求体：
 
 ```json
 {
   "role_id": "role_org_member",
+  "count": 2,
   "max_uses": 1
 }
 ```
 
-成功响应：
+| 字段 | 类型 | 必填 | 规则 |
+| --- | --- | --- | --- |
+| `role_id` | string | 是 | 当前组织内角色 |
+| `count` | number | 否 | 创建数量，1-100，默认 `1` |
+| `max_uses` | number | 否 | 每个邀请码的最大使用次数，1-100，默认 `1` |
+
+成功响应(`data` 为数组，每个元素对应一个新建邀请码)：
 
 ```json
 {
   "code": 0,
   "message": "ok",
   "request_id": "req_xxx",
-  "data": {
-    "id": "inv_xxx",
-    "role_id": "role_org_member",
-    "role_name": "普通用户",
-    "max_uses": 1,
-    "used_count": 0,
-    "status": "active",
-    "expires_at": "2026-05-05T10:13:38.810Z",
-    "created_at": "2026-04-28T10:13:38.814Z",
-    "code": "inv_plain_code_only_once"
-  }
+  "data": [
+    {
+      "id": "inv_xxx",
+      "code": "INVG6R35ZS",
+      "role_id": "role_org_member",
+      "role_name": "普通用户",
+      "max_uses": 1,
+      "used_count": 0,
+      "status": "active",
+      "expires_at": "2026-05-05T10:13:38.810Z",
+      "created_at": "2026-04-28T10:13:38.814Z"
+    },
+    {
+      "id": "inv_yyy",
+      "code": "INVW8PW2G7",
+      "role_id": "role_org_member",
+      "role_name": "普通用户",
+      "max_uses": 1,
+      "used_count": 0,
+      "status": "active",
+      "expires_at": "2026-05-05T10:13:38.810Z",
+      "created_at": "2026-04-28T10:13:38.814Z"
+    }
+  ]
 }
 ```
 
@@ -277,15 +298,9 @@ curl http://localhost:3000/api/v1/health
   "created_by": "usr_admin",
   "product_key": "pk_demo",
   "name": "演示产品",
-  "protocols": ["mqtt", "http"],
+  "protocols": ["mqtt"],
   "auth_type": "device_secret",
   "data_format": "json",
-  "thing_model": {
-    "version": "1.0",
-    "properties": [],
-    "events": [],
-    "services": []
-  },
   "status": "active",
   "device_count": 2,
   "created_at": "2026-04-28T09:05:44.384Z",
@@ -301,25 +316,13 @@ curl http://localhost:3000/api/v1/health
 | `created_by` | string | 创建用户 ID |
 | `product_key` | string | 产品唯一标识，全局唯一 |
 | `name` | string | 产品名称 |
-| `protocols` | string[] | 支持协议，当前使用 `mqtt` / `http` |
+| `protocols` | string[] | 支持协议，当前仅支持 `mqtt` |
 | `auth_type` | string | 认证方式，当前默认 `device_secret` |
 | `data_format` | string | 数据格式，当前默认 `json` |
-| `thing_model` | object | 物模型定义 |
 | `status` | string | 资源状态，当前为 `active` / `disabled` |
 | `device_count` | number | 关联设备数量 |
 | `created_at` | string | 创建时间，ISO 8601 |
 | `updated_at` | string | 更新时间，ISO 8601 |
-
-当前默认物模型：
-
-```json
-{
-  "version": "1.0",
-  "properties": [],
-  "events": [],
-  "services": []
-}
-```
 
 ### `GET /api/v1/products`
 
@@ -357,15 +360,9 @@ curl "http://localhost:3000/api/v1/products?page=1&page_size=20"
         "id": "prd_demo",
         "product_key": "pk_demo",
         "name": "演示产品",
-        "protocols": ["mqtt", "http"],
+        "protocols": ["mqtt"],
         "auth_type": "device_secret",
         "data_format": "json",
-        "thing_model": {
-          "version": "1.0",
-          "properties": [],
-          "events": [],
-          "services": []
-        },
         "status": "active",
         "device_count": 2,
         "created_at": "2026-04-28T09:05:44.384Z",
@@ -386,7 +383,7 @@ curl "http://localhost:3000/api/v1/products?page=1&page_size=20"
 
 - `keyword` 当前只匹配 `name`，不匹配 `product_key`。
 - 需要登录，并按当前组织和 `product:read` / `product:write` 权限访问。
-- 普通用户访问别人创建的产品详情、物模型、更新或删除接口时返回 `404001`。
+- 普通用户访问别人创建的产品详情、更新或删除接口时返回 `404001`。
 
 ### `POST /api/v1/products`
 
@@ -407,13 +404,7 @@ content-type: application/json
   "name": "温湿度传感器",
   "protocols": ["mqtt"],
   "auth_type": "device_secret",
-  "data_format": "json",
-  "thing_model": {
-    "version": "1.0",
-    "properties": [],
-    "events": [],
-    "services": []
-  }
+  "data_format": "json"
 }
 ```
 
@@ -423,10 +414,9 @@ content-type: application/json
 | --- | --- | --- | --- |
 | `product_key` | string | 否 | 3-64 位，只允许字母、数字、下划线和中划线；不传时服务端生成 |
 | `name` | string | 是 | 1-128 位 |
-| `protocols` | string[] | 否 | 默认 `["mqtt"]` |
+| `protocols` | string[] | 否 | 当前仅支持 `["mqtt"]`，默认 `["mqtt"]`，传入其他协议返回 `400001` |
 | `auth_type` | string | 否 | 默认 `device_secret` |
 | `data_format` | string | 否 | 默认 `json` |
-| `thing_model` | object | 否 | 默认空物模型 |
 
 请求示例：
 
@@ -453,12 +443,6 @@ HTTP 状态码：`201`
     "protocols": ["mqtt"],
     "auth_type": "device_secret",
     "data_format": "json",
-    "thing_model": {
-      "version": "1.0",
-      "properties": [],
-      "events": [],
-      "services": []
-    },
     "status": "active",
     "device_count": 0,
     "created_at": "2026-04-28T09:10:33.579Z",
@@ -474,7 +458,7 @@ HTTP 状态码：`201`
 ```json
 {
   "code": 400001,
-  "message": "product_key must be 3-64 characters of letters, numbers, underscore or hyphen",
+  "message": "product_key 必须为 3-64 位字母、数字、下划线或中划线",
   "request_id": "req_xxx",
   "data": null
 }
@@ -485,7 +469,7 @@ HTTP 状态码：`201`
 ```json
 {
   "code": 400001,
-  "message": "name must be 1-128 characters",
+  "message": "名称长度必须为 1-128 位",
   "request_id": "req_xxx",
   "data": null
 }
@@ -496,7 +480,7 @@ HTTP 状态码：`201`
 ```json
 {
   "code": 409001,
-  "message": "product_key already exists",
+  "message": "product_key 已存在",
   "request_id": "req_xxx",
   "data": null
 }
@@ -525,10 +509,9 @@ HTTP 状态码：`201`
 | 字段 | 类型 | 必填 | 规则 |
 | --- | --- | --- | --- |
 | `name` | string | 否 | 1-128 位；当前产品列表编辑入口只提交该字段 |
-| `protocols` | string[] | 否 | 为空数组时回退为 `["mqtt"]` |
+| `protocols` | string[] | 否 | 当前仅支持 `["mqtt"]`，为空数组时回退为 `["mqtt"]` |
 | `auth_type` | string | 否 | 当前默认 `device_secret` |
 | `data_format` | string | 否 | 当前默认 `json` |
-| `thing_model` | object | 否 | 必须通过物模型结构校验 |
 
 成功响应：
 
@@ -546,12 +529,6 @@ HTTP 状态码：`200`
     "protocols": ["mqtt"],
     "auth_type": "device_secret",
     "data_format": "json",
-    "thing_model": {
-      "version": "1.0",
-      "properties": [],
-      "events": [],
-      "services": []
-    },
     "status": "active",
     "device_count": 0,
     "created_at": "2026-04-28T09:10:33.579Z",
@@ -567,7 +544,7 @@ HTTP 状态码：`200`
 ```json
 {
   "code": 404001,
-  "message": "product not found",
+  "message": "产品不存在",
   "request_id": "req_xxx",
   "data": null
 }
@@ -578,7 +555,7 @@ HTTP 状态码：`200`
 ```json
 {
   "code": 400001,
-  "message": "name must be 1-128 characters",
+  "message": "名称长度必须为 1-128 位",
   "request_id": "req_xxx",
   "data": null
 }
@@ -611,7 +588,7 @@ HTTP 状态码：`200`
 ```json
 {
   "code": 404001,
-  "message": "product not found",
+  "message": "产品不存在",
   "request_id": "req_xxx",
   "data": null
 }
@@ -627,35 +604,6 @@ HTTP 状态码：`200`
   "data": null
 }
 ```
-
-### `GET /api/v1/products/{product_id}/thing-model`
-
-查询产品物模型。
-
-### `PUT /api/v1/products/{product_id}/thing-model`
-
-更新产品物模型。请求体可直接提交物模型对象，也可以放在 `thing_model` 字段中。
-
-请求体：
-
-```json
-{
-  "thing_model": {
-    "version": "1.0",
-    "properties": [
-      {
-        "identifier": "temperature",
-        "name": "温度",
-        "dataType": "number"
-      }
-    ],
-    "events": [],
-    "services": []
-  }
-}
-```
-
-物模型校验失败返回 `400001`，`message` 中包含结构化校验错误。
 
 ## 7. 设备 API
 
@@ -1097,43 +1045,7 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 - `/sys/{product_key}/{device_key}/thing/event/post`: 写入事件上报日志。
 - `/sys/{product_key}/{device_key}/thing/log/post`: 写入设备日志上报。
 
-## 9. HTTP 设备接入 API
-
-HTTP 设备接口面向设备端，不使用后台用户 Cookie。请求必须携带设备签名头：
-
-| Header | 说明 |
-| --- | --- |
-| `x-ziot-product-key` | 产品 Product Key |
-| `x-ziot-device-key` | 设备 Device Key |
-| `x-ziot-device-secret` | 设备密钥；当前用于校验 bcrypt hash 后再校验 HMAC |
-| `x-ziot-timestamp` | 毫秒时间戳，允许 5 分钟窗口 |
-| `x-ziot-nonce` | 随机字符串，窗口内不可重复 |
-| `x-ziot-body-sha256` | 原始 body 的 SHA256 hex |
-| `x-ziot-signature` | HMAC-SHA256 hex 签名 |
-
-签名原文：
-
-```text
-method + "\n" + path + "\n" + timestamp + "\n" + nonce + "\n" + body_sha256
-```
-
-当前 HTTP 设备接口：
-
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| `POST` | `/device-api/v1/properties` | 属性上报，写入上报记录并合并到 `device_shadows.reported` |
-| `POST` | `/device-api/v1/events` | 事件上报，写入 `device_logs` |
-| `POST` | `/device-api/v1/logs` | 日志上报，写入 `device_logs` |
-| `GET` | `/device-api/v1/commands/pending` | 拉取当前设备待处理命令，并标记为 `delivered` |
-| `POST` | `/device-api/v1/commands/{request_id}/reply` | 回复命令执行结果 |
-
-防重放：
-
-- 时间戳超过 5 分钟窗口返回 `401001`。
-- 同一设备、同一 timestamp、同一 nonce 重复请求返回 `409001`。
-- 如果配置 `REDIS_URL`，nonce 通过 Redis `SET NX EX` 保存；本地未配置 Redis 时使用进程内 nonce 存储。
-
-## 10. OTA API
+## 9. OTA API
 
 ### `GET /api/v1/firmwares`
 
@@ -1229,42 +1141,14 @@ method + "\n" + path + "\n" + timestamp + "\n" + nonce + "\n" + body_sha256
 
 查询任务下设备升级记录。需要 `ota:read` 权限。
 
-### HTTP 设备 OTA API
-
-HTTP 设备使用 Task 7 的设备签名头认证。
-
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| `GET` | `/device-api/v1/ota/tasks/current` | 查询当前设备正在执行的 OTA 任务 |
-| `POST` | `/device-api/v1/ota/tasks/{task_id}/progress` | 上报 OTA 进度或结果 |
-
-进度上报示例：
-
-```json
-{
-  "status": "installing",
-  "progress": 80
-}
-```
-
-成功结果示例：
-
-```json
-{
-  "status": "success",
-  "progress": 100,
-  "firmware_version": "v1.0.1"
-}
-```
-
-MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web：
+设备通过以下 MQTT Topic 上报进度和结果，EMQX rule 会转发到 Web：
 
 ```text
 /ota/{product_key}/{device_key}/upgrade/progress
 /ota/{product_key}/{device_key}/upgrade/result
 ```
 
-## 11. Dashboard API
+## 10. Dashboard API
 
 ### `GET /api/v1/dashboard/summary`
 
@@ -1284,7 +1168,7 @@ MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web
 | `traffic` | 近 12 小时上报与命令趋势 |
 | `generated_at` | 统计生成时间 |
 
-## 12. 审计日志 API
+## 11. 审计日志 API
 
 ### `GET /api/v1/audit-logs`
 
@@ -1306,7 +1190,7 @@ MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web
 
 审计记录覆盖登录、产品创建/更新/删除、设备创建/更新/删除、设备密钥重置、设备控制、固件创建/上传/发布/废弃、OTA 创建/启动/取消和邀请码创建/禁用。
 
-## 13. 已验证用例
+## 12. 已验证用例
 
 2026-04-28 本地验证过以下用例：
 
@@ -1317,7 +1201,7 @@ MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web
 | `GET /api/v1/me` | 返回当前用户、当前组织和权限集合 |
 | `GET /api/v1/users` | 返回当前组织成员 |
 | `GET /api/v1/roles` | 返回当前组织角色 |
-| `POST /api/v1/invitations` | 返回 HTTP `201`，只在创建响应中包含明文邀请码 |
+| `POST /api/v1/invitations` | 返回 HTTP `201`，支持 `count` 批量创建，响应数组包含每个邀请码的明文 `code` |
 | `GET /api/v1/invitations/{invitation_id}` | 返回邀请码详情和使用记录 |
 | `PATCH /api/v1/invitations/{invitation_id}` | 可禁用邀请码 |
 | `POST /api/v1/auth/register` | 有效邀请码可注册并登录 |
@@ -1326,8 +1210,6 @@ MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web
 | `PATCH /api/v1/products/{product_id}` | 返回 HTTP `200`，产品名称成功更新 |
 | `DELETE /api/v1/products/{product_id}` | 返回 HTTP `200`，产品成功软删除 |
 | `GET /api/v1/products/{product_id}` | 返回产品详情和接入参数所需字段 |
-| `GET /api/v1/products/{product_id}/thing-model` | 返回产品物模型 |
-| `PUT /api/v1/products/{product_id}/thing-model` | 返回 HTTP `200`，物模型成功更新 |
 | `GET /products` | 产品列表展示编辑、删除操作按钮 |
 | `GET /api/v1/devices` | 返回当前组织设备列表 |
 | `POST /api/v1/devices` | 返回 HTTP `201`，只在创建响应中包含明文设备密钥 |
@@ -1347,9 +1229,6 @@ MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web
 | `POST /api/internal/emqx/auth` | 有效 MQTT `device_secret` 返回 `allow`，错误密钥或禁用设备返回 `deny` |
 | `POST /api/internal/emqx/acl` | 允许本设备 Topic，拒绝跨设备 Topic |
 | `POST /api/internal/emqx/webhook` | 连接事件更新设备在线状态，命令回执更新命令状态，设备上报写入日志并更新 reported 影子 |
-| `POST /device-api/v1/properties` | HTTP 设备属性上报更新 reported 影子并写入上报记录 |
-| `GET /device-api/v1/commands/pending` | HTTP 设备可拉取待处理命令 |
-| `POST /device-api/v1/commands/{request_id}/reply` | HTTP 设备可回复命令结果 |
 | `GET /api/v1/dashboard/summary` | 返回设备、上报、命令、OTA 和最近错误概览 |
 | `GET /api/v1/audit-logs` | 可按用户、动作、资源、IP 和时间范围查询审计日志 |
 | 数据库直查 | `products`、`devices`、`device_groups`、`device_shadows` 表可查到对应数据 |
@@ -1360,7 +1239,7 @@ MQTT 设备通过以下 Topic 上报进度和结果，EMQX rule 会转发到 Web
 docs/dev-logs/2026-04-28-local-db-and-product-api.md
 ```
 
-## 10. 待补充接口
+## 13. 待补充接口
 
 以下接口在 PRD 中已规划，但当前尚未实现：
 

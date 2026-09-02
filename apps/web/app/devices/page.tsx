@@ -1,4 +1,3 @@
-import { Database } from "lucide-react";
 import { ConsoleHeader } from "@/components/console/header";
 import { ConsoleSidebar } from "@/components/console/sidebar";
 import { navItems } from "@/components/console/dashboard-data";
@@ -32,13 +31,6 @@ export default function DevicesPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <a
-                  className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-                  href="/api/v1/devices"
-                >
-                  <Database className="h-4 w-4" />
-                  查看 API
-                </a>
                 <DeviceCreateForm />
               </div>
             </div>

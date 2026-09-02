@@ -19,7 +19,7 @@ function canAccessAllResources(permissions: string[]) {
 
 function requirePermission(permissions: string[], permission: string) {
   if (!permissions.includes(permission)) {
-    throw Object.assign(new Error("permission denied"), { code: 403001 });
+    throw Object.assign(new Error("没有操作权限"), { code: 403001 });
   }
 }
 
@@ -57,7 +57,7 @@ export async function PATCH(request: NextRequest, { params }: FirmwareRouteConte
     const body = (await request.json()) as Record<string, unknown>;
 
     if (body.status !== "released" && body.status !== "deprecated") {
-      throw Object.assign(new Error("status must be released or deprecated"), {
+      throw Object.assign(new Error("固件状态只能是 released 或 deprecated"), {
         code: 400001
       });
     }

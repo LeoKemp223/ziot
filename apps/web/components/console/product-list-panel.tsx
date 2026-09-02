@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Pencil, RefreshCw, Save, Trash2, X } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { Pencil, RefreshCw, Trash2, X } from "lucide-react";
 import type { ProductDto } from "@/lib/products/product-service";
 import { usePermissions } from "./use-permissions";
 
@@ -53,6 +53,9 @@ export function ProductListPanel() {
     id: string;
     name: string;
   } | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<ProductDto | null>(
+    null
+  );
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     page_size: 20,
@@ -84,7 +87,7 @@ export function ProductListPanel() {
           status: "error",
           products: [],
           error:
-            body.message === "internal server error"
+            body.message === "服务器内部错误"
               ? "暂时无法连接数据库。启动 PostgreSQL 并执行 seed 后可查看真实产品。"
               : body.message
         });
@@ -107,23 +110,21 @@ export function ProductListPanel() {
     }
   }
 
-  async function saveProduct(product: ProductDto) {
-    if (!editingProduct || editingProduct.id !== product.id) {
+  async function saveEditingProduct(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!editingProduct) {
       return;
     }
 
-    const name = editingProduct.name.trim();
+    const form = new FormData(event.currentTarget);
+    const name = String(form.get("name") ?? "").trim();
 
-    if (!name) {
-      setActionError("产品名称不能为空。");
-      return;
-    }
-
-    setPendingAction(`update:${product.id}`);
+    setPendingAction(`update:${editingProduct.id}`);
     setActionError("");
 
     try {
-      const response = await fetch(`/api/v1/products/${product.id}`, {
+      const response = await fetch(`/api/v1/products/${editingProduct.id}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name })
@@ -140,26 +141,26 @@ export function ProductListPanel() {
           item.id === body.data?.id ? body.data : item
         )
       }));
-      setEditingProduct(null);
     } catch (error) {
       setActionError(
         error instanceof Error ? error.message : "更新产品失败，请稍后重试。"
       );
     } finally {
       setPendingAction(null);
+      setEditingProduct(null);
     }
   }
 
-  async function deleteProduct(product: ProductDto) {
-    if (!window.confirm(`确定删除产品「${product.name}」？`)) {
+  async function deleteProduct() {
+    if (!deletingProduct) {
       return;
     }
 
-    setPendingAction(`delete:${product.id}`);
+    setPendingAction(`delete:${deletingProduct.id}`);
     setActionError("");
 
     try {
-      const response = await fetch(`/api/v1/products/${product.id}`, {
+      const response = await fetch(`/api/v1/products/${deletingProduct.id}`, {
         method: "DELETE",
         headers: { accept: "application/json" }
       });
@@ -174,16 +175,13 @@ export function ProductListPanel() {
           ? pagination.page - 1
           : pagination.page
       );
-
-      if (editingProduct?.id === product.id) {
-        setEditingProduct(null);
-      }
     } catch (error) {
       setActionError(
         error instanceof Error ? error.message : "删除产品失败，请稍后重试。"
       );
     } finally {
       setPendingAction(null);
+      setDeletingProduct(null);
     }
   }
 
@@ -203,7 +201,160 @@ export function ProductListPanel() {
   }, []);
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+    <>
+      {editingProduct ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+          role="dialog"
+        >
+          <form
+            className="w-full max-w-xl rounded-lg bg-white shadow-xl"
+            onSubmit={saveEditingProduct}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">
+                  编辑产品
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">修改产品基础信息。</p>
+              </div>
+              <button
+                aria-label="关闭"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                onClick={() => setEditingProduct(null)}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-5 py-5">
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">
+                  Product Key
+                </span>
+                <input
+                  className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 font-mono text-sm text-slate-500 outline-none"
+                  disabled
+                  readOnly
+                  value={
+                    state.products.find(
+                      (product) => product.id === editingProduct.id
+                    )?.product_key ?? ""
+                  }
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">
+                  产品名称
+                </span>
+                <input
+                  className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  defaultValue={editingProduct.name}
+                  key={editingProduct.id}
+                  maxLength={128}
+                  name="name"
+                  placeholder="温湿度传感器"
+                  required
+                />
+              </label>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button
+                className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setEditingProduct(null)}
+                type="button"
+              >
+                取消
+              </button>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={pendingAction !== null}
+                type="submit"
+              >
+                {pendingAction === `update:${editingProduct.id}` ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : null}
+                保存
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      {deletingProduct ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+          role="dialog"
+        >
+          <div className="w-full max-w-xl rounded-lg bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">
+                  删除产品
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  删除后产品进入回收状态，不可恢复。
+                </p>
+              </div>
+              <button
+                aria-label="关闭"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                onClick={() => setDeletingProduct(null)}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 px-5 py-5 text-sm text-slate-600">
+              <div>
+                确定删除产品
+                <span className="mx-1 font-medium text-slate-950">
+                  「{deletingProduct.name}」
+                </span>
+                ？
+              </div>
+              <div className="rounded-md bg-slate-50 px-3 py-2 font-mono text-xs text-slate-500">
+                {deletingProduct.product_key}
+              </div>
+              {deletingProduct.device_count > 0 ? (
+                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-700">
+                  该产品下还有 {deletingProduct.device_count} 台设备，无法删除。
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button
+                className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setDeletingProduct(null)}
+                type="button"
+              >
+                取消
+              </button>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-md bg-rose-600 px-4 text-sm font-medium text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={
+                  pendingAction !== null || deletingProduct.device_count > 0
+                }
+                onClick={() => void deleteProduct()}
+                type="button"
+              >
+                {pendingAction === `delete:${deletingProduct.id}` ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : null}
+                确认删除
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <div>
           <h2 className="text-base font-semibold text-slate-950">产品列表</h2>
@@ -250,8 +401,6 @@ export function ProductListPanel() {
                 <th className="px-5 py-3">产品</th>
                 <th className="px-4 py-3">Product Key</th>
                 <th className="px-4 py-3">协议</th>
-                <th className="px-4 py-3">认证 / 格式</th>
-                <th className="px-4 py-3">物模型</th>
                 <th className="px-4 py-3">设备数</th>
                 <th className="px-4 py-3">状态</th>
                 <th className="px-4 py-3">创建时间</th>
@@ -263,35 +412,17 @@ export function ProductListPanel() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {state.products.map((product) => {
-                const model = product.thing_model;
-                const modelSummary = `${model.properties.length} 属性 / ${model.events.length} 事件 / ${model.services.length} 服务`;
-                const isEditing = editingProduct?.id === product.id;
-                const isUpdating = pendingAction === `update:${product.id}`;
                 const isDeleting = pendingAction === `delete:${product.id}`;
 
                 return (
                   <tr className="align-top hover:bg-slate-50" key={product.id}>
                     <td className="px-5 py-4">
-                      {isEditing ? (
-                        <input
-                          className="h-9 w-full max-w-[260px] rounded-md border border-slate-200 px-3 text-sm font-medium text-slate-950 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-                          maxLength={128}
-                          onChange={(event) =>
-                            setEditingProduct({
-                              id: product.id,
-                              name: event.currentTarget.value
-                            })
-                          }
-                          value={editingProduct.name}
-                        />
-                      ) : (
-                        <a
-                          className="font-medium text-slate-950 hover:text-blue-700"
-                          href={`/products/${product.id}`}
-                        >
-                          {product.name}
-                        </a>
-                      )}
+                      <a
+                        className="font-medium text-slate-950 hover:text-blue-700"
+                        href={`/products/${product.id}`}
+                      >
+                        {product.name}
+                      </a>
                       <div className="mt-1 max-w-[260px] truncate font-mono text-xs text-slate-400">
                         {product.id}
                       </div>
@@ -317,18 +448,6 @@ export function ProductListPanel() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-slate-600">
-                      <div>{product.auth_type}</div>
-                      <div className="mt-1 text-xs text-slate-400">
-                        {product.data_format}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-slate-600">
-                      <div className="whitespace-nowrap">{model.version}</div>
-                      <div className="mt-1 whitespace-nowrap text-xs text-slate-400">
-                        {modelSummary}
-                      </div>
-                    </td>
                     <td className="px-4 py-4 font-medium text-slate-900">
                       {product.device_count}
                     </td>
@@ -346,67 +465,39 @@ export function ProductListPanel() {
                     {canWriteProducts ? (
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-2">
-                          {isEditing ? (
-                            <>
-                              <button
-                                aria-label="保存产品"
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                disabled={pendingAction !== null}
-                                onClick={() => void saveProduct(product)}
-                                title="保存"
-                                type="button"
-                              >
-                                {isUpdating ? (
-                                  <RefreshCw className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Save className="h-4 w-4" />
-                                )}
-                              </button>
-                              <button
-                                aria-label="取消编辑"
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                disabled={pendingAction !== null}
-                                onClick={() => setEditingProduct(null)}
-                                title="取消"
-                                type="button"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                aria-label="编辑产品"
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                disabled={pendingAction !== null}
-                                onClick={() => {
-                                  setActionError("");
-                                  setEditingProduct({
-                                    id: product.id,
-                                    name: product.name
-                                  });
-                                }}
-                                title="编辑"
-                                type="button"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-                              <button
-                                aria-label="删除产品"
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                disabled={pendingAction !== null}
-                                onClick={() => void deleteProduct(product)}
-                                title="删除"
-                                type="button"
-                              >
-                                {isDeleting ? (
-                                  <RefreshCw className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-                              </button>
-                            </>
-                          )}
+                          <button
+                            aria-label="编辑产品"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={pendingAction !== null}
+                            onClick={() => {
+                              setActionError("");
+                              setEditingProduct({
+                                id: product.id,
+                                name: product.name
+                              });
+                            }}
+                            title="编辑"
+                            type="button"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            aria-label="删除产品"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={pendingAction !== null}
+                            onClick={() => {
+                              setActionError("");
+                              setDeletingProduct(product);
+                            }}
+                            title="删除"
+                            type="button"
+                          >
+                            {isDeleting ? (
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
                         </div>
                       </td>
                     ) : null}
@@ -422,7 +513,8 @@ export function ProductListPanel() {
         onPageChange={(page) => void loadProducts(page)}
         pagination={pagination}
       />
-    </section>
+      </section>
+    </>
   );
 }
 

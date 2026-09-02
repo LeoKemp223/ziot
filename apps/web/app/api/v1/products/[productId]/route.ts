@@ -33,7 +33,7 @@ export async function GET(
     const user = await getCurrentUser(request);
 
     if (!user.permissions.includes("product:read")) {
-      throw Object.assign(new Error("permission denied"), { code: 403001 });
+      throw Object.assign(new Error("没有操作权限"), { code: 403001 });
     }
 
     const { productId } = await params;
@@ -60,7 +60,7 @@ export async function PATCH(
     const user = await getCurrentUser(request);
 
     if (!user.permissions.includes("product:write")) {
-      throw Object.assign(new Error("permission denied"), { code: 403001 });
+      throw Object.assign(new Error("没有操作权限"), { code: 403001 });
     }
 
     const { productId } = await params;
@@ -83,9 +83,6 @@ export async function PATCH(
         : {}),
       ...(typeof body.data_format === "string"
         ? { data_format: body.data_format }
-        : {}),
-      ...(Object.hasOwn(body, "thing_model")
-        ? { thing_model: body.thing_model }
         : {})
     });
     await safeWriteAuditLog(prisma, {
@@ -113,7 +110,7 @@ export async function DELETE(
     const user = await getCurrentUser(request);
 
     if (!user.permissions.includes("product:write")) {
-      throw Object.assign(new Error("permission denied"), { code: 403001 });
+      throw Object.assign(new Error("没有操作权限"), { code: 403001 });
     }
 
     const { productId } = await params;

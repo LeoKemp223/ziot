@@ -25,14 +25,16 @@ export function AuthForm({ mode }: AuthFormProps) {
     const payload =
       mode === "login"
         ? {
-            account: String(form.get("account") ?? ""),
+            account: String(form.get("account") ?? "").trim(),
             password: String(form.get("password") ?? "")
           }
         : {
-            account: String(form.get("account") ?? ""),
+            account: String(form.get("account") ?? "").trim(),
             password: String(form.get("password") ?? ""),
             display_name: String(form.get("display_name") ?? ""),
             invitation_code: String(form.get("invitation_code") ?? "")
+              .trim()
+              .toUpperCase()
           };
 
     try {
@@ -59,14 +61,17 @@ export function AuthForm({ mode }: AuthFormProps) {
   return (
     <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
       <label className="block">
-        <span className="text-sm font-medium text-slate-700">账号邮箱</span>
+        <span className="text-sm font-medium text-slate-700">手机号</span>
         <input
-          autoComplete="email"
+          autoComplete={mode === "register" ? "tel" : "username"}
           className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+          inputMode={mode === "register" ? "numeric" : undefined}
+          maxLength={mode === "register" ? 11 : undefined}
           name="account"
-          placeholder="admin@example.com"
+          pattern={mode === "register" ? "1[3-9][0-9]{9}" : undefined}
+          placeholder="13800000001"
           required
-          type="email"
+          type="tel"
         />
       </label>
 
@@ -100,9 +105,10 @@ export function AuthForm({ mode }: AuthFormProps) {
         <label className="block">
           <span className="text-sm font-medium text-slate-700">邀请码</span>
           <input
-            className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 font-mono text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 font-mono text-sm uppercase outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            maxLength={10}
             name="invitation_code"
-            placeholder="inv_xxx"
+            placeholder="INVG6R35ZS"
             required
           />
         </label>

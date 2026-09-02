@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const user = await getCurrentUser(request);
 
   if (!user.permissions.includes("device:read")) {
-    return new Response("permission denied", { status: 403 });
+    return new Response("没有操作权限", { status: 403 });
   }
 
   const encoder = new TextEncoder();

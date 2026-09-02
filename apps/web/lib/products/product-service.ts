@@ -1,5 +1,3 @@
-import { validateThingModel, type ThingModel } from "@ziot/domain";
-
 export type ProductServiceError = Error & {
   code: 400001 | 404001 | 409001 | 500001;
 };
@@ -72,7 +70,6 @@ export type CreateProductInput = {
   protocols?: string[];
   auth_type?: string;
   data_format?: string;
-  thing_model?: unknown;
 };
 
 export type UpdateProductInput = {
@@ -84,7 +81,6 @@ export type UpdateProductInput = {
   protocols?: string[];
   auth_type?: string;
   data_format?: string;
-  thing_model?: unknown;
 };
 
 export type DeleteProductInput = {
@@ -92,14 +88,6 @@ export type DeleteProductInput = {
   userId?: string;
   canAccessAll?: boolean;
   productId: string;
-};
-
-export type ProductThingModelInput = {
-  orgId: string;
-  userId?: string;
-  canAccessAll?: boolean;
-  productId: string;
-  thing_model: unknown;
 };
 
 export type ProductDto = {
@@ -110,7 +98,6 @@ export type ProductDto = {
   protocols: string[];
   auth_type: string;
   data_format: string;
-  thing_model: ThingModel;
   status: string;
   device_count: number;
   created_at: string;
@@ -140,6 +127,26 @@ function clampPageSize(value: number | undefined): number {
   return Math.min(100, Math.max(1, Math.floor(value)));
 }
 
+// 产品目前仅支持 MQTT 接入;protocols 字段保留以兼容既有数据结构
+const SUPPORTED_PROTOCOLS = ["mqtt"];
+
+function assertProtocols(protocols: string[] | undefined): string[] {
+  if (!protocols?.length) {
+    return ["mqtt"];
+  }
+
+  for (const protocol of protocols) {
+    if (!SUPPORTED_PROTOCOLS.includes(protocol)) {
+      throw serviceError(
+        400001,
+        `不支持的协议 "${protocol}"，当前仅支持 "mqtt"`
+      );
+    }
+  }
+
+  return protocols;
+}
+
 function normalizeProtocols(protocols: unknown): string[] {
   if (!Array.isArray(protocols)) {
     return [];
@@ -150,23 +157,14 @@ function normalizeProtocols(protocols: unknown): string[] {
   });
 }
 
-function defaultThingModel(): ThingModel {
+// thing_model 列为 NOT NULL,写入空默认值占位(功能已下线)
+function defaultThingModel() {
   return {
     version: "1.0",
     properties: [],
     events: [],
     services: []
   };
-}
-
-function normalizeThingModel(input: unknown): ThingModel {
-  const result = validateThingModel(input ?? defaultThingModel());
-
-  if (!result.success) {
-    throw serviceError(400001, result.errors.join("; "));
-  }
-
-  return result.data;
 }
 
 function mapProduct(product: ProductRecord): ProductDto {
@@ -178,7 +176,6 @@ function mapProduct(product: ProductRecord): ProductDto {
     protocols: normalizeProtocols(product.protocols),
     auth_type: product.auth_type,
     data_format: product.data_format,
-    thing_model: normalizeThingModel(product.thing_model),
     status: product.status,
     device_count: product._count?.devices ?? 0,
     created_at: product.created_at.toISOString(),
@@ -205,7 +202,7 @@ async function findActiveProduct(
   });
 
   if (!product) {
-    throw serviceError(404001, "product not found");
+    throw serviceError(404001, "产品不存在");
   }
 
   return product;
@@ -260,12 +257,12 @@ export async function createProduct(
   if (!productKey || !/^[A-Za-z0-9_-]{3,64}$/.test(productKey)) {
     throw serviceError(
       400001,
-      "product_key must be 3-64 characters of letters, numbers, underscore or hyphen"
+      "product_key 必须为 3-64 位字母、数字、下划线或中划线"
     );
   }
 
   if (!name || name.length > 128) {
-    throw serviceError(400001, "name must be 1-128 characters");
+    throw serviceError(400001, "名称长度必须为 1-128 位");
   }
 
   const existing = await db.product.findUnique({
@@ -273,7 +270,7 @@ export async function createProduct(
   });
 
   if (existing) {
-    throw serviceError(409001, "product_key already exists");
+    throw serviceError(409001, "product_key 已存在");
   }
 
   const product = await db.product.create({
@@ -283,10 +280,10 @@ export async function createProduct(
       created_by: input.createdBy,
       product_key: productKey,
       name,
-      protocols: input.protocols?.length ? input.protocols : ["mqtt"],
+      protocols: assertProtocols(input.protocols),
       auth_type: input.auth_type ?? "device_secret",
       data_format: input.data_format ?? "json",
-      thing_model: normalizeThingModel(input.thing_model)
+      thing_model: defaultThingModel()
     },
     include: { _count: { select: { devices: true } } }
   });
@@ -306,14 +303,14 @@ export async function updateProduct(
     const name = input.name.trim();
 
     if (!name || name.length > 128) {
-      throw serviceError(400001, "name must be 1-128 characters");
+      throw serviceError(400001, "名称长度必须为 1-128 位");
     }
 
     data.name = name;
   }
 
   if (input.protocols !== undefined) {
-    data.protocols = input.protocols.length ? input.protocols : ["mqtt"];
+    data.protocols = assertProtocols(input.protocols);
   }
 
   if (input.auth_type !== undefined) {
@@ -322,10 +319,6 @@ export async function updateProduct(
 
   if (input.data_format !== undefined) {
     data.data_format = input.data_format;
-  }
-
-  if (input.thing_model !== undefined) {
-    data.thing_model = normalizeThingModel(input.thing_model);
   }
 
   const product = await db.product.update({
@@ -344,21 +337,6 @@ export async function getProduct(
   return mapProduct(await findActiveProduct(db, input));
 }
 
-export async function updateProductThingModel(
-  db: ProductMutationDb,
-  input: ProductThingModelInput
-) {
-  await findActiveProduct(db, input);
-
-  const product = await db.product.update({
-    where: { id: input.productId },
-    data: { thing_model: normalizeThingModel(input.thing_model) },
-    include: { _count: { select: { devices: true } } }
-  });
-
-  return mapProduct(product).thing_model;
-}
-
 export async function deleteProduct(
   db: ProductMutationDb,
   input: DeleteProductInput
@@ -374,7 +352,7 @@ export async function deleteProduct(
     });
 
     if (deviceCount > 0) {
-      throw serviceError(409001, "product has active devices");
+      throw serviceError(409001, "产品下仍有设备，无法删除");
     }
   }
 

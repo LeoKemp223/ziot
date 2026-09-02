@@ -1,4 +1,3 @@
-import { Database } from "lucide-react";
 import { ConsoleHeader } from "@/components/console/header";
 import { ConsoleSidebar } from "@/components/console/sidebar";
 import { navItems } from "@/components/console/dashboard-data";
@@ -26,17 +25,10 @@ export default function ProductsPage() {
                   产品管理
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">
-                  管理设备产品、接入协议、认证方式和物模型基础定义。
+                  管理设备产品和 Product Key。
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <a
-                  className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-                  href="/api/v1/products"
-                >
-                  <Database className="h-4 w-4" />
-                  查看 API
-                </a>
                 <ProductCreateForm />
               </div>
             </div>

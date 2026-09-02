@@ -46,7 +46,7 @@ export async function getCurrentUser(
   const token = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
 
   if (!token) {
-    throw Object.assign(new Error("authentication required"), { code: 401001 });
+    throw Object.assign(new Error("请先登录"), { code: 401001 });
   }
 
   const currentOrgId = request.cookies.get(CURRENT_ORG_COOKIE)?.value;

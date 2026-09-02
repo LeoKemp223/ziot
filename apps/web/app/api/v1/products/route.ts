@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const user = await getCurrentUser(request);
 
     if (!user.permissions.includes("product:read")) {
-      throw Object.assign(new Error("permission denied"), { code: 403001 });
+      throw Object.assign(new Error("没有操作权限"), { code: 403001 });
     }
 
     const products = await listProducts(prisma, {
@@ -48,15 +48,14 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser(request);
 
     if (!user.permissions.includes("product:write")) {
-      throw Object.assign(new Error("permission denied"), { code: 403001 });
+      throw Object.assign(new Error("没有操作权限"), { code: 403001 });
     }
 
     const body = (await request.json()) as Record<string, unknown>;
     const input = {
       orgId: user.current_org_id,
       createdBy: user.id,
-      name: String(body.name ?? ""),
-      thing_model: body.thing_model
+      name: String(body.name ?? "")
     };
     const product = await createProduct(prisma, {
       ...input,

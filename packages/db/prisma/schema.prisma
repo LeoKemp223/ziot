@@ -180,6 +180,7 @@ model UserOrgRole {
 
 model Invitation {
   id         String           @id @db.VarChar(64)
+  code       String?          @db.VarChar(32)
   code_hash  String           @unique @db.VarChar(255)
   org_id     String           @db.VarChar(64)
   role_id    String           @db.VarChar(64)

@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createFirmware,
   createOtaTask,
-  getCurrentDeviceOtaTask,
   recordOtaProgress
 } from "./ota-service";
 
@@ -184,32 +183,6 @@ describe("ota service", () => {
         })
       })
     );
-  });
-
-  it("returns current HTTP OTA task for a device", async () => {
-    const db = {
-      otaRecord: {
-        findFirst: vi.fn().mockResolvedValue(record())
-      }
-    };
-
-    const result = await getCurrentDeviceOtaTask(db, {
-      orgId: "org_default",
-      deviceId: "dev_demo"
-    });
-
-    expect(result).toEqual({
-      task_id: "ota_demo",
-      record_id: "otr_demo",
-      status: "notified",
-      progress: 0,
-      firmware: {
-        version: "v1.0.1",
-        file_url: "https://example.com/fw.bin",
-        file_size: 1024,
-        sha256: "0".repeat(64)
-      }
-    });
   });
 
   it("records OTA success and updates device firmware version", async () => {

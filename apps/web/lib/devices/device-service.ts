@@ -96,7 +96,7 @@ async function findProductForScope(
   });
 
   if (!product) {
-    throw serviceError(404001, "product not found");
+    throw serviceError(404001, "产品不存在");
   }
 
   return product;
@@ -165,7 +165,7 @@ export async function getDevice(
   });
 
   if (!device) {
-    throw serviceError(404001, "device not found");
+    throw serviceError(404001, "设备不存在");
   }
 
   return mapDevice(device);
@@ -191,7 +191,7 @@ export async function listDeviceTopics(
   });
 
   if (!device) {
-    throw serviceError(404001, "device not found");
+    throw serviceError(404001, "设备不存在");
   }
 
   return [
@@ -265,7 +265,7 @@ export async function createDevice(
   const name = input.name.trim();
 
   if (!name || name.length > 128) {
-    throw serviceError(400001, "name must be 1-128 characters");
+    throw serviceError(400001, "名称长度必须为 1-128 位");
   }
 
   const key = input.deviceKey?.trim() || deviceKey();
@@ -273,7 +273,7 @@ export async function createDevice(
   if (!/^[A-Za-z0-9_-]{3,128}$/.test(key)) {
     throw serviceError(
       400001,
-      "device_key must be 3-128 characters of letters, numbers, underscore or hyphen"
+      "device_key 必须为 3-128 位字母、数字、下划线或中划线"
     );
   }
 
@@ -285,7 +285,7 @@ export async function createDevice(
   });
 
   if (existing) {
-    throw serviceError(409001, "device_key already exists in product");
+    throw serviceError(409001, "device_key 在该产品下已存在");
   }
 
   const secret = deviceSecret();
@@ -336,7 +336,7 @@ export async function updateDevice(
     const name = input.name.trim();
 
     if (!name || name.length > 128) {
-      throw serviceError(400001, "name must be 1-128 characters");
+      throw serviceError(400001, "名称长度必须为 1-128 位");
     }
 
     data.name = name;
@@ -407,7 +407,7 @@ export async function resetDeviceSecret(
   });
 
   if (!currentDevice) {
-    throw serviceError(404001, "device not found");
+    throw serviceError(404001, "设备不存在");
   }
 
   const device = await db.device.update({
@@ -436,7 +436,7 @@ export async function getDeviceShadow(
   });
 
   if (!shadow) {
-    throw serviceError(404001, "device shadow not found");
+    throw serviceError(404001, "设备影子不存在");
   }
 
   return {
@@ -497,7 +497,7 @@ export async function updateDeviceDesiredShadow(
     input.desired === null ||
     Array.isArray(input.desired)
   ) {
-    throw serviceError(400001, "desired must be an object");
+    throw serviceError(400001, "desired 必须是 JSON 对象");
   }
 
   const shadow = await db.deviceShadow.update({
@@ -560,7 +560,7 @@ export async function createDeviceGroup(
   const name = input.name.trim();
 
   if (!name || name.length > 128) {
-    throw serviceError(400001, "name must be 1-128 characters");
+    throw serviceError(400001, "名称长度必须为 1-128 位");
   }
 
   const group = await db.deviceGroup.create({
@@ -606,7 +606,7 @@ export async function addDeviceToGroup(
   });
 
   if (!group) {
-    throw serviceError(404001, "device group not found");
+    throw serviceError(404001, "设备分组不存在");
   }
 
   const device = await db.device.findFirst({
@@ -619,11 +619,11 @@ export async function addDeviceToGroup(
   });
 
   if (!device) {
-    throw serviceError(404001, "device not found");
+    throw serviceError(404001, "设备不存在");
   }
 
   if (device.product_id !== group.product_id) {
-    throw serviceError(409001, "device and group must belong to the same product");
+    throw serviceError(409001, "设备和分组必须属于同一产品");
   }
 
   await db.deviceGroupMember.upsert({

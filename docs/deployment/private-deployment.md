@@ -32,14 +32,14 @@ Default admin account:
 
 | Field | Value |
 | --- | --- |
-| Account | `admin@example.com` |
+| Account | `13800000001` |
 | Password | `Admin123456` |
 
 Default operator account:
 
 | Field | Value |
 | --- | --- |
-| Account | `operator@example.com` |
+| Account | `13800000002` |
 | Password | `Operator123456` |
 
 Open the console:

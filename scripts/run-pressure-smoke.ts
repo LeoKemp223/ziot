@@ -9,7 +9,7 @@ const BASE_URL = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/$/
 const MQTT_BROKER_URL =
   process.env.MQTT_BROKER_URL ??
   `mqtt://${process.env.MQTT_HOST ?? "localhost"}:${process.env.MQTT_PORT ?? "1883"}`;
-const ADMIN_ACCOUNT = process.env.ADMIN_ACCOUNT ?? "admin@example.com";
+const ADMIN_ACCOUNT = process.env.ADMIN_ACCOUNT ?? "13800000001";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "Admin123456";
 const CONNECTIONS = Number(process.env.SMOKE_MQTT_CONNECTIONS ?? "100");
 const MESSAGES_PER_SECOND = Number(process.env.SMOKE_MESSAGES_PER_SECOND ?? "5");
@@ -185,13 +185,7 @@ async function main() {
     json: {
       name: `Pressure Product ${stamp}`,
       product_key: `pk_pressure_${stamp}`,
-      protocols: ["mqtt"],
-      thing_model: {
-        version: "1.0",
-        properties: [],
-        events: [],
-        services: []
-      }
+      protocols: ["mqtt"]
     }
   });
 

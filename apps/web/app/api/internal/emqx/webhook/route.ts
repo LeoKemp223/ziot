@@ -87,6 +87,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(decision);
   } catch {
-    return NextResponse.json({ result: "deny", reason: "request failed" });
+    return NextResponse.json({ result: "deny", reason: "请求失败" });
   }
 }

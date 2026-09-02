@@ -83,7 +83,7 @@ function normalizeTimeout(timeoutMs: number | undefined) {
   }
 
   if (!Number.isFinite(timeoutMs) || timeoutMs < 1_000 || timeoutMs > 120_000) {
-    throw controlError(400001, "timeout_ms must be between 1000 and 120000");
+    throw controlError(400001, "timeout_ms 必须在 1000-120000 之间");
   }
 
   return Math.floor(timeoutMs);
@@ -91,7 +91,7 @@ function normalizeTimeout(timeoutMs: number | undefined) {
 
 function assertJsonObject(value: unknown, name: string) {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw controlError(400001, `${name} must be an object`);
+    throw controlError(400001, `${name} 必须是 JSON 对象`);
   }
 }
 
@@ -99,7 +99,7 @@ function assertIdentifier(identifier: string) {
   if (!/^[A-Za-z_][A-Za-z0-9_]{0,127}$/.test(identifier)) {
     throw controlError(
       400001,
-      "identifier must be 1-128 characters and start with a letter or underscore"
+      "服务标识必须为 1-128 位，且以字母或下划线开头"
     );
   }
 }
@@ -163,11 +163,11 @@ async function findDeviceForControl(
   });
 
   if (!device) {
-    throw controlError(404001, "device not found");
+    throw controlError(404001, "设备不存在");
   }
 
   if (device.status !== "active") {
-    throw controlError(403001, "device is disabled");
+    throw controlError(403001, "设备已被禁用");
   }
 
   return device;
@@ -209,13 +209,13 @@ async function emqxToken() {
   });
 
   if (!response.ok) {
-    throw controlError(500001, "failed to login emqx");
+    throw controlError(500001, "登录 EMQX 失败");
   }
 
   const body = (await response.json()) as { token?: string };
 
   if (!body.token) {
-    throw controlError(500001, "failed to login emqx");
+    throw controlError(500001, "登录 EMQX 失败");
   }
 
   cachedEmqxToken = {
@@ -267,7 +267,7 @@ export async function createDeviceCommand(db: Db, input: CreateCommandInput) {
     kind === "property_set" ? "property.set" : (input.identifier ?? "").trim();
 
   if (kind !== "property_set" && kind !== "service") {
-    throw controlError(400001, "kind must be property_set or service");
+    throw controlError(400001, "命令类型必须是 property_set 或 service");
   }
 
   if (kind === "service") {
@@ -422,22 +422,6 @@ export async function createSyncDeviceCommand(db: Db, input: CreateCommandInput)
   });
 }
 
-function servicesFromThingModel(product: any): string[] {
-  const thingModel = product?.thing_model;
-
-  if (
-    typeof thingModel !== "object" ||
-    thingModel === null ||
-    !Array.isArray((thingModel as any).services)
-  ) {
-    return [];
-  }
-
-  return (thingModel as any).services
-    .map((service: any) => String(service.identifier ?? ""))
-    .filter(Boolean);
-}
-
 export async function createGroupCommands(db: Db, input: BatchCommandInput) {
   assertJsonObject(input.params, "params");
 
@@ -463,7 +447,7 @@ export async function createGroupCommands(db: Db, input: BatchCommandInput) {
   });
 
   if (!group) {
-    throw controlError(404001, "device group not found");
+    throw controlError(404001, "设备分组不存在");
   }
 
   const devices = group.members
@@ -471,7 +455,7 @@ export async function createGroupCommands(db: Db, input: BatchCommandInput) {
     .filter((device: any) => device && !device.deleted_at);
 
   if (devices.length === 0) {
-    throw controlError(400001, "device group is empty");
+    throw controlError(400001, "设备分组为空");
   }
 
   if (
@@ -479,16 +463,7 @@ export async function createGroupCommands(db: Db, input: BatchCommandInput) {
       (device: any) => (device.product_id ?? device.product?.id) !== group.product_id
     )
   ) {
-    throw controlError(409001, "device group contains multiple products");
-  }
-
-  if (input.kind === "service") {
-    const services = servicesFromThingModel(group.product);
-    const identifier = (input.identifier ?? "").trim();
-
-    if (services.length > 0 && !services.includes(identifier)) {
-      throw controlError(400001, "service is not defined on product thing model");
-    }
+    throw controlError(409001, "设备分组内包含其他产品的设备");
   }
 
   const commands = [];
@@ -575,7 +550,7 @@ export async function getCommand(
   });
 
   if (!command) {
-    throw controlError(404001, "command not found");
+    throw controlError(404001, "命令不存在");
   }
 
   return mapCommand(command);
@@ -597,7 +572,7 @@ function parseReplyPayload(payload: unknown) {
     return payload as Record<string, unknown>;
   }
 
-  throw controlError(400001, "payload must be an object");
+  throw controlError(400001, "payload 必须是 JSON 对象");
 }
 
 export async function recordCommandReply(db: Db, input: CommandReplyInput) {
@@ -605,7 +580,7 @@ export async function recordCommandReply(db: Db, input: CommandReplyInput) {
   const requestId = String(payload.request_id ?? payload.id ?? "");
 
   if (!requestId) {
-    throw controlError(400001, "request_id is required");
+    throw controlError(400001, "request_id 不能为空");
   }
 
   const code = Number(payload.code ?? 0);
@@ -615,7 +590,7 @@ export async function recordCommandReply(db: Db, input: CommandReplyInput) {
   });
 
   if (!command) {
-    throw controlError(404001, "command not found");
+    throw controlError(404001, "命令不存在");
   }
 
   if (["success", "failed", "timeout", "cancelled"].includes(command.status)) {

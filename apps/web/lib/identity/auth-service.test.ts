@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import bcrypt from "bcryptjs";
 import {
-  createInvitation,
+  createInvitations,
   ensureDefaultOrgRoles,
   listRoles,
   loginUser,
@@ -88,11 +88,11 @@ describe("auth service", () => {
       })
     ).rejects.toMatchObject({
       code: 401001,
-      message: "invalid account or password"
+      message: "账号或密码错误"
     });
   });
 
-  it("creates an invitation and returns the plain code once", async () => {
+  it("creates a batch of invitations with unique plain codes", async () => {
     const db = {
       organization: {
         findUnique: vi.fn().mockResolvedValue({ id: "org_default", name: "默认组织" })
@@ -114,22 +114,55 @@ describe("auth service", () => {
       }
     };
 
-    const invitation = await createInvitation(db, {
+    const invitations = await createInvitations(db, {
       orgId: "org_default",
       roleId: "role_org_admin",
-      createdBy: "usr_admin"
+      createdBy: "usr_admin",
+      count: 3
     });
 
-    expect(invitation.code).toMatch(/^inv_/);
+    expect(invitations).toHaveLength(3);
+    for (const invitation of invitations) {
+      expect(invitation.code).toMatch(/^INV[A-HJ-NP-Z2-9]{7}$/);
+    }
+    expect(new Set(invitations.map((invitation) => invitation.code)).size).toBe(3);
+    expect(db.invitation.create).toHaveBeenCalledTimes(3);
     expect(db.invitation.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          code: expect.stringMatching(/^INV[A-HJ-NP-Z2-9]{7}$/),
+          code_hash: expect.any(String),
           org_id: "org_default",
           role_id: "role_org_admin",
           max_uses: 1
         })
       })
     );
+  });
+
+  it("rejects invalid invitation batch counts", async () => {
+    const db = {
+      organization: {
+        findUnique: vi.fn().mockResolvedValue({ id: "org_default", name: "默认组织" })
+      },
+      role: {
+        findFirst: vi.fn().mockResolvedValue({ id: "role_org_admin", name: "组织管理员" })
+      },
+      invitation: { create: vi.fn() }
+    };
+
+    await expect(
+      createInvitations(db, {
+        orgId: "org_default",
+        roleId: "role_org_admin",
+        createdBy: "usr_admin",
+        count: 0
+      })
+    ).rejects.toMatchObject({
+      code: 400001,
+      message: "创建数量必须在 1-100 之间"
+    });
+    expect(db.invitation.create).not.toHaveBeenCalled();
   });
 
   it("ensures the ordinary user role with read-only permissions", async () => {
@@ -231,7 +264,7 @@ describe("auth service", () => {
   });
 
   it("registers a user with a valid invitation", async () => {
-    const code = "inv_valid";
+    const code = "INVG6R35ZS";
     const codeHash = await bcrypt.hash(code, 10);
     const invitation = {
       id: "inv_demo",
@@ -247,7 +280,7 @@ describe("auth service", () => {
     };
     const createdUser = user({
       id: "usr_new",
-      account: "new@example.com",
+      account: "13912345678",
       display_name: "新用户"
     });
     const db = {
@@ -272,10 +305,11 @@ describe("auth service", () => {
     };
 
     const session = await registerWithInvitation(db, {
-      account: "new@example.com",
+      account: "13912345678",
       password: "Password123",
       display_name: "新用户",
-      invitation_code: code
+      // 故意用小写,验证注册时会把邀请码 trim + 转大写后再比对
+      invitation_code: code.toLowerCase()
     });
 
     expect(db.invitation.update).toHaveBeenCalledWith({
@@ -284,6 +318,22 @@ describe("auth service", () => {
     });
     expect(db.invitationUsage.create).toHaveBeenCalledOnce();
     expect(session.user.id).toBe("usr_new");
+  });
+
+  it("rejects email accounts at registration", async () => {
+    const db = { user: { findUnique: vi.fn().mockResolvedValue(null) } };
+
+    await expect(
+      registerWithInvitation(db, {
+        account: "newuser@example.com",
+        password: "Password123",
+        display_name: "新用户",
+        invitation_code: "INVG6R35ZS"
+      })
+    ).rejects.toMatchObject({
+      code: 400001,
+      message: "账号必须是有效的大陆手机号"
+    });
   });
 
   it("rotates a valid refresh token", async () => {

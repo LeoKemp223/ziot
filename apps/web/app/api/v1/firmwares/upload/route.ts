@@ -21,7 +21,7 @@ function canAccessAllResources(permissions: string[]) {
 
 function requirePermission(permissions: string[], permission: string) {
   if (!permissions.includes(permission)) {
-    throw Object.assign(new Error("permission denied"), { code: 403001 });
+    throw Object.assign(new Error("没有操作权限"), { code: 403001 });
   }
 }
 
@@ -71,15 +71,15 @@ export async function POST(request: NextRequest) {
     const fileValue = form.get("file");
 
     if (!(fileValue instanceof File)) {
-      badRequest("firmware file is required");
+      badRequest("必须上传固件文件");
     }
 
     if (fileValue.size <= 0) {
-      badRequest("firmware file is required");
+      badRequest("必须上传固件文件");
     }
 
     if (fileValue.size > maxUploadBytes) {
-      badRequest("firmware file must be less than 50MB");
+      badRequest("固件文件不能超过 50MB");
     }
 
     const bytes = Buffer.from(await fileValue.arrayBuffer());

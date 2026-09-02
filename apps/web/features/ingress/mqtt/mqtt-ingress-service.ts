@@ -170,7 +170,7 @@ export async function authenticateMqttClient(
   const device = await findActiveDeviceByUsername(db, username);
 
   if (!device || device.status !== "active") {
-    return deny("device not found or disabled");
+    return deny("设备不存在 or disabled");
   }
 
   const verified = await verifyMqttPassword(
@@ -233,7 +233,7 @@ export async function authorizeMqttAction(
   const device = await findActiveDeviceByUsername(db, username);
 
   if (!device || device.status !== "active") {
-    return deny("device not found or disabled");
+    return deny("设备不存在 or disabled");
   }
 
   if (action === "publish") {
@@ -279,7 +279,7 @@ export async function recordMqttWebhookEvent(
   const device = await findActiveDeviceByUsername(db, username);
 
   if (!device) {
-    return deny("device not found");
+    return deny("设备不存在");
   }
 
   const now = input.connectedAt ?? new Date();
@@ -346,7 +346,7 @@ export async function recordMqttReport(
   const device = await findActiveDeviceByTopic(db, topic);
 
   if (!device) {
-    return deny("device not found");
+    return deny("设备不存在");
   }
 
   const payload = parsePayload(input.payload);

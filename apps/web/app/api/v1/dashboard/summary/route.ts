@@ -14,7 +14,7 @@ function canAccessAllResources(permissions: string[]) {
 
 function requireAnyPermission(permissions: string[], required: string[]) {
   if (!required.some((permission) => permissions.includes(permission))) {
-    throw Object.assign(new Error("permission denied"), { code: 403001 });
+    throw Object.assign(new Error("没有操作权限"), { code: 403001 });
   }
 }
 

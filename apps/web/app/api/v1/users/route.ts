@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const user = await getCurrentUser(request);
 
     if (!user.permissions.includes("user:read")) {
-      throw Object.assign(new Error("permission denied"), { code: 403001 });
+      throw Object.assign(new Error("没有操作权限"), { code: 403001 });
     }
 
     return NextResponse.json(
