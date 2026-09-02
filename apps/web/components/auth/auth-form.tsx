@@ -62,12 +62,12 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+    <form className="mt-7 space-y-5" onSubmit={handleSubmit}>
       <label className="block">
-        <span className="text-sm font-medium text-slate-700">手机号</span>
+        <span className="text-sm font-semibold text-slate-800">手机号</span>
         <input
           autoComplete={mode === "login" ? "username" : "tel"}
-          className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+          className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-slate-50/70 px-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
           inputMode={mode === "login" ? undefined : "numeric"}
           maxLength={mode === "login" ? undefined : 11}
           name="account"
@@ -83,7 +83,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           <span className="text-sm font-medium text-slate-700">姓名/昵称</span>
           <input
             autoComplete="name"
-            className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-slate-50/70 px-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
             maxLength={128}
             name="display_name"
             placeholder="张三"
@@ -94,7 +94,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       <label className="block">
         <span className="flex items-center justify-between">
-          <span className="text-sm font-medium text-slate-700">
+          <span className="text-sm font-semibold text-slate-800">
             {mode === "reset" ? "新密码" : "密码"}
           </span>
           {mode === "login" ? (
@@ -108,7 +108,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         </span>
         <input
           autoComplete={mode === "login" ? "current-password" : "new-password"}
-          className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+          className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-slate-50/70 px-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
           minLength={8}
           name="password"
           required
@@ -118,9 +118,9 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       {mode !== "login" ? (
         <label className="block">
-          <span className="text-sm font-medium text-slate-700">邀请码</span>
+        <span className="text-sm font-semibold text-slate-800">邀请码</span>
           <input
-            className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 font-mono text-sm uppercase outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-slate-50/70 px-3 font-mono text-sm uppercase outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
             maxLength={10}
             name="invitation_code"
             placeholder="INVG6R35ZS"
@@ -132,7 +132,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       {error ? <div className="text-sm text-rose-600">{error}</div> : null}
 
       <button
-        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         disabled={pending}
         type="submit"
       >

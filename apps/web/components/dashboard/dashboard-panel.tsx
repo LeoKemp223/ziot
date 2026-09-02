@@ -130,12 +130,12 @@ export function DashboardPanel() {
   }, [summary]);
 
   if (!summary && loading) {
-    return <div className="p-8 text-sm text-slate-500">正在加载概览数据...</div>;
+    return <div className="rounded-xl border border-blue-100 bg-white/80 p-8 text-sm text-slate-500 shadow-sm backdrop-blur">正在加载概览数据...</div>;
   }
 
   if (!summary) {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-700">
+      <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-5 text-sm text-amber-700 shadow-sm">
         {error || "暂无概览数据。"}
       </div>
     );
@@ -174,12 +174,12 @@ export function DashboardPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-white/80 bg-white/65 px-4 py-3 shadow-sm backdrop-blur">
         <div className="text-sm text-slate-500">
           数据刷新于 {formatDateTime(summary.generated_at)}
         </div>
         <button
-          className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+          className="inline-flex h-9 items-center gap-2 rounded-md border border-blue-200 bg-white px-3 text-sm font-medium text-blue-700 shadow-sm hover:border-blue-300 hover:bg-blue-50 disabled:opacity-60"
           disabled={loading}
           onClick={() => void load()}
           type="button"
@@ -195,7 +195,7 @@ export function DashboardPanel() {
 
           return (
             <section
-              className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+              className="relative overflow-hidden rounded-xl border border-white/90 bg-white/90 p-5 shadow-[0_8px_28px_rgba(30,64,175,0.08)] backdrop-blur"
               key={stat.key}
             >
               <div className="flex items-start justify-between gap-3">
@@ -207,7 +207,7 @@ export function DashboardPanel() {
                 </div>
                 <div
                   className={[
-                    "flex h-10 w-10 items-center justify-center rounded-md",
+                    "flex h-11 w-11 items-center justify-center rounded-lg",
                     stat.tone === "blue"
                       ? "bg-blue-50 text-blue-600"
                       : stat.tone === "emerald"
@@ -227,7 +227,7 @@ export function DashboardPanel() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="rounded-xl border border-white/90 bg-white/90 p-5 shadow-[0_8px_28px_rgba(30,64,175,0.08)] backdrop-blur">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-semibold text-slate-950">近 12 小时活动</h2>
@@ -249,8 +249,8 @@ export function DashboardPanel() {
           <div className="mt-6 h-72 w-full" ref={chartRef} />
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-5 py-4">
+        <section className="rounded-xl border border-white/90 bg-white/90 shadow-[0_8px_28px_rgba(30,64,175,0.08)] backdrop-blur">
+          <div className="border-b border-slate-200/80 px-5 py-4">
             <h2 className="text-base font-semibold text-slate-950">最近错误</h2>
           </div>
           {summary.recent_errors.length === 0 ? (

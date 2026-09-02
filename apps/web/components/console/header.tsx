@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BookOpen, Bell, LogOut, PanelLeft } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 type MeResponse = {
   code: number;
@@ -44,6 +45,7 @@ export function ConsoleHeader() {
         </button>
       </div>
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         <a
           aria-current={docsActive ? "page" : undefined}
           className={[
