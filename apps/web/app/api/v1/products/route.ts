@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
     const input = {
       orgId: user.current_org_id,
       createdBy: user.id,
+      quotaExempt: canAccessAllResources(user.permissions),
       name: String(body.name ?? "")
     };
     const product = await createProduct(prisma, {

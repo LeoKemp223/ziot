@@ -27,6 +27,7 @@ type ProductListDelegate = {
 };
 
 type ProductCreateDelegate = {
+  count(args: unknown): Promise<number>;
   findUnique(args: unknown): Promise<ProductRecord | null>;
   create(args: unknown): Promise<ProductRecord>;
 };
@@ -65,6 +66,7 @@ export type ListProductsInput = {
 export type CreateProductInput = {
   orgId: string;
   createdBy: string;
+  quotaExempt?: boolean;
   product_key?: string;
   name: string;
   protocols?: string[];
@@ -129,6 +131,9 @@ function clampPageSize(value: number | undefined): number {
 
 // 产品目前仅支持 MQTT 接入;protocols 字段保留以兼容既有数据结构
 const SUPPORTED_PROTOCOLS = ["mqtt"];
+
+// 每用户在每个组织最多可创建的产品数(删除产品即释放名额;组织管理员不受限制)
+const MAX_PRODUCTS_PER_USER = 20;
 
 function assertProtocols(protocols: string[] | undefined): string[] {
   if (!protocols?.length) {
@@ -263,6 +268,24 @@ export async function createProduct(
 
   if (!name || name.length > 128) {
     throw serviceError(400001, "名称长度必须为 1-128 位");
+  }
+
+  // 每用户配额:删除产品即释放名额;组织管理员不受限制
+  if (!input.quotaExempt) {
+    const count = await db.product.count({
+      where: {
+        org_id: input.orgId,
+        created_by: input.createdBy,
+        deleted_at: null
+      }
+    });
+
+    if (count >= MAX_PRODUCTS_PER_USER) {
+      throw serviceError(
+        409001,
+        `产品数量已达上限（每个用户最多 ${MAX_PRODUCTS_PER_USER} 个，可删除旧产品释放名额）`
+      );
+    }
   }
 
   const existing = await db.product.findUnique({

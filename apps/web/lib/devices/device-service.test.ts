@@ -56,6 +56,7 @@ describe("device service", () => {
         findFirst: vi.fn().mockResolvedValue(product())
       },
       device: {
+        count: vi.fn().mockResolvedValue(0),
         findFirst: vi.fn().mockResolvedValue(null),
         create: vi.fn().mockResolvedValue(createdDevice)
       },
@@ -107,6 +108,7 @@ describe("device service", () => {
         findFirst: vi.fn().mockResolvedValue(product())
       },
       device: {
+        count: vi.fn().mockResolvedValue(0),
         findFirst: vi.fn().mockResolvedValue(device()),
         create: vi.fn()
       }
@@ -123,6 +125,100 @@ describe("device service", () => {
     ).rejects.toMatchObject({
       code: 409001,
       message: "device_key 在该产品下已存在"
+    });
+    expect(db.device.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects device creation beyond the per-product quota", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product())
+      },
+      device: {
+        count: vi.fn().mockResolvedValue(50),
+        findFirst: vi.fn(),
+        create: vi.fn()
+      },
+      deviceShadow: {
+        create: vi.fn()
+      }
+    };
+
+    await expect(
+      createDevice(db, {
+        orgId: "org_default",
+        createdBy: "usr_member",
+        productId: "prd_demo",
+        name: "超限设备"
+      })
+    ).rejects.toMatchObject({
+      code: 409001,
+      message: "设备数量已达上限（每个产品最多 50 个，可删除旧设备释放名额）"
+    });
+    expect(db.device.findFirst).not.toHaveBeenCalled();
+    expect(db.device.create).not.toHaveBeenCalled();
+    expect(db.deviceShadow.create).not.toHaveBeenCalled();
+  });
+
+  it("counts only active devices in the product toward the quota", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product())
+      },
+      device: {
+        count: vi.fn().mockResolvedValue(49),
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(device({ id: "dev_new" }))
+      },
+      deviceShadow: {
+        create: vi.fn().mockResolvedValue({})
+      }
+    };
+
+    await createDevice(db, {
+      orgId: "org_default",
+      createdBy: "usr_member",
+      productId: "prd_demo",
+      name: "第 50 个设备"
+    });
+
+    expect(db.device.count).toHaveBeenCalledWith({
+      where: {
+        org_id: "org_default",
+        product_id: "prd_demo",
+        deleted_at: null
+      }
+    });
+    expect(db.device.create).toHaveBeenCalled();
+  });
+
+  it("enforces the device quota for organization admins as well", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product())
+      },
+      device: {
+        count: vi.fn().mockResolvedValue(50),
+        findFirst: vi.fn(),
+        create: vi.fn()
+      },
+      deviceShadow: {
+        create: vi.fn()
+      }
+    };
+
+    await expect(
+      createDevice(db, {
+        orgId: "org_default",
+        createdBy: "usr_admin",
+        userId: "usr_admin",
+        canAccessAll: true,
+        productId: "prd_demo",
+        name: "管理员设备"
+      })
+    ).rejects.toMatchObject({
+      code: 409001,
+      message: "设备数量已达上限（每个产品最多 50 个，可删除旧设备释放名额）"
     });
     expect(db.device.create).not.toHaveBeenCalled();
   });

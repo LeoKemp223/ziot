@@ -32,6 +32,9 @@ function deviceKey(): string {
   return `dk_${randomUUID().replaceAll("-", "").slice(0, 12)}`;
 }
 
+// 每个产品最多可创建的设备数(删除设备即释放名额;对组织管理员同样生效)
+const MAX_DEVICES_PER_PRODUCT = 50;
+
 function mapDevice(device: any, plainSecret?: string) {
   return {
     id: device.id,
@@ -275,6 +278,22 @@ export async function createDevice(
     throw serviceError(
       400001,
       "device_key 必须为 3-128 位字母、数字、下划线或中划线"
+    );
+  }
+
+  // 每产品配额:删除设备即释放名额,组织管理员同样受限
+  const deviceCount = await db.device.count({
+    where: {
+      org_id: input.orgId,
+      product_id: input.productId,
+      deleted_at: null
+    }
+  });
+
+  if (deviceCount >= MAX_DEVICES_PER_PRODUCT) {
+    throw serviceError(
+      409001,
+      `设备数量已达上限（每个产品最多 ${MAX_DEVICES_PER_PRODUCT} 个，可删除旧设备释放名额）`
     );
   }
 

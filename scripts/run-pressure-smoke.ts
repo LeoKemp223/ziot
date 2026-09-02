@@ -12,6 +12,9 @@ const MQTT_BROKER_URL =
 const ADMIN_ACCOUNT = process.env.ADMIN_ACCOUNT ?? "13800000001";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "Admin123456";
 const CONNECTIONS = Number(process.env.SMOKE_MQTT_CONNECTIONS ?? "100");
+// 与 apps/web/lib/devices/device-service.ts 的 MAX_DEVICES_PER_PRODUCT 保持一致,
+// 超出后按 50 个/产品分片创建(组织管理员不受产品数量配额限制)
+const DEVICES_PER_PRODUCT = 50;
 const MESSAGES_PER_SECOND = Number(process.env.SMOKE_MESSAGES_PER_SECOND ?? "5");
 const DURATION_SECONDS = Number(process.env.SMOKE_DURATION_SECONDS ?? "300");
 const COMMANDS = Number(process.env.SMOKE_COMMANDS ?? "20");
@@ -179,20 +182,33 @@ async function main() {
     }
   });
 
-  const product = await api<{ id: string; product_key: string }>("/api/v1/products", {
-    method: "POST",
-    jar,
-    json: {
-      name: `Pressure Product ${stamp}`,
-      product_key: `pk_pressure_${stamp}`,
-      protocols: ["mqtt"]
-    }
-  });
+  const productCount = Math.ceil(CONNECTIONS / DEVICES_PER_PRODUCT);
+  const products: Array<{ id: string; product_key: string }> = [];
+  for (let productIndex = 0; productIndex < productCount; productIndex += 1) {
+    products.push(
+      await api<{ id: string; product_key: string }>("/api/v1/products", {
+        method: "POST",
+        jar,
+        json: {
+          name: `Pressure Product ${stamp}-${productIndex}`,
+          product_key: `pk_pressure_${stamp}_${productIndex}`,
+          protocols: ["mqtt"]
+        }
+      })
+    );
+  }
 
-  const devices: Array<{ id: string; device_key: string; device_secret: string }> = [];
+  const devices: Array<{
+    id: string;
+    product_key: string;
+    device_key: string;
+    device_secret: string;
+  }> = [];
   for (let index = 0; index < CONNECTIONS; index += 1) {
+    const product = products[Math.floor(index / DEVICES_PER_PRODUCT)];
     const device = await api<{
       id: string;
+      product_key: string;
       device_key: string;
       device_secret: string;
     }>("/api/v1/devices", {
@@ -211,7 +227,7 @@ async function main() {
   for (let index = 0; index < devices.length; index += 1) {
     const device = devices[index];
     const client = await connectMqttDevice({
-      productKey: product.product_key,
+      productKey: device.product_key,
       deviceKey: device.device_key,
       deviceSecret: device.device_secret,
       index
@@ -219,7 +235,7 @@ async function main() {
     clients.push(client);
 
     if (index < COMMANDS) {
-      const serviceTopic = `/sys/${product.product_key}/${device.device_key}/thing/service/+/invoke`;
+      const serviceTopic = `/sys/${device.product_key}/${device.device_key}/thing/service/+/invoke`;
       await subscribe(client, serviceTopic);
       client.on("message", (topic: string, payload: Buffer) => {
         const parts = topic.split("/").filter(Boolean);
@@ -232,7 +248,7 @@ async function main() {
         }
         void publish(
           client,
-          `/sys/${product.product_key}/${device.device_key}/thing/service/${identifier}/reply`,
+          `/sys/${device.product_key}/${device.device_key}/thing/service/${identifier}/reply`,
           {
             id: body.request_id ?? body.id,
             request_id: body.request_id ?? body.id,
@@ -254,7 +270,7 @@ async function main() {
     const client = clients[index % clients.length];
     await publish(
       client,
-      `/sys/${product.product_key}/${device.device_key}/thing/property/post`,
+      `/sys/${device.product_key}/${device.device_key}/thing/property/post`,
       {
         id: `pressure_${stamp}_${index}`,
         params: {

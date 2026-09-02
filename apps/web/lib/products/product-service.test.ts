@@ -104,6 +104,7 @@ describe("product service", () => {
   it("creates a product with mqtt protocol and a placeholder thing model", async () => {
     const db = {
       product: {
+        count: vi.fn().mockResolvedValue(0),
         findUnique: vi.fn().mockResolvedValue(null),
         create: vi.fn().mockResolvedValue(product({ id: "prd_new" }))
       }
@@ -146,6 +147,7 @@ describe("product service", () => {
   it("generates product key when product_key is omitted", async () => {
     const db = {
       product: {
+        count: vi.fn().mockResolvedValue(0),
         findUnique: vi.fn().mockResolvedValue(null),
         create: vi.fn().mockResolvedValue(product({ id: "prd_new" }))
       }
@@ -169,6 +171,7 @@ describe("product service", () => {
   it("rejects creating a product with unsupported protocols", async () => {
     const db = {
       product: {
+        count: vi.fn().mockResolvedValue(0),
         findUnique: vi.fn().mockResolvedValue(null),
         create: vi.fn()
       }
@@ -212,6 +215,7 @@ describe("product service", () => {
   it("rejects duplicated product keys", async () => {
     const db = {
       product: {
+        count: vi.fn().mockResolvedValue(0),
         findUnique: vi.fn().mockResolvedValue(product()),
         create: vi.fn()
       }
@@ -231,6 +235,75 @@ describe("product service", () => {
       code: 409001,
       message: "product_key 已存在"
     });
+  });
+
+  it("rejects product creation beyond the per-user quota", async () => {
+    const db = {
+      product: {
+        count: vi.fn().mockResolvedValue(20),
+        findUnique: vi.fn(),
+        create: vi.fn()
+      }
+    };
+
+    await expect(
+      createProduct(db, {
+        orgId: "org_default",
+        createdBy: "usr_member",
+        name: "超限产品"
+      })
+    ).rejects.toMatchObject({
+      code: 409001,
+      message: "产品数量已达上限（每个用户最多 20 个，可删除旧产品释放名额）"
+    });
+    expect(db.product.findUnique).not.toHaveBeenCalled();
+    expect(db.product.create).not.toHaveBeenCalled();
+  });
+
+  it("exempts quota-exempt admins from the product quota", async () => {
+    const db = {
+      product: {
+        count: vi.fn(),
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(product({ id: "prd_new" }))
+      }
+    };
+
+    const result = await createProduct(db, {
+      orgId: "org_default",
+      createdBy: "usr_admin",
+      quotaExempt: true,
+      name: "管理员产品"
+    });
+
+    expect(db.product.count).not.toHaveBeenCalled();
+    expect(db.product.create).toHaveBeenCalled();
+    expect(result.id).toBe("prd_new");
+  });
+
+  it("counts only active products created by the user toward the quota", async () => {
+    const db = {
+      product: {
+        count: vi.fn().mockResolvedValue(19),
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(product({ id: "prd_new" }))
+      }
+    };
+
+    await createProduct(db, {
+      orgId: "org_default",
+      createdBy: "usr_member",
+      name: "第 20 个产品"
+    });
+
+    expect(db.product.count).toHaveBeenCalledWith({
+      where: {
+        org_id: "org_default",
+        created_by: "usr_member",
+        deleted_at: null
+      }
+    });
+    expect(db.product.create).toHaveBeenCalled();
   });
 
   it("updates an active product name", async () => {

@@ -216,7 +216,7 @@ export function DeviceCreateForm() {
                     创建设备
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    设备密钥只在创建后显示一次。
+                    设备密钥只在创建后显示一次。每个产品最多 50 个设备，删除旧设备可释放名额。
                   </p>
                 </div>
                 <button
