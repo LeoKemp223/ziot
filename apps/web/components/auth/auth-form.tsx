@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { RefreshCw } from "lucide-react";
 
 type AuthFormProps = {
-  mode: "login" | "register";
+  mode: "login" | "register" | "reset";
 };
 
 type ApiResponse = {
@@ -31,14 +31,17 @@ export function AuthForm({ mode }: AuthFormProps) {
         : {
             account: String(form.get("account") ?? "").trim(),
             password: String(form.get("password") ?? ""),
-            display_name: String(form.get("display_name") ?? ""),
+            ...(mode === "register"
+              ? { display_name: String(form.get("display_name") ?? "") }
+              : {}),
             invitation_code: String(form.get("invitation_code") ?? "")
               .trim()
               .toUpperCase()
           };
 
     try {
-      const response = await fetch(`/api/v1/auth/${mode}`, {
+      const endpoint = mode === "reset" ? "reset-password" : mode;
+      const response = await fetch(`/api/v1/auth/${endpoint}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload)
@@ -50,7 +53,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         return;
       }
 
-      window.location.href = "/";
+      window.location.href = mode === "reset" ? "/login?reset=success" : "/";
     } catch {
       setError("请求失败，请确认 Web 服务状态。");
     } finally {
@@ -63,12 +66,12 @@ export function AuthForm({ mode }: AuthFormProps) {
       <label className="block">
         <span className="text-sm font-medium text-slate-700">手机号</span>
         <input
-          autoComplete={mode === "register" ? "tel" : "username"}
+          autoComplete={mode === "login" ? "username" : "tel"}
           className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-          inputMode={mode === "register" ? "numeric" : undefined}
-          maxLength={mode === "register" ? 11 : undefined}
+          inputMode={mode === "login" ? undefined : "numeric"}
+          maxLength={mode === "login" ? undefined : 11}
           name="account"
-          pattern={mode === "register" ? "1[3-9][0-9]{9}" : undefined}
+          pattern={mode === "login" ? undefined : "1[3-9][0-9]{9}"}
           placeholder="13800000001"
           required
           type="tel"
@@ -90,7 +93,19 @@ export function AuthForm({ mode }: AuthFormProps) {
       ) : null}
 
       <label className="block">
-        <span className="text-sm font-medium text-slate-700">密码</span>
+        <span className="flex items-center justify-between">
+          <span className="text-sm font-medium text-slate-700">
+            {mode === "reset" ? "新密码" : "密码"}
+          </span>
+          {mode === "login" ? (
+            <a
+              className="text-sm font-medium text-blue-700 hover:text-blue-800"
+              href="/reset-password"
+            >
+              忘记密码？
+            </a>
+          ) : null}
+        </span>
         <input
           autoComplete={mode === "login" ? "current-password" : "new-password"}
           className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
@@ -101,7 +116,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         />
       </label>
 
-      {mode === "register" ? (
+      {mode !== "login" ? (
         <label className="block">
           <span className="text-sm font-medium text-slate-700">邀请码</span>
           <input
@@ -122,7 +137,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         type="submit"
       >
         {pending ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
-        {mode === "login" ? "登录" : "注册并登录"}
+        {mode === "login" ? "登录" : mode === "register" ? "注册并登录" : "重置密码"}
       </button>
     </form>
   );

@@ -211,9 +211,6 @@ export function ControlConsolePanel() {
             {selectedDevice ? (
               <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">
                 <div className="font-medium text-slate-950">{selectedDevice.name}</div>
-                <div className="mt-1 font-mono text-xs">
-                  {selectedDevice.product_key} / {selectedDevice.device_key}
-                </div>
               </div>
             ) : null}
             <Field label="类型">

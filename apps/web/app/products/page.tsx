@@ -25,7 +25,7 @@ export default function ProductsPage() {
                   产品管理
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">
-                  管理设备产品和 Product Key。
+                  管理设备产品和产品标识。
                 </p>
               </div>
               <div className="flex items-center gap-2">

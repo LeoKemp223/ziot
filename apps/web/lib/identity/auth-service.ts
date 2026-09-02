@@ -102,6 +102,41 @@ function addSeconds(seconds: number): Date {
   return new Date(Date.now() + seconds * 1000);
 }
 
+// 邀请码仅存哈希,按明文码匹配需要载入全部 active 邀请码逐个 bcrypt 比对
+async function findInvitationByCode(db: Db, invitationCode: string) {
+  const invitations = await db.invitation.findMany({
+    where: {
+      status: "active"
+    },
+    include: {
+      organization: true,
+      role: true
+    }
+  });
+
+  return (
+    await Promise.all(
+      invitations.map(async (item: any) =>
+        (await bcrypt.compare(invitationCode, item.code_hash)) ? item : null
+      )
+    )
+  ).find(Boolean);
+}
+
+function assertInvitationUsable(invitation: {
+  expires_at: Date;
+  used_count: number;
+  max_uses: number;
+}) {
+  if (invitation.expires_at <= new Date()) {
+    throw serviceError(400001, "邀请码已过期");
+  }
+
+  if (invitation.used_count >= invitation.max_uses) {
+    throw serviceError(400001, "邀请码已达最大使用次数");
+  }
+}
+
 function publicInvitationCode(): string {
   const bytes = randomBytes(7);
   let code = "INV";
@@ -413,34 +448,13 @@ export async function registerWithInvitation(
     throw serviceError(409001, "账号已存在");
   }
 
-  const invitations = await db.invitation.findMany({
-    where: {
-      status: "active"
-    },
-    include: {
-      organization: true,
-      role: true
-    }
-  });
-  const invitation = (
-    await Promise.all(
-      invitations.map(async (item: any) =>
-        (await bcrypt.compare(invitationCode, item.code_hash)) ? item : null
-      )
-    )
-  ).find(Boolean);
+  const invitation = await findInvitationByCode(db, invitationCode);
 
   if (!invitation) {
     throw serviceError(400001, "邀请码无效");
   }
 
-  if (invitation.expires_at <= new Date()) {
-    throw serviceError(400001, "邀请码已过期");
-  }
-
-  if (invitation.used_count >= invitation.max_uses) {
-    throw serviceError(400001, "邀请码已达最大使用次数");
-  }
+  assertInvitationUsable(invitation);
 
   const passwordHash = await bcrypt.hash(input.password, 10);
   const run = async (tx: Db) => {
@@ -484,6 +498,95 @@ export async function registerWithInvitation(
   const user = db.$transaction ? await db.$transaction(run) : await run(db);
 
   return createSession(db, user, invitation.org_id);
+}
+
+export async function resetPasswordWithInvitation(
+  db: Db,
+  input: {
+    account: string;
+    password: string;
+    invitation_code: string;
+  }
+): Promise<{ user_id: string; account: string; org_id: string }> {
+  const account = normalizeAccount(input.account);
+  const invitationCode = input.invitation_code.trim().toUpperCase();
+
+  assertAccount(account);
+  assertPassword(input.password);
+
+  const user = await db.user.findUnique({
+    where: { account },
+    include: {
+      user_org_roles: {
+        where: { status: "active" },
+        select: { org_id: true }
+      }
+    }
+  });
+
+  if (!user) {
+    throw serviceError(404001, "账号不存在");
+  }
+
+  if (user.status !== "active") {
+    throw serviceError(403001, "用户已被禁用");
+  }
+
+  const invitation = await findInvitationByCode(db, invitationCode);
+
+  if (!invitation) {
+    throw serviceError(400001, "邀请码无效");
+  }
+
+  assertInvitationUsable(invitation);
+
+  const memberOrgIds = new Set(
+    user.user_org_roles.map(
+      (membership: { org_id: string }) => membership.org_id
+    )
+  );
+
+  if (!memberOrgIds.has(invitation.org_id)) {
+    throw serviceError(400001, "邀请码与账号所在组织不匹配");
+  }
+
+  const passwordHash = await bcrypt.hash(input.password, 10);
+  const run = async (tx: Db) => {
+    await tx.user.update({
+      where: { id: user.id },
+      data: { password_hash: passwordHash }
+    });
+    await tx.invitation.update({
+      where: { id: invitation.id },
+      data: { used_count: { increment: 1 } }
+    });
+    await tx.invitationUsage.create({
+      data: {
+        id: id("inu"),
+        invitation_id: invitation.id,
+        user_id: user.id,
+        org_id: invitation.org_id,
+        role_id: invitation.role_id
+      }
+    });
+  };
+
+  if (db.$transaction) {
+    await db.$transaction(run);
+  } else {
+    await run(db);
+  }
+
+  // 密码已更换,吊销该用户全部刷新令牌,旧会话随之失效
+  await db.refreshToken.updateMany({
+    where: {
+      user_id: user.id,
+      revoked_at: null
+    },
+    data: { revoked_at: new Date() }
+  });
+
+  return { user_id: user.id, account: user.account, org_id: invitation.org_id };
 }
 
 export async function createInvitations(

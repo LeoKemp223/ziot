@@ -254,6 +254,7 @@ export function DeviceCreateForm() {
                     设备名称
                   </span>
                   <input
+                    autoComplete="off"
                     className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
                     maxLength={128}
                     name="name"
@@ -567,6 +568,7 @@ export function DeviceListPanel() {
                   设备名称
                 </span>
                 <input
+                  autoComplete="off"
                   className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
                   defaultValue={editingDevice.name}
                   key={editingDevice.id}
@@ -653,7 +655,7 @@ export function DeviceListPanel() {
               <tr>
                 <th className="px-5 py-3">设备</th>
                 <th className="px-4 py-3">所属产品</th>
-                <th className="px-4 py-3">Device Key</th>
+                <th className="px-4 py-3">设备标识</th>
                 <th className="px-4 py-3">在线状态</th>
                 <th className="px-4 py-3">最后心跳</th>
                 <th className="px-5 py-3">创建时间</th>
@@ -670,9 +672,6 @@ export function DeviceListPanel() {
                     >
                       {device.name}
                     </a>
-                    <div className="mt-1 font-mono text-xs text-slate-400">
-                      {device.id}
-                    </div>
                   </td>
                   <td className="px-4 py-4 text-slate-600">
                     {device.product_name}
@@ -822,7 +821,7 @@ function onlineStatusMeta(value: string) {
   }
 
   return {
-    label: "未知",
+    label: "未上线",
     className: "bg-zinc-100 text-zinc-600",
     dotClassName: "bg-zinc-400"
   };

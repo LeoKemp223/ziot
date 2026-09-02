@@ -170,6 +170,38 @@ curl http://localhost:3000/api/v1/health
 
 成功响应 HTTP 状态码：`201`，响应体同登录用户结构。
 
+### `POST /api/v1/auth/reset-password`
+
+忘记密码时凭邀请码重置密码（公开接口，无需登录）。要求：
+
+- 邀请码必须有效（active、未过期、未达最大使用次数），重置成功会**消耗一次使用次数**；
+- 邀请码所属组织必须与该账号所在组织匹配，防止跨组织接管账号；
+- 重置成功后该账号全部已有会话（refresh token）被吊销，需用新密码重新登录；
+- 成功后写入 `auth.reset_password` 审计日志。接口不设置会话 Cookie。
+
+请求体：
+
+```json
+{
+  "account": "13800000001",
+  "password": "NewPass123456",
+  "invitation_code": "INVXXXXXXX"
+}
+```
+
+成功响应：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "request_id": "req_xxx",
+  "data": { "user_id": "usr_admin", "account": "13800000001", "org_id": "org_default" }
+}
+```
+
+常见错误：`400001 邀请码无效`、`400001 邀请码与账号所在组织不匹配`、`404001 账号不存在`。
+
 ### `POST /api/v1/auth/refresh`
 
 使用 refresh token Cookie 换发新 session，并撤销旧 refresh token。

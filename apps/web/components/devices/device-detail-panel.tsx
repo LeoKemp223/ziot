@@ -405,8 +405,8 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
               <option value="disabled">禁用</option>
             </select>
           </Field>
-          <Info label="Product Key" value={device.product_key} mono />
-          <Info label="Device Key" value={device.device_key} mono />
+          <Info label="产品标识" value={device.product_key} mono />
+          <Info label="设备标识" value={device.device_key} mono />
           <div>
             <div className="text-xs font-medium text-slate-400">在线状态</div>
             <div className="mt-1">
@@ -960,7 +960,7 @@ function onlineStatusMeta(value: string) {
   }
 
   return {
-    label: "未知",
+    label: "未上线",
     className: "bg-zinc-100 text-zinc-600",
     dotClassName: "bg-zinc-400"
   };

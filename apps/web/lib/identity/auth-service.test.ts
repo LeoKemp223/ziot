@@ -6,7 +6,8 @@ import {
   listRoles,
   loginUser,
   refreshSession,
-  registerWithInvitation
+  registerWithInvitation,
+  resetPasswordWithInvitation
 } from "./auth-service";
 
 const now = new Date("2026-04-28T08:00:00.000Z");
@@ -334,6 +335,139 @@ describe("auth service", () => {
       code: 400001,
       message: "账号必须是有效的大陆手机号"
     });
+  });
+
+  it("resets a password with an org-matched invitation", async () => {
+    const code = "INVRST9999";
+    const codeHash = await bcrypt.hash(code, 10);
+    const invitation = {
+      id: "inv_reset",
+      code_hash: codeHash,
+      org_id: "org_default",
+      role_id: "role_org_admin",
+      max_uses: 1,
+      used_count: 0,
+      status: "active",
+      expires_at: new Date("2099-05-01T08:00:00.000Z"),
+      organization: { id: "org_default", name: "默认组织" },
+      role: { id: "role_org_admin", name: "组织管理员" }
+    };
+    const db = {
+      user: {
+        findUnique: vi.fn().mockResolvedValue(user()),
+        update: vi.fn().mockResolvedValue({})
+      },
+      invitation: {
+        findMany: vi.fn().mockResolvedValue([invitation]),
+        update: vi.fn().mockResolvedValue({})
+      },
+      invitationUsage: {
+        create: vi.fn().mockResolvedValue({})
+      },
+      refreshToken: {
+        updateMany: vi.fn().mockResolvedValue({})
+      },
+      $transaction: async (callback: any) => callback(db)
+    };
+
+    const reset = await resetPasswordWithInvitation(db, {
+      account: "13800000001",
+      password: "NewPass123456",
+      invitation_code: code.toLowerCase()
+    });
+
+    expect(reset).toEqual({
+      user_id: "usr_admin",
+      account: "admin@example.com",
+      org_id: "org_default"
+    });
+    expect(db.user.update).toHaveBeenCalledWith({
+      where: { id: "usr_admin" },
+      data: { password_hash: expect.any(String) }
+    });
+    const updateArg = db.user.update.mock.calls.at(0)?.[0];
+    expect(
+      await bcrypt.compare("NewPass123456", updateArg?.data?.password_hash ?? "")
+    ).toBe(true);
+    expect(db.invitation.update).toHaveBeenCalledWith({
+      where: { id: "inv_reset" },
+      data: { used_count: { increment: 1 } }
+    });
+    expect(db.invitationUsage.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          invitation_id: "inv_reset",
+          user_id: "usr_admin",
+          org_id: "org_default",
+          role_id: "role_org_admin"
+        })
+      })
+    );
+    expect(db.refreshToken.updateMany).toHaveBeenCalledWith({
+      where: { user_id: "usr_admin", revoked_at: null },
+      data: { revoked_at: expect.any(Date) }
+    });
+  });
+
+  it("rejects a reset invitation from another organization", async () => {
+    const code = "INVOTHER01";
+    const codeHash = await bcrypt.hash(code, 10);
+    const invitation = {
+      id: "inv_other",
+      code_hash: codeHash,
+      org_id: "org_other",
+      role_id: "role_org_admin",
+      max_uses: 1,
+      used_count: 0,
+      status: "active",
+      expires_at: new Date("2099-05-01T08:00:00.000Z"),
+      organization: { id: "org_other", name: "其他组织" },
+      role: { id: "role_org_admin", name: "组织管理员" }
+    };
+    const db = {
+      user: {
+        findUnique: vi.fn().mockResolvedValue(user()),
+        update: vi.fn()
+      },
+      invitation: {
+        findMany: vi.fn().mockResolvedValue([invitation]),
+        update: vi.fn()
+      },
+      invitationUsage: { create: vi.fn() },
+      refreshToken: { updateMany: vi.fn() }
+    };
+
+    await expect(
+      resetPasswordWithInvitation(db, {
+        account: "13800000001",
+        password: "NewPass123456",
+        invitation_code: code
+      })
+    ).rejects.toMatchObject({
+      code: 400001,
+      message: "邀请码与账号所在组织不匹配"
+    });
+    expect(db.invitation.update).not.toHaveBeenCalled();
+    expect(db.user.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects a reset for an unknown account", async () => {
+    const db = {
+      user: { findUnique: vi.fn().mockResolvedValue(null) },
+      invitation: { findMany: vi.fn() }
+    };
+
+    await expect(
+      resetPasswordWithInvitation(db, {
+        account: "13900000000",
+        password: "NewPass123456",
+        invitation_code: "INVRST9999"
+      })
+    ).rejects.toMatchObject({
+      code: 404001,
+      message: "账号不存在"
+    });
+    expect(db.invitation.findMany).not.toHaveBeenCalled();
   });
 
   it("rotates a valid refresh token", async () => {

@@ -232,7 +232,7 @@ export function ProductListPanel() {
             <div className="space-y-4 px-5 py-5">
               <label className="block">
                 <span className="text-sm font-medium text-slate-700">
-                  Product Key
+                  产品标识
                 </span>
                 <input
                   className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 font-mono text-sm text-slate-500 outline-none"
@@ -250,6 +250,7 @@ export function ProductListPanel() {
                   产品名称
                 </span>
                 <input
+                  autoComplete="off"
                   className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
                   defaultValue={editingProduct.name}
                   key={editingProduct.id}
@@ -399,7 +400,7 @@ export function ProductListPanel() {
             <thead className="bg-slate-50 text-xs font-medium text-slate-500">
               <tr>
                 <th className="px-5 py-3">产品</th>
-                <th className="px-4 py-3">Product Key</th>
+                <th className="px-4 py-3">产品标识</th>
                 <th className="px-4 py-3">协议</th>
                 <th className="px-4 py-3">设备数</th>
                 <th className="px-4 py-3">状态</th>
@@ -423,9 +424,6 @@ export function ProductListPanel() {
                       >
                         {product.name}
                       </a>
-                      <div className="mt-1 max-w-[260px] truncate font-mono text-xs text-slate-400">
-                        {product.id}
-                      </div>
                     </td>
                     <td className="px-4 py-4">
                       <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700">

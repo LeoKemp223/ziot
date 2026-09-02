@@ -59,7 +59,7 @@ export function ProductDetailPanel({ productId }: ProductDetailPanelProps) {
         </div>
         <div className="grid gap-4 px-5 py-5 md:grid-cols-4">
           <Info label="产品名称" value={product.name} />
-          <Info label="Product Key" value={product.product_key} mono />
+          <Info label="产品标识" value={product.product_key} mono />
           <Info label="设备数" value={`${product.device_count}`} />
           <Info label="协议" value={product.protocols.join(", ")} />
         </div>

@@ -76,7 +76,7 @@ export default function IntegrationDocsPage() {
               <SummaryCard
                 icon={<KeyRound className="h-5 w-5" />}
                 title="接入凭据"
-                text="设备使用 Product Key、Device Key 和 Device Secret 认证。Device Secret 只在创建设备或重置密钥后显示一次。"
+                text="设备使用产品标识（Product Key）、设备标识（Device Key）和设备密钥（Device Secret）认证。设备密钥只在创建设备或重置密钥后显示一次。"
               />
               <SummaryCard
                 icon={<RadioTower className="h-5 w-5" />}
@@ -96,8 +96,8 @@ export default function IntegrationDocsPage() {
               </div>
               <div className="grid gap-4 p-5 lg:grid-cols-4">
                 {[
-                  "创建产品，确认 Product Key。",
-                  "在产品下创建设备，记录 Device Key 和 Device Secret。",
+                  "创建产品，确认产品标识（Product Key）。",
+                  "在产品下创建设备，记录设备标识（Device Key）和设备密钥（Device Secret）。",
                   "设备通过 MQTT 连接平台 Broker。",
                   "运行 demo 验证属性上报、控制下发和 OTA 流程。"
                 ].map((step, index) => (

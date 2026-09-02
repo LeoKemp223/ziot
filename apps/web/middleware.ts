@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const publicPaths = ["/login", "/register"];
+const publicPaths = ["/login", "/register", "/reset-password"];
 const DEFAULT_JWT_SECRET = "local-development-secret-change-before-production";
 const protectedPagePermissions = [
   { path: "/products", permission: "product:read" },

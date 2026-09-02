@@ -109,6 +109,7 @@ export function ProductCreateForm() {
                   产品名称
                 </span>
                 <input
+                  autoComplete="off"
                   className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
                   maxLength={128}
                   name="name"
