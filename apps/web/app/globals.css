@@ -43,18 +43,17 @@ body {
 
 .auth-shell { background: #eef4fc; }
 .auth-content { background: #f8fafc; }
-.auth-visual { background: #02183f; background-image: linear-gradient(rgba(96,165,250,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(96,165,250,.1) 1px, transparent 1px); background-size: 42px 42px; animation: auth-grid-drift 18s linear infinite; }
+.auth-visual { background: #02183f; background-image: linear-gradient(rgba(96,165,250,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(96,165,250,.1) 1px, transparent 1px); background-size: 42px 42px; }
 .auth-visual::after { position:absolute; inset:0; content:""; background: linear-gradient(115deg, transparent 25%, rgba(96,165,250,.08) 50%, transparent 75%); background-size:220% 100%; animation: auth-light-sweep 12s ease-in-out infinite; pointer-events:none; }
 .auth-orbit { position:absolute; border:1px solid rgba(96,165,250,.25); border-radius:999px; transform:rotate(-18deg); animation: auth-orbit-drift 14s ease-in-out infinite; }
 .auth-orbit-one { width:520px; height:180px; left:8%; top:47%; }
 .auth-orbit-two { width:420px; height:140px; left:18%; top:51%; animation-delay:-5s; animation-duration:18s; }
-.auth-scanline { position:absolute; inset:0; background:linear-gradient(to bottom, transparent 0%, rgba(125,211,252,.08) 44%, rgba(125,211,252,.28) 50%, transparent 56%); background-size:100% 220px; animation:auth-scan 6s linear infinite; opacity:.7; pointer-events:none; }
+.auth-scanline { position:absolute; inset:0; background:linear-gradient(to bottom, transparent 0%, rgba(125,211,252,.06) 48%, rgba(125,211,252,.18) 50%, transparent 52%); background-size:100% 260px; animation:auth-scan 9s linear infinite; opacity:.55; pointer-events:none; }
 .auth-node { position:absolute; width:7px; height:7px; border-radius:50%; background:#7dd3fc; box-shadow:0 0 0 4px rgba(125,211,252,.08), 0 0 18px rgba(56,189,248,.9); animation:auth-pulse 3s ease-in-out infinite; }
 .auth-node-one { left:18%; top:43%; }
 .auth-node-two { left:72%; top:55%; animation-delay:-1.2s; }
 .auth-node-three { left:51%; top:72%; animation-delay:-2.1s; }
 @keyframes auth-light-sweep { 0%, 100% { background-position: 180% 0; } 50% { background-position: -20% 0; } }
-@keyframes auth-grid-drift { from { background-position: 0 0, 0 0; } to { background-position: 42px 42px, 42px 42px; } }
 @keyframes auth-scan { from { background-position: 0 -260px; } to { background-position: 0 100%; } }
 @keyframes auth-orbit-drift { 0%, 100% { transform:rotate(-18deg) translate3d(0,0,0); } 50% { transform:rotate(-14deg) translate3d(12px,-8px,0); } }
 @keyframes auth-pulse { 0%, 100% { opacity:.45; transform:scale(.8); } 50% { opacity:1; transform:scale(1.25); } }
