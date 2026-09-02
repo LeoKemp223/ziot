@@ -16,16 +16,15 @@ export function AuthShell({ title, description, children }: AuthShellProps) {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500 text-lg font-bold shadow-lg shadow-blue-950/40">Z</div>
           <div><div className="text-lg font-semibold">ZIOT Console</div><div className="text-xs text-blue-200">Device Cloud Platform</div></div>
         </div>
-        <div className="relative z-10 mt-auto max-w-xl pb-10">
+        <div className="relative z-10 mt-auto max-w-xl pb-16 xl:pb-20">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-300/30 bg-blue-400/10 px-3 py-1.5 text-xs font-medium tracking-wide text-blue-100"><Cloud className="h-3.5 w-3.5" /> DEVICE CLOUD PLATFORM</div>
-          <h1 className="max-w-lg text-4xl font-semibold leading-[1.15] tracking-tight xl:text-5xl">连接每一台设备</h1>
-          <p className="mt-5 max-w-lg text-base leading-7 text-blue-50/80">从设备接入、实时数据到远程控制，在一个稳定而清晰的工作台中管理物联网业务。</p>
-          <div className="mt-9 grid max-w-lg grid-cols-3 divide-x divide-white/10 rounded-xl border border-white/10 bg-white/[0.06] px-2 py-4 backdrop-blur-sm">
+          <h1 className="max-w-lg text-3xl font-semibold leading-tight tracking-tight xl:text-[42px]">连接每一台设备</h1>
+          <p className="mt-4 max-w-md text-sm leading-6 text-blue-50/75 xl:text-base xl:leading-7">从设备接入、实时数据到远程控制，在一个稳定而清晰的工作台中管理物联网业务。</p>
+          <div className="mt-8 grid max-w-lg grid-cols-3 divide-x divide-white/10 border-y border-white/10 py-4">
             {[{ value: "24/7", label: "稳定在线", icon: ShieldCheck }, { value: "实时", label: "数据同步", icon: Activity }, { value: "一站式", label: "设备运维", icon: Boxes }].map(({ icon: Icon, value, label }) => <div className="px-3" key={label}><div className="flex items-center gap-2 text-sm font-semibold text-white"><Icon className="h-4 w-4 text-blue-300" />{value}</div><div className="mt-1 text-xs text-blue-100/65">{label}</div></div>)}
           </div>
-          <div className="mt-7 flex items-center gap-2 text-xs text-blue-100/60"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.8)]" />平台服务正常运行 · 数据传输全程受保护</div>
+          <div className="mt-6 flex items-center gap-2 text-xs text-blue-100/70"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.8)]" />平台服务正常运行 · 数据传输全程受保护</div>
         </div>
-        <div className="auth-scanline" aria-hidden="true" />
         <div className="auth-orbit auth-orbit-one" aria-hidden="true" />
         <div className="auth-orbit auth-orbit-two" aria-hidden="true" />
         <div className="auth-node auth-node-one" aria-hidden="true" />
