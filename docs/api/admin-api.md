@@ -228,7 +228,7 @@ curl http://localhost:3000/api/v1/health
 
 ### `GET /api/v1/users`
 
-查询当前组织用户列表。需要 `user:read` 权限。
+查询当前组织用户列表。需要 `user:read` 权限。支持 `page` / `page_size` 分页参数（默认每页 20），返回 `{ items, pagination }`。
 
 ### `GET /api/v1/roles`
 
@@ -245,7 +245,7 @@ curl http://localhost:3000/api/v1/health
 
 ### `GET /api/v1/invitations`
 
-查询当前组织邀请码列表。需要 `invite:read` 或 `invite:write` 权限。
+查询当前组织邀请码列表。需要 `invite:read` 或 `invite:write` 权限。支持 `page` / `page_size` 分页参数（默认每页 20），返回 `{ items, pagination }`。
 列表项包含 `code` 明文字段(2026-09 起创建的邀请码才有值,历史记录为 `null`)。
 
 ### `POST /api/v1/invitations`
@@ -1081,11 +1081,12 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 
 ### `GET /api/v1/firmwares`
 
-查询固件列表。需要 `ota:read` 权限。
+查询固件列表。需要 `ota:read` 权限。支持 `page` / `page_size` 分页参数（默认每页 20），返回 `{ items, pagination }`；`product_id` 可选过滤。
 
 ### `POST /api/v1/firmwares`
 
-创建固件记录。需要 `ota:write` 权限。
+创建固件记录。需要 `ota:write` 权限。固件创建后即为 `released` 状态，可直接用于升级任务（`deprecated` 状态才会被任务创建拦截）。
+配额：每个用户在每个组织最多 10 个固件，超量返回 `409001`（删除固件可释放名额）。
 
 ```json
 {
@@ -1100,7 +1101,8 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 
 ### `POST /api/v1/firmwares/upload`
 
-直接上传固件文件并创建固件记录。需要 `ota:write` 权限。请求格式为 `multipart/form-data`，服务端会保存文件并自动计算 `file_size` 和 `sha256`。
+直接上传固件文件并创建固件记录。需要 `ota:write` 权限。请求格式为 `multipart/form-data`，服务端会保存文件并自动计算 `file_size` 和 `sha256`，固件创建后即为 `released` 状态。
+限制：单文件不超过 5MB（超限返回 `400001`）；每个用户在每个组织最多 10 个固件，超量返回 `409001`（删除固件可释放名额）。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
@@ -1113,15 +1115,10 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 
 查询固件详情。需要 `ota:read` 权限。
 
-### `PATCH /api/v1/firmwares/{firmware_id}`
+### `DELETE /api/v1/firmwares/{firmware_id}`
 
-发布或废弃固件。需要 `ota:write` 权限。
-
-```json
-{
-  "status": "released"
-}
-```
+删除固件。需要 `ota:write` 权限。固件被任何升级任务引用时无法删除（`409001 固件已被升级任务引用，无法删除`）。
+删除会同时清理本地 `public/uploads/firmwares/` 下的固件文件（外部 URL 不受影响）并释放该用户的固件配额名额，操作不可恢复。写入 `firmware.delete` 审计日志。
 
 ### `POST /api/v1/firmwares/{firmware_id}/upload-url`
 
@@ -1130,7 +1127,7 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 
 ### `GET /api/v1/ota/tasks`
 
-查询 OTA 任务列表。需要 `ota:read` 权限。
+查询 OTA 任务列表。需要 `ota:read` 权限。支持 `page` / `page_size` 分页参数（默认每页 20），返回 `{ items, pagination }`；`product_id` 可选过滤。
 
 ### `POST /api/v1/ota/tasks`
 
@@ -1167,11 +1164,13 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 
 ### `POST /api/v1/ota/tasks/{task_id}/cancel`
 
-取消 OTA 任务。需要 `ota:execute` 权限。
+停止/取消 OTA 任务。需要 `ota:execute` 权限。`finished` / `cancelled` 状态的任务无法再取消（`409001`）。
+
+取消后：任务状态变为 `cancelled` 并写入 `finished_at`；所有未到终态（`created`/`scheduled`/`notified`/`downloading`/`installing`）的设备记录置为 `cancelled`（错误信息为“任务已取消”），已成功/失败的记录保持不变；已取消的设备记录后续收到设备上报会被拒绝（`409001 升级记录已取消`）。
 
 ### `GET /api/v1/ota/tasks/{task_id}/records`
 
-查询任务下设备升级记录。需要 `ota:read` 权限。
+查询任务下设备升级记录。需要 `ota:read` 权限。支持 `page` / `page_size` 分页参数（默认每页 20），返回 `{ items, pagination }`。
 
 设备通过以下 MQTT Topic 上报进度和结果，EMQX rule 会转发到 Web：
 
@@ -1220,7 +1219,7 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 | `page` | 页码，默认 `1` |
 | `page_size` | 每页数量，默认 `20`，最大 `100` |
 
-审计记录覆盖登录、产品创建/更新/删除、设备创建/更新/删除、设备密钥重置、设备控制、固件创建/上传/发布/废弃、OTA 创建/启动/取消和邀请码创建/禁用。
+审计记录覆盖登录、产品创建/更新/删除、设备创建/更新/删除、设备密钥重置、设备控制、固件创建/上传/删除、OTA 创建/启动/取消和邀请码创建/禁用。
 
 ## 12. 已验证用例
 

@@ -36,7 +36,11 @@ export async function GET(
           orgId: user.current_org_id,
           userId: user.id,
           canAccessAll: canAccessAllResources(user.permissions),
-          taskId
+          taskId,
+          page: Number(request.nextUrl.searchParams.get("page") ?? "1"),
+          pageSize: Number(
+            request.nextUrl.searchParams.get("page_size") ?? "20"
+          )
         }),
         requestId
       )

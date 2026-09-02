@@ -14,7 +14,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `try{var m=document.cookie.match(/(?:^|; )ziot-theme=(dark|light)/);var t=localStorage.getItem('ziot-theme')|| (m&&m[1]) || 'light';document.documentElement.dataset.theme=t;document.documentElement.classList.toggle('dark',t==='dark')}catch{}` }} />
+        <script dangerouslySetInnerHTML={{ __html: `try{var m=document.cookie.match(/(?:^|; )ziot-theme=(dark|light)/);var t=localStorage.getItem('ziot-theme')||(m&&m[1])||'light';var c=localStorage.getItem('ziot-sidebar-collapsed')==='true';document.documentElement.dataset.theme=t;document.documentElement.dataset.sidebarCollapsed=String(c);document.documentElement.classList.toggle('dark',t==='dark')}catch{}` }} />
       </head>
       <body>{children}</body>
     </html>

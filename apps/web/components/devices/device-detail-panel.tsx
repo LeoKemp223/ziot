@@ -94,7 +94,7 @@ export function DeviceDetailPanel({ deviceId }: DeviceDetailPanelProps) {
   const [commands, setCommands] = useState<DeviceCommand[]>([]);
   const [commandPagination, setCommandPagination] = useState<Pagination>({
     page: 1,
-    page_size: 20,
+    page_size: 10,
     total: 0,
     total_pages: 1
   });

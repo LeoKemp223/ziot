@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { rm } from "node:fs/promises";
+import path from "node:path";
 import { Client as MinioClient } from "minio";
+import { buildPagination, clampPage, clampPageSize } from "@/lib/pagination";
 
 type Db = { [key: string]: any };
 type AccessScope = {
@@ -26,6 +29,9 @@ type TargetStrategy = {
   device_ids?: string[];
   group_id?: string;
 };
+
+// 每用户在每个组织最多保留的固件数(删除固件即释放名额)
+const MAX_FIRMWARES_PER_USER = 10;
 
 function otaError(code: OtaError["code"], message: string): OtaError {
   return Object.assign(new Error(message), { code });
@@ -211,19 +217,35 @@ async function findTaskForScope(
 
 export async function listFirmwares(
   db: Db,
-  input: AccessScope & { orgId: string; productId?: string }
+  input: AccessScope & {
+    orgId: string;
+    productId?: string;
+    page?: number;
+    pageSize?: number;
+  }
 ) {
-  const firmwares = await db.firmware.findMany({
-    where: {
-      org_id: input.orgId,
-      product: ownerFilter(input),
-      ...(input.productId ? { product_id: input.productId } : {})
-    },
-    orderBy: { created_at: "desc" },
-    include: { product: true }
-  });
+  const page = clampPage(input.page);
+  const pageSize = clampPageSize(input.pageSize);
+  const where = {
+    org_id: input.orgId,
+    product: ownerFilter(input),
+    ...(input.productId ? { product_id: input.productId } : {})
+  };
+  const [total, firmwares] = await Promise.all([
+    db.firmware.count({ where }),
+    db.firmware.findMany({
+      where,
+      orderBy: { created_at: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: { product: true }
+    })
+  ]);
 
-  return firmwares.map((firmware: any) => mapFirmware(firmware));
+  return {
+    items: firmwares.map((firmware: any) => mapFirmware(firmware)),
+    pagination: buildPagination(page, pageSize, total)
+  };
 }
 
 export async function createFirmware(
@@ -247,6 +269,21 @@ export async function createFirmware(
     throw otaError(400001, "固件地址长度必须为 1-2048 位");
   }
 
+  // 每用户配额:删除固件即释放名额
+  const count = await db.firmware.count({
+    where: {
+      org_id: input.orgId,
+      created_by: input.createdBy
+    }
+  });
+
+  if (count >= MAX_FIRMWARES_PER_USER) {
+    throw otaError(
+      409001,
+      `固件数量已达上限（每个用户最多 ${MAX_FIRMWARES_PER_USER} 个，可删除旧固件释放名额）`
+    );
+  }
+
   const existing = await db.firmware.findFirst({
     where: {
       product_id: input.productId,
@@ -268,6 +305,8 @@ export async function createFirmware(
       file_size: normalizeFileSize(input.fileSize),
       sha256: assertSha256(input.sha256),
       release_note: input.releaseNote,
+      // 上传即可用于升级任务,不再有 draft 中间态
+      status: "released",
       created_by: input.createdBy
     },
     include: { product: true }
@@ -283,22 +322,38 @@ export async function getFirmware(
   return mapFirmware(await findFirmwareForScope(db, input));
 }
 
-export async function updateFirmwareStatus(
-  db: Db,
-  input: AccessScope & {
-    orgId: string;
-    firmwareId: string;
-    status: "released" | "deprecated";
+// 仅清理本地上传目录(public/uploads/firmwares)里的文件,外部 URL 不动
+async function removeLocalFirmwareFile(fileUrl: string) {
+  try {
+    const pathname = new URL(fileUrl).pathname;
+
+    if (!/^\/uploads\/firmwares\/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(pathname)) {
+      return;
+    }
+
+    await rm(path.join(process.cwd(), "public", pathname), { force: true });
+  } catch {
+    // 文件清理失败不阻塞记录删除
   }
+}
+
+export async function deleteFirmware(
+  db: Db,
+  input: AccessScope & { orgId: string; firmwareId: string }
 ) {
-  await findFirmwareForScope(db, input);
-  const firmware = await db.firmware.update({
-    where: { id: input.firmwareId },
-    data: { status: input.status },
-    include: { product: true }
+  const firmware = await findFirmwareForScope(db, input);
+  const taskCount = await db.otaTask.count({
+    where: { firmware_id: firmware.id }
   });
 
-  return mapFirmware(firmware);
+  if (taskCount > 0) {
+    throw otaError(409001, "固件已被升级任务引用，无法删除");
+  }
+
+  await removeLocalFirmwareFile(firmware.file_url);
+  await db.firmware.delete({ where: { id: firmware.id } });
+
+  return { id: firmware.id, deleted: true };
 }
 
 export async function createFirmwareUploadUrl(
@@ -411,19 +466,35 @@ async function resolveTargetDevices(
 
 export async function listOtaTasks(
   db: Db,
-  input: AccessScope & { orgId: string; productId?: string }
+  input: AccessScope & {
+    orgId: string;
+    productId?: string;
+    page?: number;
+    pageSize?: number;
+  }
 ) {
-  const tasks = await db.otaTask.findMany({
-    where: {
-      org_id: input.orgId,
-      product: ownerFilter(input),
-      ...(input.productId ? { product_id: input.productId } : {})
-    },
-    orderBy: { created_at: "desc" },
-    include: { product: true, firmware: true, records: true }
-  });
+  const page = clampPage(input.page);
+  const pageSize = clampPageSize(input.pageSize);
+  const where = {
+    org_id: input.orgId,
+    product: ownerFilter(input),
+    ...(input.productId ? { product_id: input.productId } : {})
+  };
+  const [total, tasks] = await Promise.all([
+    db.otaTask.count({ where }),
+    db.otaTask.findMany({
+      where,
+      orderBy: { created_at: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: { product: true, firmware: true, records: true }
+    })
+  ]);
 
-  return tasks.map((task: any) => mapTask(task));
+  return {
+    items: tasks.map((task: any) => mapTask(task)),
+    pagination: buildPagination(page, pageSize, total)
+  };
 }
 
 export async function createOtaTask(
@@ -601,7 +672,7 @@ export async function cancelOtaTask(
     },
     data: {
       status: "cancelled",
-      error_message: "task cancelled",
+      error_message: "任务已取消",
       finished_at: now
     }
   });
@@ -620,19 +691,35 @@ export async function cancelOtaTask(
 
 export async function listOtaRecords(
   db: Db,
-  input: AccessScope & { orgId: string; taskId: string }
+  input: AccessScope & {
+    orgId: string;
+    taskId: string;
+    page?: number;
+    pageSize?: number;
+  }
 ) {
   await findTaskForScope(db, input);
-  const records = await db.otaRecord.findMany({
-    where: {
-      org_id: input.orgId,
-      task_id: input.taskId
-    },
-    orderBy: { updated_at: "desc" },
-    include: { device: true }
-  });
+  const page = clampPage(input.page);
+  const pageSize = clampPageSize(input.pageSize);
+  const where = {
+    org_id: input.orgId,
+    task_id: input.taskId
+  };
+  const [total, records] = await Promise.all([
+    db.otaRecord.count({ where }),
+    db.otaRecord.findMany({
+      where,
+      orderBy: { updated_at: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: { device: true }
+    })
+  ]);
 
-  return records.map((record: any) => mapRecord(record));
+  return {
+    items: records.map((record: any) => mapRecord(record)),
+    pagination: buildPagination(page, pageSize, total)
+  };
 }
 
 function normalizeProgress(input: unknown) {

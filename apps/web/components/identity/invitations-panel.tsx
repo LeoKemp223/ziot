@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Copy, RefreshCw, X } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/clipboard";
+import { PaginationBar, type ListPagination } from "@/components/ui/pagination-bar";
 
 type RoleItem = {
   id: string;
@@ -31,6 +32,12 @@ type ApiResponse<T> = {
 export function InvitationsPanel() {
   const [roles, setRoles] = useState<RoleItem[]>([]);
   const [invitations, setInvitations] = useState<InvitationItem[]>([]);
+  const [pagination, setPagination] = useState<ListPagination>({
+    page: 1,
+    page_size: 10,
+    total: 0,
+    total_pages: 1
+  });
   const [createdCodes, setCreatedCodes] = useState<string[]>([]);
   const [codesCopied, setCodesCopied] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -48,18 +55,24 @@ export function InvitationsPanel() {
     }
   }
 
-  async function loadData() {
+  async function loadData(page = pagination.page) {
     setLoading(true);
     setError("");
 
     try {
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(pagination.page_size)
+      });
       const [rolesResponse, invitationsResponse] = await Promise.all([
         fetch("/api/v1/roles"),
-        fetch("/api/v1/invitations")
+        fetch(`/api/v1/invitations?${params.toString()}`)
       ]);
       const rolesBody = (await rolesResponse.json()) as ApiResponse<RoleItem[]>;
-      const invitationsBody =
-        (await invitationsResponse.json()) as ApiResponse<InvitationItem[]>;
+      const invitationsBody = (await invitationsResponse.json()) as ApiResponse<{
+        items: InvitationItem[];
+        pagination: ListPagination;
+      }>;
 
       if (!rolesResponse.ok || rolesBody.code !== 0 || !rolesBody.data) {
         setError(rolesBody.message);
@@ -85,7 +98,8 @@ export function InvitationsPanel() {
         const memberRole = loadedRoles.find((role) => role.code === "org_member");
         return memberRole?.id ?? loadedRoles[0]?.id ?? "";
       });
-      setInvitations(invitationsBody.data);
+      setInvitations(invitationsBody.data.items);
+      setPagination(invitationsBody.data.pagination);
     } catch {
       setError("请求失败，请确认 Web 服务状态。");
     } finally {
@@ -126,7 +140,7 @@ export function InvitationsPanel() {
           .filter((code): code is string => Boolean(code))
       );
       formElement.reset();
-      await loadData();
+      await loadData(1);
     } catch {
       setError("创建邀请码失败，请稍后重试。");
     } finally {
@@ -374,6 +388,11 @@ export function InvitationsPanel() {
             </table>
           </div>
         )}
+        <PaginationBar
+          disabled={loading}
+          onPageChange={(page) => void loadData(page)}
+          pagination={pagination}
+        />
       </section>
     </div>
   );

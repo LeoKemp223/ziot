@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Square } from "lucide-react";
+import { PaginationBar, type ListPagination } from "@/components/ui/pagination-bar";
+import { RecordStatusBadge, TaskStatusBadge } from "@/components/ota/ota-status";
 
 type OtaTask = {
   id: string;
@@ -31,20 +33,35 @@ type ApiResponse<T> = {
 export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
   const [task, setTask] = useState<OtaTask | null>(null);
   const [records, setRecords] = useState<OtaRecord[]>([]);
+  const [pagination, setPagination] = useState<ListPagination>({
+    page: 1,
+    page_size: 10,
+    total: 0,
+    total_pages: 1
+  });
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [stopping, setStopping] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  async function load() {
+  async function load(page = pagination.page) {
     setLoading(true);
     setError("");
 
     try {
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(pagination.page_size)
+      });
       const [taskResponse, recordsResponse] = await Promise.all([
         fetch(`/api/v1/ota/tasks/${taskId}`),
-        fetch(`/api/v1/ota/tasks/${taskId}/records`)
+        fetch(`/api/v1/ota/tasks/${taskId}/records?${params.toString()}`)
       ]);
       const taskBody = (await taskResponse.json()) as ApiResponse<OtaTask>;
-      const recordsBody = (await recordsResponse.json()) as ApiResponse<OtaRecord[]>;
+      const recordsBody = (await recordsResponse.json()) as ApiResponse<{
+        items: OtaRecord[];
+        pagination: ListPagination;
+      }>;
 
       if (!taskResponse.ok || taskBody.code !== 0 || !taskBody.data) {
         setError(taskBody.message);
@@ -57,11 +74,37 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
       }
 
       setTask(taskBody.data);
-      setRecords(recordsBody.data);
+      setRecords(recordsBody.data.items);
+      setPagination(recordsBody.data.pagination);
     } catch {
       setError("请求失败，请确认 Web 服务状态。");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function cancelTask() {
+    setStopping(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch(`/api/v1/ota/tasks/${taskId}/cancel`, {
+        method: "POST"
+      });
+      const body = (await response.json()) as ApiResponse<OtaTask>;
+
+      if (!response.ok || body.code !== 0) {
+        setError(body.message);
+        return;
+      }
+
+      setMessage("任务已取消，未完成的设备记录已一并取消。");
+      await load();
+    } catch {
+      setError("取消任务失败，请稍后重试。");
+    } finally {
+      setStopping(false);
     }
   }
 
@@ -83,23 +126,44 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
             <h1 className="text-xl font-semibold text-slate-950">{task.name}</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              {task.product_name} / {task.firmware_version} / {task.status}
+            <p className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+              {task.product_name} / {task.firmware_version}
+              <TaskStatusBadge value={task.status} />
             </p>
           </div>
-          <button
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            onClick={() => void load()}
-            type="button"
-          >
-            <RefreshCw className="h-4 w-4" />
-            刷新
-          </button>
+          <div className="flex items-center gap-2">
+            {!["finished", "cancelled"].includes(task.status) ? (
+              <button
+                className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 px-3 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={stopping}
+                onClick={() => void cancelTask()}
+                type="button"
+              >
+                <Square className="h-4 w-4" />
+                {stopping ? "取消中..." : "取消任务"}
+              </button>
+            ) : null}
+            <button
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              onClick={() => void load()}
+              type="button"
+            >
+              <RefreshCw className="h-4 w-4" />
+              刷新
+            </button>
+          </div>
         </div>
         <div className="grid gap-4 p-5 md:grid-cols-4">
-          {["total", "success", "failed", "cancelled"].map((key) => (
+          {(
+            [
+              ["total", "设备总数"],
+              ["success", "升级成功"],
+              ["failed", "升级失败"],
+              ["cancelled", "已取消"]
+            ] as const
+          ).map(([key, label]) => (
             <div className="rounded-md border border-slate-200 p-4" key={key}>
-              <div className="text-xs font-medium text-slate-400">{key}</div>
+              <div className="text-xs font-medium text-slate-400">{label}</div>
               <div className="mt-1 text-2xl font-semibold text-slate-950">
                 {task.record_counts[key] ?? 0}
               </div>
@@ -111,6 +175,9 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
           <h2 className="text-base font-semibold text-slate-950">设备升级记录</h2>
+          {message ? (
+            <p className="mt-1 text-sm text-emerald-600">{message}</p>
+          ) : null}
           {error ? <p className="mt-1 text-sm text-rose-600">{error}</p> : null}
         </div>
         {records.length === 0 ? (
@@ -138,7 +205,9 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
                         {record.device_key}
                       </div>
                     </td>
-                    <td className="px-4 py-4">{record.status}</td>
+                    <td className="px-4 py-4">
+                      <RecordStatusBadge value={record.status} />
+                    </td>
                     <td className="px-4 py-4">{record.progress}%</td>
                     <td className="px-4 py-4 text-rose-600">
                       {record.error_message ?? "-"}
@@ -152,6 +221,11 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
             </table>
           </div>
         )}
+        <PaginationBar
+          disabled={loading}
+          onPageChange={(page) => void load(page)}
+          pagination={pagination}
+        />
       </section>
     </div>
   );

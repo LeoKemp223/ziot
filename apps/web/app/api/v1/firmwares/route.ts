@@ -32,6 +32,10 @@ export async function GET(request: NextRequest) {
           orgId: user.current_org_id,
           userId: user.id,
           canAccessAll: canAccessAllResources(user.permissions),
+          page: Number(request.nextUrl.searchParams.get("page") ?? "1"),
+          pageSize: Number(
+            request.nextUrl.searchParams.get("page_size") ?? "20"
+          ),
           ...(request.nextUrl.searchParams.has("product_id")
             ? { productId: request.nextUrl.searchParams.get("product_id") ?? "" }
             : {})

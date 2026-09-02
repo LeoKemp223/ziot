@@ -25,21 +25,21 @@ export async function runRetentionCleanup() {
     prisma.deviceCommand.deleteMany({
       where: {
         created_at: {
-          lt: cutoff(retentionDays("COMMAND_RETENTION_DAYS", 30))
+          lt: cutoff(retentionDays("COMMAND_RETENTION_DAYS", 7))
         }
       }
     }),
     prisma.otaRecord.deleteMany({
       where: {
         updated_at: {
-          lt: cutoff(retentionDays("OTA_RECORD_RETENTION_DAYS", 180))
+          lt: cutoff(retentionDays("OTA_RECORD_RETENTION_DAYS", 7))
         }
       }
     }),
     prisma.auditLog.deleteMany({
       where: {
         created_at: {
-          lt: cutoff(retentionDays("AUDIT_LOG_RETENTION_DAYS", 180))
+          lt: cutoff(retentionDays("AUDIT_LOG_RETENTION_DAYS", 7))
         }
       }
     })

@@ -2,6 +2,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { mergePermissions } from "@ziot/domain";
+import { buildPagination, clampPage, clampPageSize } from "@/lib/pagination";
 
 export type IdentityError = Error & {
   code: 400001 | 401001 | 403001 | 404001 | 409001 | 500001;
@@ -655,17 +656,32 @@ export async function createInvitations(
   return results;
 }
 
-export async function listInvitations(db: Db, orgId: string) {
-  const invitations = await db.invitation.findMany({
-    where: { org_id: orgId },
-    orderBy: { created_at: "desc" },
-    include: {
-      organization: true,
-      role: true
-    }
-  });
+export async function listInvitations(
+  db: Db,
+  orgId: string,
+  input?: { page?: number; pageSize?: number }
+) {
+  const page = clampPage(input?.page);
+  const pageSize = clampPageSize(input?.pageSize);
+  const where = { org_id: orgId };
+  const [total, invitations] = await Promise.all([
+    db.invitation.count({ where }),
+    db.invitation.findMany({
+      where,
+      orderBy: { created_at: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        organization: true,
+        role: true
+      }
+    })
+  ]);
 
-  return invitations.map(mapInvitation);
+  return {
+    items: invitations.map(mapInvitation),
+    pagination: buildPagination(page, pageSize, total)
+  };
 }
 
 export async function getInvitation(db: Db, orgId: string, invitationId: string) {
@@ -788,34 +804,49 @@ export async function listRoles(db: Db, orgId: string) {
   });
 }
 
-export async function listUsers(db: Db, orgId: string) {
-  const memberships = await db.userOrgRole.findMany({
-    where: { org_id: orgId },
-    orderBy: { created_at: "desc" },
-    include: {
-      user: true,
-      role: true,
-      organization: true
-    }
-  });
+export async function listUsers(
+  db: Db,
+  orgId: string,
+  input?: { page?: number; pageSize?: number }
+) {
+  const page = clampPage(input?.page);
+  const pageSize = clampPageSize(input?.pageSize);
+  const where = { org_id: orgId };
+  const [total, memberships] = await Promise.all([
+    db.userOrgRole.count({ where }),
+    db.userOrgRole.findMany({
+      where,
+      orderBy: { created_at: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        user: true,
+        role: true,
+        organization: true
+      }
+    })
+  ]);
 
-  return memberships.map((membership: any) => ({
-    id: membership.user.id,
-    account: membership.user.account,
-    display_name: membership.user.display_name,
-    status: membership.user.status,
-    role: {
-      id: membership.role.id,
-      code: membership.role.code,
-      name: membership.role.name
-    },
-    organization: {
-      id: membership.organization.id,
-      name: membership.organization.name
-    },
-    created_at: membership.user.created_at.toISOString(),
-    last_login_at: membership.user.last_login_at?.toISOString() ?? null
-  }));
+  return {
+    items: memberships.map((membership: any) => ({
+      id: membership.user.id,
+      account: membership.user.account,
+      display_name: membership.user.display_name,
+      status: membership.user.status,
+      role: {
+        id: membership.role.id,
+        code: membership.role.code,
+        name: membership.role.name
+      },
+      organization: {
+        id: membership.organization.id,
+        name: membership.organization.name
+      },
+      created_at: membership.user.created_at.toISOString(),
+      last_login_at: membership.user.last_login_at?.toISOString() ?? null
+    })),
+    pagination: buildPagination(page, pageSize, total)
+  };
 }
 
 function mapInvitation(invitation: any) {

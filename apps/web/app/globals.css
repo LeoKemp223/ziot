@@ -4,6 +4,7 @@
   color-scheme: light;
   --background: #f8fafc;
   --foreground: #111827;
+  --console-chrome: #0b0f16;
 }
 
 body {
@@ -128,7 +129,74 @@ html[data-theme="dark"] pre { background-color: #0b1525 !important; color: #b9c8
   box-sizing: border-box;
 }
 
+/* Keep the app chrome visible while each page's content scrolls independently. */
+main > section > header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  flex-shrink: 0;
+  backdrop-filter: blur(12px);
+}
+
+main > section { min-height: 0; }
+
+main > section > div {
+  min-width: 0;
+  min-height: 0;
+}
+
 button,
 input {
   font: inherit;
 }
+
+/* Product dark palette */
+html[data-theme="dark"] body { background: #080D18; color: #E8EEF7; }
+html[data-theme="dark"] .dashboard-shell, html[data-theme="dark"] .dashboard-grid { background-color: #080D18; }
+html[data-theme="dark"] header { background-color: #0B101A !important; border-color: #223149 !important; }
+html[data-theme="dark"] header { background-color: #0B0F16 !important; }
+html.dark header { background-color: #0B0F16 !important; }
+html[data-theme="dark"] .bg-white, html[data-theme="dark"] .dashboard-grid .bg-white\/90, html[data-theme="dark"] .dashboard-grid .bg-white\/65 { background-color: #111B2B !important; }
+html[data-theme="dark"] .bg-slate-100 { background-color: #080D18 !important; }
+html[data-theme="dark"] .bg-slate-50 { background-color: #111C2D !important; }
+html[data-theme="dark"] .bg-slate-200 { background-color: #16243A !important; }
+html[data-theme="dark"] .border-slate-200, html[data-theme="dark"] .border-slate-100 { border-color: #223149 !important; }
+html[data-theme="dark"] .text-slate-950, html[data-theme="dark"] .text-slate-900 { color: #E8EEF7 !important; }
+html[data-theme="dark"] .text-slate-700, html[data-theme="dark"] .text-slate-600, html[data-theme="dark"] .text-slate-500 { color: #8B9AB0 !important; }
+html[data-theme="dark"] .bg-blue-600, html[data-theme="dark"] .bg-blue-500 { background-color: #2468D8 !important; }
+html[data-theme="dark"] .hover\:bg-blue-700:hover { background-color: #3478E8 !important; }
+html[data-theme="dark"] .bg-blue-50 { background-color: #16243A !important; }
+html[data-theme="dark"] .text-blue-700, html[data-theme="dark"] .text-blue-600 { color: #8FC5FF !important; }
+html[data-theme="dark"] .bg-emerald-50 { background-color: #073D31 !important; color: #34D399 !important; }
+html[data-theme="dark"] .bg-rose-50 { background-color: #351624 !important; color: #FB7185 !important; border-color: #7F2940 !important; }
+html[data-theme="dark"] .border-rose-200 { border-color: #7F2940 !important; }
+html[data-theme="dark"] input, html[data-theme="dark"] textarea, html[data-theme="dark"] select { background-color: #111C2D; border-color: #223149; color: #E8EEF7; }
+
+.console-sidebar,
+html[data-theme="light"] .console-sidebar,
+html[data-theme="dark"] .console-sidebar {
+  color-scheme: dark;
+  background-color: #0b0f16 !important;
+}
+
+.console-sidebar > div:first-child {
+  background-color: #0b0f16;
+}
+
+@media (min-width: 64rem) {
+  html[data-sidebar-collapsed="true"] .console-sidebar {
+    width: 72px !important;
+  }
+
+  html[data-sidebar-collapsed="true"] .console-sidebar .sidebar-expanded-only {
+    display: none !important;
+  }
+
+  html[data-sidebar-collapsed="true"] .console-sidebar > div:first-child,
+  html[data-sidebar-collapsed="true"] .console-sidebar nav a,
+  html[data-sidebar-collapsed="true"] .console-sidebar nav + div button {
+    justify-content: center;
+  }
+}
+html[data-theme="dark"] .console-header,
+html.dark .console-header { background-color: var(--console-chrome) !important; }

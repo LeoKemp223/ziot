@@ -4,7 +4,7 @@ import { apiErrorResponse } from "@/lib/api-errors";
 import { apiOk } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/identity/session";
 import { createRequestId } from "@/lib/request-id";
-import { getFirmware, updateFirmwareStatus } from "@/features/ota/ota-service";
+import { getFirmware, deleteFirmware } from "@/features/ota/ota-service";
 import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
@@ -47,38 +47,42 @@ export async function GET(request: NextRequest, { params }: FirmwareRouteContext
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: FirmwareRouteContext) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: FirmwareRouteContext
+) {
   const requestId = createRequestId();
 
   try {
     const user = await getCurrentUser(request);
     requirePermission(user.permissions, "ota:write");
     const { firmwareId } = await params;
-    const body = (await request.json()) as Record<string, unknown>;
-
-    if (body.status !== "released" && body.status !== "deprecated") {
-      throw Object.assign(new Error("固件状态只能是 released 或 deprecated"), {
-        code: 400001
-      });
-    }
-
-    const firmware = await updateFirmwareStatus(prisma, {
+    const firmware = await getFirmware(prisma, {
       orgId: user.current_org_id,
       userId: user.id,
       canAccessAll: canAccessAllResources(user.permissions),
-      firmwareId,
-      status: body.status
+      firmwareId
+    });
+    await deleteFirmware(prisma, {
+      orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
+      firmwareId
     });
     await safeWriteAuditLog(prisma, {
       user,
-      action: "firmware.status.update",
+      action: "firmware.delete",
       resourceType: "firmware",
-      resourceId: firmware.id,
+      resourceId: firmwareId,
       request,
-      detail: { status: firmware.status, version: firmware.version }
+      detail: {
+        product_id: firmware.product_id,
+        version: firmware.version,
+        file_url: firmware.file_url
+      }
     });
 
-    return NextResponse.json(apiOk(firmware, requestId));
+    return NextResponse.json(apiOk({ id: firmwareId, deleted: true }, requestId));
   } catch (error) {
     return apiErrorResponse(error, requestId);
   }

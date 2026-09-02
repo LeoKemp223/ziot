@@ -7,8 +7,10 @@ import {
   type InputHTMLAttributes,
   type ReactNode
 } from "react";
-import { Play, Plus, RefreshCw } from "lucide-react";
+import { Play, Plus, RefreshCw, Square, Trash2, X } from "lucide-react";
 import { usePermissions } from "@/components/console/use-permissions";
+import { PaginationBar, type ListPagination } from "@/components/ui/pagination-bar";
+import { FirmwareStatusBadge, TaskStatusBadge } from "@/components/ota/ota-status";
 
 type Product = {
   id: string;
@@ -47,34 +49,93 @@ type ApiResponse<T> = {
   data?: T;
 };
 
+type PaginatedList<T> = {
+  items: T[];
+  pagination: ListPagination;
+};
+
 export function OtaConsolePanel() {
   const { isLoaded, hasPermission } = usePermissions();
   const canWriteOta = isLoaded && hasPermission("ota:write");
   const canExecuteOta = isLoaded && hasPermission("ota:execute");
   const [products, setProducts] = useState<Product[]>([]);
   const [firmwares, setFirmwares] = useState<Firmware[]>([]);
+  const [allFirmwares, setAllFirmwares] = useState<Firmware[]>([]);
+  const [firmwarePagination, setFirmwarePagination] = useState<ListPagination>({
+    page: 1,
+    page_size: 10,
+    total: 0,
+    total_pages: 1
+  });
   const [tasks, setTasks] = useState<OtaTask[]>([]);
+  const [taskPagination, setTaskPagination] = useState<ListPagination>({
+    page: 1,
+    page_size: 10,
+    total: 0,
+    total_pages: 1
+  });
   const [lastUploadedFirmware, setLastUploadedFirmware] = useState<Firmware | null>(null);
+  const [taskName, setTaskName] = useState("");
+  const [selectedFirmwareId, setSelectedFirmwareId] = useState("");
+  const [firmwareModalOpen, setFirmwareModalOpen] = useState(false);
+  const [firmwareFileName, setFirmwareFileName] = useState("");
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [firmwarePending, setFirmwarePending] = useState(false);
+  const [deletingFirmware, setDeletingFirmware] = useState<Firmware | null>(null);
+  const [deletePending, setDeletePending] = useState(false);
+  const [taskPending, setTaskPending] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function load() {
+  async function load(
+    firmwarePage = firmwarePagination.page,
+    taskPage = taskPagination.page
+  ) {
     setLoading(true);
     setError("");
 
     try {
-      const [productsResponse, firmwaresResponse, tasksResponse] = await Promise.all([
-        fetch("/api/v1/products?page_size=100", { cache: "no-store" }),
-        fetch("/api/v1/firmwares", { cache: "no-store" }),
-        fetch("/api/v1/ota/tasks", { cache: "no-store" })
-      ]);
+      const firmwareParams = new URLSearchParams({
+        page: String(firmwarePage),
+        page_size: String(firmwarePagination.page_size)
+      });
+      const taskParams = new URLSearchParams({
+        page: String(taskPage),
+        page_size: String(taskPagination.page_size)
+      });
+      const [productsResponse, allFirmwaresResponse, firmwaresResponse, tasksResponse] =
+        await Promise.all([
+          fetch("/api/v1/products?page_size=100", { cache: "no-store" }),
+          // 创建任务下拉需要全部固件,单独拉一页大列表
+          fetch("/api/v1/firmwares?page_size=100", { cache: "no-store" }),
+          fetch(`/api/v1/firmwares?${firmwareParams.toString()}`, {
+            cache: "no-store"
+          }),
+          fetch(`/api/v1/ota/tasks?${taskParams.toString()}`, { cache: "no-store" })
+        ]);
       const productsBody = (await productsResponse.json()) as ApiResponse<ProductList>;
-      const firmwaresBody = (await firmwaresResponse.json()) as ApiResponse<Firmware[]>;
-      const tasksBody = (await tasksResponse.json()) as ApiResponse<OtaTask[]>;
+      const allFirmwaresBody = (await allFirmwaresResponse.json()) as ApiResponse<
+        PaginatedList<Firmware>
+      >;
+      const firmwaresBody = (await firmwaresResponse.json()) as ApiResponse<
+        PaginatedList<Firmware>
+      >;
+      const tasksBody = (await tasksResponse.json()) as ApiResponse<
+        PaginatedList<OtaTask>
+      >;
 
       if (!productsResponse.ok || productsBody.code !== 0 || !productsBody.data) {
         setError(productsBody.message);
+        return;
+      }
+
+      if (
+        !allFirmwaresResponse.ok ||
+        allFirmwaresBody.code !== 0 ||
+        !allFirmwaresBody.data
+      ) {
+        setError(allFirmwaresBody.message);
         return;
       }
 
@@ -89,8 +150,11 @@ export function OtaConsolePanel() {
       }
 
       setProducts(productsBody.data.items);
-      setFirmwares(firmwaresBody.data);
-      setTasks(tasksBody.data);
+      setAllFirmwares(allFirmwaresBody.data.items);
+      setFirmwares(firmwaresBody.data.items);
+      setFirmwarePagination(firmwaresBody.data.pagination);
+      setTasks(tasksBody.data.items);
+      setTaskPagination(tasksBody.data.pagination);
     } catch {
       setError("请求失败，请确认 Web 服务状态。");
     } finally {
@@ -104,6 +168,14 @@ export function OtaConsolePanel() {
     setError("");
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    const file = form.get("file");
+
+    if (!(file instanceof File) || file.size === 0) {
+      setError("请选择固件文件。");
+      return;
+    }
+
+    setFirmwarePending(true);
 
     try {
       const response = await fetch("/api/v1/firmwares/upload", {
@@ -117,36 +189,46 @@ export function OtaConsolePanel() {
         return;
       }
 
-      setLastUploadedFirmware(body.data);
-      setMessage("固件已上传并创建。");
       formElement.reset();
-      await load();
+      setFirmwareFileName("");
+      setLastUploadedFirmware(body.data);
+      // 上传后自动衔接:预填升级任务并打开创建任务弹窗
+      setSelectedFirmwareId(body.data.id);
+      setTaskName(`${body.data.product_name} ${body.data.version} 升级`);
+      setFirmwareModalOpen(false);
+      setTaskModalOpen(true);
+      setMessage("固件已上传，已为你预填升级任务，确认后点击“创建任务”。");
+      await load(1);
     } catch {
       setError("上传固件失败。");
+    } finally {
+      setFirmwarePending(false);
     }
   }
 
-  async function updateFirmwareStatus(firmwareId: string, status: "released" | "deprecated") {
+  async function deleteFirmware(firmwareId: string) {
+    setDeletePending(true);
     setMessage("");
     setError("");
     const response = await fetch(`/api/v1/firmwares/${firmwareId}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ status })
+      method: "DELETE"
     });
-    const body = (await response.json()) as ApiResponse<Firmware>;
+    const body = (await response.json()) as ApiResponse<{ id: string }>;
 
     if (!response.ok || body.code !== 0) {
       setError(body.message);
-      return;
+    } else {
+      setMessage("固件已删除。");
+      await load();
     }
 
-    setMessage(status === "released" ? "固件已发布。" : "固件已废弃。");
-    await load();
+    setDeletePending(false);
+    setDeletingFirmware(null);
   }
 
   async function createTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setTaskPending(true);
     setMessage("");
     setError("");
     const formElement = event.currentTarget;
@@ -169,12 +251,16 @@ export function OtaConsolePanel() {
         return;
       }
 
-      setTasks((currentTasks) => [body.data as OtaTask, ...currentTasks]);
-      setMessage("OTA 任务已创建。");
+      setMessage("OTA 任务已创建，请在下方任务列表点击“启动”开始推送。");
       formElement.reset();
-      await load();
+      setTaskName("");
+      setSelectedFirmwareId("");
+      setTaskModalOpen(false);
+      await load(undefined, 1);
     } catch {
       setError("创建 OTA 任务失败。");
+    } finally {
+      setTaskPending(false);
     }
   }
 
@@ -195,16 +281,35 @@ export function OtaConsolePanel() {
     await load();
   }
 
+  async function cancelTask(taskId: string) {
+    setMessage("");
+    setError("");
+    const response = await fetch(`/api/v1/ota/tasks/${taskId}/cancel`, {
+      method: "POST"
+    });
+    const body = (await response.json()) as ApiResponse<OtaTask>;
+
+    if (!response.ok || body.code !== 0) {
+      setError(body.message);
+      return;
+    }
+
+    setMessage("OTA 任务已取消，未完成的设备记录已一并取消。");
+    await load();
+  }
+
   useEffect(() => {
     void load();
   }, []);
 
   const defaultProductId = products[0]?.id ?? "";
-  const releasedFirmwares = firmwares.filter((firmware) => firmware.status !== "deprecated");
+  const releasedFirmwares = allFirmwares.filter(
+    (firmware) => firmware.status !== "deprecated"
+  );
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
           onClick={() => void load()}
@@ -215,38 +320,36 @@ export function OtaConsolePanel() {
         </button>
         {message ? <span className="text-sm text-emerald-600">{message}</span> : null}
         {error ? <span className="text-sm text-rose-600">{error}</span> : null}
-      </div>
-
-      {canWriteOta ? (
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="text-base font-semibold text-slate-950">创建固件</h2>
-        </div>
-        <form className="grid gap-4 p-5 md:grid-cols-2" onSubmit={createFirmware}>
-          <Select name="product_id" value={defaultProductId}>
-            {products.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.name}
-              </option>
-            ))}
-          </Select>
-          <Input name="version" placeholder="v1.0.1" required />
-          <Input
-            accept=".bin,.hex,.img,.ota,.uf2,.zip,.tar,.gz,application/octet-stream"
-            name="file"
-            required
-            type="file"
-          />
-          <Input name="release_note" placeholder="修复问题或新增能力" />
-          <div className="md:col-span-2">
-            <button className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white hover:bg-slate-800">
+        {canWriteOta ? (
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              onClick={() => {
+                setMessage("");
+                setError("");
+                setFirmwareFileName("");
+                setFirmwareModalOpen(true);
+              }}
+              type="button"
+            >
               <Plus className="h-4 w-4" />
-              上传并创建
+              创建固件
+            </button>
+            <button
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800"
+              onClick={() => {
+                setMessage("");
+                setError("");
+                setTaskModalOpen(true);
+              }}
+              type="button"
+            >
+              <Plus className="h-4 w-4" />
+              创建任务
             </button>
           </div>
-        </form>
-      </section>
-      ) : null}
+        ) : null}
+      </div>
 
       {lastUploadedFirmware ? (
         <section className="rounded-lg border border-emerald-200 bg-emerald-50 shadow-sm">
@@ -254,13 +357,13 @@ export function OtaConsolePanel() {
             <h2 className="text-base font-semibold text-emerald-950">最近上传结果</h2>
           </div>
           <dl className="grid gap-3 p-5 text-sm md:grid-cols-[120px_1fr]">
-            <dt className="font-medium text-emerald-900">file_size</dt>
+            <dt className="font-medium text-emerald-900">文件大小</dt>
             <dd className="font-mono text-emerald-950">{lastUploadedFirmware.file_size} B</dd>
-            <dt className="font-medium text-emerald-900">SHA256</dt>
+            <dt className="font-medium text-emerald-900">SHA256 校验</dt>
             <dd className="break-all font-mono text-xs text-emerald-950">
               {lastUploadedFirmware.sha256}
             </dd>
-            <dt className="font-medium text-emerald-900">URL</dt>
+            <dt className="font-medium text-emerald-900">下载地址</dt>
             <dd>
               <a
                 className="break-all font-mono text-xs text-blue-700 hover:underline"
@@ -281,69 +384,54 @@ export function OtaConsolePanel() {
         </div>
         <Table
           empty="暂无固件。"
-          headers={["版本", "产品", "状态", "file_size", "SHA256", "URL", "操作"]}
+          headers={["版本", "产品", "状态", "文件大小", "SHA256", "下载地址", "操作"]}
           rows={firmwares.map((firmware) => [
             firmware.version,
             firmware.product_name,
-            firmware.status,
+            <FirmwareStatusBadge key={firmware.id} value={firmware.status} />,
             `${firmware.file_size} B`,
-            <span className="block max-w-[320px] break-all font-mono text-xs" key="sha256">
+            <span
+              className="block max-w-[140px] truncate font-mono text-xs"
+              key="sha256"
+              title={firmware.sha256}
+            >
               {firmware.sha256}
             </span>,
             <a
-              className="block max-w-[360px] break-all font-mono text-xs text-blue-600 hover:underline"
+              className="block max-w-[220px] truncate font-mono text-xs text-blue-600 hover:underline"
               href={firmware.file_url}
               key="url"
               rel="noreferrer"
               target="_blank"
+              title={firmware.file_url}
             >
               {firmware.file_url}
             </a>,
             canWriteOta ? (
-              <div className="flex gap-2" key={firmware.id}>
-                <button
-                  className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700"
-                  onClick={() => void updateFirmwareStatus(firmware.id, "released")}
-                  type="button"
-                >
-                  发布
-                </button>
-                <button
-                  className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700"
-                  onClick={() => void updateFirmwareStatus(firmware.id, "deprecated")}
-                  type="button"
-                >
-                  废弃
-                </button>
-              </div>
+              <button
+                className="inline-flex items-center gap-1 rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-700 hover:bg-rose-50"
+                key={firmware.id}
+                onClick={() => {
+                  setMessage("");
+                  setError("");
+                  setDeletingFirmware(firmware);
+                }}
+                type="button"
+              >
+                <Trash2 className="h-3 w-3" />
+                删除
+              </button>
             ) : (
               "-"
             )
           ])}
         />
+        <PaginationBar
+          disabled={loading}
+          onPageChange={(page) => void load(page)}
+          pagination={firmwarePagination}
+        />
       </section>
-
-      {canWriteOta ? (
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="text-base font-semibold text-slate-950">创建 OTA 任务</h2>
-        </div>
-        <form className="grid gap-4 p-5 md:grid-cols-[1fr_1fr_auto]" onSubmit={createTask}>
-          <Input name="name" placeholder="演示升级任务" required />
-          <Select name="firmware_id" value={releasedFirmwares[0]?.id ?? ""}>
-            {releasedFirmwares.map((firmware) => (
-              <option key={firmware.id} value={firmware.id}>
-                {firmware.product_name} / {firmware.version}
-              </option>
-            ))}
-          </Select>
-          <button className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white hover:bg-slate-800">
-            <Plus className="h-4 w-4" />
-            创建任务
-          </button>
-        </form>
-      </section>
-      ) : null}
 
       <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
@@ -358,24 +446,292 @@ export function OtaConsolePanel() {
             </a>,
             task.product_name,
             task.firmware_version,
-            task.status,
+            <TaskStatusBadge key={task.id} value={task.status} />,
             `${task.record_counts.success}/${task.record_counts.total} 成功`,
-            canExecuteOta ? (
-              <button
-                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700"
-                key={task.id}
-                onClick={() => void startTask(task.id)}
-                type="button"
-              >
-                <Play className="h-3 w-3" />
-                启动
-              </button>
+            canExecuteOta &&
+            !["finished", "cancelled"].includes(task.status) ? (
+              <div className="flex justify-end gap-2" key={task.id}>
+                {["created", "scheduled"].includes(task.status) ? (
+                  <button
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                    onClick={() => void startTask(task.id)}
+                    type="button"
+                  >
+                    <Play className="h-3 w-3" />
+                    启动
+                  </button>
+                ) : null}
+                <button
+                  className="inline-flex items-center gap-1 rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-700 hover:bg-rose-50"
+                  onClick={() => void cancelTask(task.id)}
+                  type="button"
+                >
+                  <Square className="h-3 w-3" />
+                  取消
+                </button>
+              </div>
             ) : (
               "-"
             )
           ])}
         />
+        <PaginationBar
+          disabled={loading}
+          onPageChange={(page) => void load(undefined, page)}
+          pagination={taskPagination}
+        />
       </section>
+
+      {firmwareModalOpen ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+          role="dialog"
+        >
+          <form
+            className="w-full max-w-xl rounded-lg bg-white shadow-xl"
+            onSubmit={createFirmware}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">创建固件</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  固件上传后即为已发布状态，单文件不超过 5MB，每个用户最多保留 10 个（删除可释放名额）。
+                </p>
+              </div>
+              <button
+                aria-label="关闭"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                onClick={() => setFirmwareModalOpen(false)}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-5 py-5">
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">所属产品</span>
+                <Select name="product_id" value={defaultProductId}>
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">版本号</span>
+                <Input name="version" placeholder="v1.0.1" required />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">固件文件</span>
+                <span className="flex h-10 w-full cursor-pointer items-center gap-3 rounded-md border border-slate-200 bg-white px-3 text-sm hover:border-blue-300">
+                  <span className="inline-flex h-7 shrink-0 items-center rounded-md bg-slate-950 px-3 text-xs font-medium text-white">
+                    选择文件
+                  </span>
+                  <span className="truncate text-slate-500">
+                    {firmwareFileName || "未选择文件"}
+                  </span>
+                  <input
+                    accept=".bin,.hex,.img,.ota,.uf2,.zip,.tar,.gz,application/octet-stream"
+                    className="hidden"
+                    name="file"
+                    onChange={(event) =>
+                      setFirmwareFileName(event.currentTarget.files?.[0]?.name ?? "")
+                    }
+                    type="file"
+                  />
+                </span>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">
+                  发布说明(可选)
+                </span>
+                <textarea
+                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  name="release_note"
+                  placeholder="修复问题或新增能力"
+                  rows={3}
+                />
+              </label>
+              {error ? <div className="text-sm text-rose-600">{error}</div> : null}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button
+                className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setFirmwareModalOpen(false)}
+                type="button"
+              >
+                取消
+              </button>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={firmwarePending}
+                type="submit"
+              >
+                {firmwarePending ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                上传并创建
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      {deletingFirmware ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+          role="dialog"
+        >
+          <div className="w-full max-w-xl rounded-lg bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">删除固件</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  删除后将同时清理已上传的固件文件，该操作不可恢复。
+                </p>
+              </div>
+              <button
+                aria-label="关闭"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                onClick={() => setDeletingFirmware(null)}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="px-5 py-5">
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
+                <div className="font-medium text-slate-950">
+                  {deletingFirmware.product_name} / {deletingFirmware.version}
+                </div>
+                <div className="mt-1 truncate font-mono text-xs text-slate-400">
+                  {deletingFirmware.sha256}
+                </div>
+              </div>
+              {error ? (
+                <div className="mt-3 text-sm text-rose-600">{error}</div>
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button
+                className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setDeletingFirmware(null)}
+                type="button"
+              >
+                取消
+              </button>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-md bg-rose-600 px-4 text-sm font-medium text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={deletePending}
+                onClick={() => void deleteFirmware(deletingFirmware.id)}
+                type="button"
+              >
+                {deletePending ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                删除
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {taskModalOpen ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+          role="dialog"
+        >
+          <form
+            className="w-full max-w-xl rounded-lg bg-white shadow-xl"
+            onSubmit={createTask}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">创建 OTA 任务</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  选择固件创建升级任务，创建后需手动启动。
+                </p>
+              </div>
+              <button
+                aria-label="关闭"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                onClick={() => setTaskModalOpen(false)}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-5 py-5">
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">任务名称</span>
+                <Input
+                  name="name"
+                  onChange={(event) => setTaskName(event.currentTarget.value)}
+                  placeholder="演示升级任务"
+                  required
+                  value={taskName}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">升级固件</span>
+                <select
+                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  name="firmware_id"
+                  onChange={(event) => setSelectedFirmwareId(event.currentTarget.value)}
+                  required
+                  value={selectedFirmwareId}
+                >
+                  <option value="">选择固件</option>
+                  {releasedFirmwares.map((firmware) => (
+                    <option key={firmware.id} value={firmware.id}>
+                      {firmware.product_name} / {firmware.version}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="text-xs text-slate-400">
+                启动后将对所选固件产品下的全部设备推送升级。
+              </p>
+              {error ? <div className="text-sm text-rose-600">{error}</div> : null}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button
+                className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setTaskModalOpen(false)}
+                type="button"
+              >
+                取消
+              </button>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={taskPending}
+                type="submit"
+              >
+                {taskPending ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                创建任务
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -383,7 +739,7 @@ export function OtaConsolePanel() {
 function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
-      className="h-10 rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+      className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
       {...props}
     />
   );
@@ -400,7 +756,7 @@ function Select({
 }) {
   return (
     <select
-      className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+      className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
       defaultValue={value}
       name={name}
     >

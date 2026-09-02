@@ -12,7 +12,7 @@ import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
 
 export const runtime = "nodejs";
 
-const maxUploadBytes = 50 * 1024 * 1024;
+const maxUploadBytes = 5 * 1024 * 1024;
 const uploadRoot = path.join(process.cwd(), "public", "uploads", "firmwares");
 
 function canAccessAllResources(permissions: string[]) {
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (fileValue.size > maxUploadBytes) {
-      badRequest("固件文件不能超过 50MB");
+      badRequest("固件文件不能超过 5MB");
     }
 
     const bytes = Buffer.from(await fileValue.arrayBuffer());

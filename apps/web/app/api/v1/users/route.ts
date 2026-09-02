@@ -19,7 +19,15 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      apiOk(await listUsers(prisma, user.current_org_id), requestId)
+      apiOk(
+        await listUsers(prisma, user.current_org_id, {
+          page: Number(request.nextUrl.searchParams.get("page") ?? "1"),
+          pageSize: Number(
+            request.nextUrl.searchParams.get("page_size") ?? "20"
+          )
+        }),
+        requestId
+      )
     );
   } catch (error) {
     return apiErrorResponse(error, requestId);

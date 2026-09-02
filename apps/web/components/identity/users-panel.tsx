@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
+import { PaginationBar, type ListPagination } from "@/components/ui/pagination-bar";
 
 type UserItem = {
   id: string;
@@ -22,20 +23,33 @@ type UserItem = {
 type UsersResponse = {
   code: number;
   message: string;
-  data?: UserItem[];
+  data?: {
+    items: UserItem[];
+    pagination: ListPagination;
+  };
 };
 
 export function UsersPanel() {
   const [users, setUsers] = useState<UserItem[]>([]);
+  const [pagination, setPagination] = useState<ListPagination>({
+    page: 1,
+    page_size: 10,
+    total: 0,
+    total_pages: 1
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function loadUsers() {
+  async function loadUsers(page = pagination.page) {
     setLoading(true);
     setError("");
 
     try {
-      const response = await fetch("/api/v1/users");
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: String(pagination.page_size)
+      });
+      const response = await fetch(`/api/v1/users?${params.toString()}`);
       const body = (await response.json()) as UsersResponse;
 
       if (!response.ok || body.code !== 0 || !body.data) {
@@ -43,7 +57,8 @@ export function UsersPanel() {
         return;
       }
 
-      setUsers(body.data);
+      setUsers(body.data.items);
+      setPagination(body.data.pagination);
     } catch {
       setError("请求失败，请确认 Web 服务状态。");
     } finally {
@@ -52,7 +67,7 @@ export function UsersPanel() {
   }
 
   useEffect(() => {
-    void loadUsers();
+    void loadUsers(1);
   }, []);
 
   return (
@@ -124,6 +139,11 @@ export function UsersPanel() {
           </table>
         </div>
       )}
+      <PaginationBar
+        disabled={loading}
+        onPageChange={(page) => void loadUsers(page)}
+        pagination={pagination}
+      />
     </section>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { RefreshCw, Send } from "lucide-react";
 
 type DeviceItem = {
@@ -53,7 +54,7 @@ export function ControlConsolePanel() {
   const [commands, setCommands] = useState<DeviceCommand[]>([]);
   const [commandPagination, setCommandPagination] = useState<Pagination>({
     page: 1,
-    page_size: 20,
+    page_size: 10,
     total: 0,
     total_pages: 1
   });
@@ -203,14 +204,19 @@ export function ControlConsolePanel() {
                 <option value="">{loading ? "正在加载设备..." : "选择设备"}</option>
                 {devices.map((device) => (
                   <option key={device.id} value={device.id}>
-                    {device.product_name} / {device.name}
+                    {device.product_name} / {device.name}（{onlineStatusLabel(device.online_status)}）
                   </option>
                 ))}
               </select>
             </Field>
             {selectedDevice ? (
               <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">
-                <div className="font-medium text-slate-950">{selectedDevice.name}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-slate-950">
+                    {selectedDevice.name}
+                  </span>
+                  <OnlineStatusBadge value={selectedDevice.online_status} />
+                </div>
               </div>
             ) : null}
             <Field label="类型">
@@ -336,42 +342,6 @@ export function ControlConsolePanel() {
   );
 }
 
-function PaginationBar({
-  disabled,
-  onPageChange,
-  pagination
-}: {
-  disabled: boolean;
-  onPageChange: (page: number) => void;
-  pagination: Pagination;
-}) {
-  return (
-    <div className="flex items-center justify-between border-t border-slate-200 px-5 py-4">
-      <div className="text-sm text-slate-500">
-        第 {pagination.page} / {pagination.total_pages} 页，共{" "}
-        {pagination.total} 条
-      </div>
-      <div className="flex items-center gap-2">
-        <button
-          className="h-8 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-          disabled={disabled || pagination.page <= 1}
-          onClick={() => onPageChange(pagination.page - 1)}
-          type="button"
-        >
-          上一页
-        </button>
-        <button
-          className="h-8 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-          disabled={disabled || pagination.page >= pagination.total_pages}
-          onClick={() => onPageChange(pagination.page + 1)}
-          type="button"
-        >
-          下一页
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -379,6 +349,31 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
       {children}
     </label>
+  );
+}
+
+function onlineStatusLabel(value: string) {
+  if (value === "online") {
+    return "在线";
+  }
+
+  return value === "offline" ? "离线" : "未上线";
+}
+
+function OnlineStatusBadge({ value }: { value: string }) {
+  const meta =
+    value === "online"
+      ? { label: "在线", className: "bg-emerald-50 text-emerald-700" }
+      : value === "offline"
+        ? { label: "离线", className: "bg-slate-200 text-slate-600" }
+        : { label: "未上线", className: "bg-zinc-200 text-zinc-600" };
+
+  return (
+    <span
+      className={`rounded-md px-2 py-0.5 text-xs font-medium ${meta.className}`}
+    >
+      {meta.label}
+    </span>
   );
 }
 

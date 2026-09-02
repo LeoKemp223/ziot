@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createFirmware,
   createOtaTask,
+  deleteFirmware,
   recordOtaProgress
 } from "./ota-service";
 
@@ -97,6 +98,7 @@ describe("ota service", () => {
         findFirst: vi.fn().mockResolvedValue(product())
       },
       firmware: {
+        count: vi.fn().mockResolvedValue(0),
         findFirst: vi.fn().mockResolvedValue(null),
         create: vi.fn().mockResolvedValue(firmware({ status: "draft" }))
       }
@@ -133,6 +135,116 @@ describe("ota service", () => {
         sha256: "bad"
       })
     ).rejects.toMatchObject({ code: 400001 });
+  });
+
+  it("rejects firmware creation beyond the per-user quota", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product())
+      },
+      firmware: {
+        count: vi.fn().mockResolvedValue(10),
+        findFirst: vi.fn(),
+        create: vi.fn()
+      }
+    };
+
+    await expect(
+      createFirmware(db, {
+        orgId: "org_default",
+        createdBy: "usr_admin",
+        productId: "prd_demo",
+        version: "v1.1.0",
+        fileUrl: "https://example.com/fw.bin",
+        fileSize: 1024,
+        sha256: "0".repeat(64)
+      })
+    ).rejects.toMatchObject({
+      code: 409001,
+      message: "固件数量已达上限（每个用户最多 10 个，可删除旧固件释放名额）"
+    });
+    expect(db.firmware.create).not.toHaveBeenCalled();
+  });
+
+  it("counts only the user's own firmwares in the org toward the quota", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product())
+      },
+      firmware: {
+        count: vi.fn().mockResolvedValue(9),
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(firmware({ version: "v1.1.0" }))
+      }
+    };
+
+    const result = await createFirmware(db, {
+      orgId: "org_default",
+      createdBy: "usr_admin",
+      productId: "prd_demo",
+      version: "v1.1.0",
+      fileUrl: "https://example.com/fw.bin",
+      fileSize: 1024,
+      sha256: "0".repeat(64)
+    });
+
+    expect(db.firmware.count).toHaveBeenCalledWith({
+      where: {
+        org_id: "org_default",
+        created_by: "usr_admin"
+      }
+    });
+    expect(result.version).toBe("v1.1.0");
+  });
+
+  it("deletes an unreferenced firmware and skips external file urls", async () => {
+    const db = {
+      firmware: {
+        findFirst: vi.fn().mockResolvedValue(firmware()),
+        delete: vi.fn().mockResolvedValue(firmware())
+      },
+      otaTask: {
+        count: vi.fn().mockResolvedValue(0)
+      }
+    };
+
+    const result = await deleteFirmware(db, {
+      orgId: "org_default",
+      userId: "usr_admin",
+      firmwareId: "fw_demo"
+    });
+
+    expect(db.otaTask.count).toHaveBeenCalledWith({
+      where: { firmware_id: "fw_demo" }
+    });
+    expect(db.firmware.delete).toHaveBeenCalledWith({
+      where: { id: "fw_demo" }
+    });
+    expect(result).toEqual({ id: "fw_demo", deleted: true });
+  });
+
+  it("rejects deleting a firmware referenced by OTA tasks", async () => {
+    const db = {
+      firmware: {
+        findFirst: vi.fn().mockResolvedValue(firmware()),
+        delete: vi.fn()
+      },
+      otaTask: {
+        count: vi.fn().mockResolvedValue(2)
+      }
+    };
+
+    await expect(
+      deleteFirmware(db, {
+        orgId: "org_default",
+        userId: "usr_admin",
+        firmwareId: "fw_demo"
+      })
+    ).rejects.toMatchObject({
+      code: 409001,
+      message: "固件已被升级任务引用，无法删除"
+    });
+    expect(db.firmware.delete).not.toHaveBeenCalled();
   });
 
   it("creates an OTA task for all scoped product devices", async () => {

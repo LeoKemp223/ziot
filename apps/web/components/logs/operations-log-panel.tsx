@@ -6,7 +6,8 @@ import {
   type FormEvent,
   type InputHTMLAttributes
 } from "react";
-import { RefreshCw, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, RefreshCw, Search } from "lucide-react";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 
 type LogKind = "device" | "commands" | "ota";
 
@@ -58,7 +59,7 @@ export function OperationsLogPanel() {
   const [logs, setLogs] = useState<Array<Record<string, any>>>([]);
   const [pagination, setPagination] = useState<LogList["pagination"]>({
     page: 1,
-    page_size: 20,
+    page_size: 10,
     total: 0,
     total_pages: 1
   });
@@ -210,27 +211,11 @@ export function OperationsLogPanel() {
         </div>
       ) : null}
       <LogTable kind={kind} loading={loading} logs={logs} />
-      <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
-        <button
-          className="h-8 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-          disabled={loading || pagination.page <= 1}
-          onClick={() => void load(pagination.page - 1)}
-          type="button"
-        >
-          上一页
-        </button>
-        <span className="text-sm text-slate-500">
-          {pagination.page} / {pagination.total_pages}
-        </span>
-        <button
-          className="h-8 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-          disabled={loading || pagination.page >= pagination.total_pages}
-          onClick={() => void load(pagination.page + 1)}
-          type="button"
-        >
-          下一页
-        </button>
-      </div>
+      <PaginationBar
+        disabled={loading}
+        onPageChange={(page) => void load(page)}
+        pagination={pagination}
+      />
     </section>
   );
 }
@@ -244,6 +229,22 @@ function LogTable({
   loading: boolean;
   logs: Array<Record<string, any>>;
 }) {
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  function toggleExpanded(id: string) {
+    setExpandedIds((current) => {
+      const next = new Set(current);
+
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+
+      return next;
+    });
+  }
+
   if (logs.length === 0) {
     return (
       <div className="border-t border-slate-100 p-8 text-sm text-slate-500">
@@ -287,9 +288,23 @@ function LogTable({
                 </span>
               </td>
               <td className="px-5 py-4">
-                <pre className="max-h-36 max-w-[560px] overflow-auto rounded-md bg-slate-50 p-2 font-mono text-xs text-slate-600">
-                  {JSON.stringify(logContent(kind, log), null, 2)}
-                </pre>
+                <button
+                  className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 px-2.5 text-xs text-slate-600 hover:bg-slate-50"
+                  onClick={() => toggleExpanded(String(log.id))}
+                  type="button"
+                >
+                  {expandedIds.has(String(log.id)) ? (
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  )}
+                  {expandedIds.has(String(log.id)) ? "收起" : "展开"}
+                </button>
+                {expandedIds.has(String(log.id)) ? (
+                  <pre className="mt-2 max-h-36 max-w-[560px] overflow-auto rounded-md bg-slate-50 p-2 font-mono text-xs text-slate-600">
+                    {JSON.stringify(logContent(kind, log), null, 2)}
+                  </pre>
+                ) : null}
               </td>
             </tr>
           ))}

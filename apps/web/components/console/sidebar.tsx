@@ -10,7 +10,9 @@ import {
   RadioTower,
   Settings,
   ShieldCheck,
-  UploadCloud
+  UploadCloud,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 import { filterNavItemsForPermissions, type NavItem } from "./dashboard-data";
 
@@ -37,6 +39,7 @@ type MeResponse = {
 };
 
 export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
+  const [collapsed, setCollapsed] = useState(false);
   const [permissions, setPermissions] = useState<string[] | null>(null);
   const visibleItems = useMemo(
     () => filterNavItemsForPermissions(items, permissions ?? []),
@@ -44,6 +47,7 @@ export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
   );
 
   useEffect(() => {
+    setCollapsed(localStorage.getItem("ziot-sidebar-collapsed") === "true");
     void fetch("/api/v1/me")
       .then((response) => response.json() as Promise<MeResponse>)
       .then((body) => {
@@ -56,18 +60,25 @@ export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
       });
   }, []);
 
+  function toggleCollapsed() {
+    const next = !collapsed;
+    setCollapsed(next);
+    document.documentElement.dataset.sidebarCollapsed = String(next);
+    localStorage.setItem("ziot-sidebar-collapsed", String(next));
+  }
+
   return (
-    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-[#141414] text-zinc-300 lg:flex">
-      <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
+    <aside className={["console-sidebar sticky top-0 hidden h-screen shrink-0 flex-col text-zinc-300 transition-[width] duration-200 lg:flex", collapsed ? "w-[72px]" : "w-64"].join(" ")}>
+      <div className={["flex h-16 items-center border-b border-white/10", collapsed ? "justify-center px-2" : "gap-3 px-5"].join(" ")}>
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-sm font-semibold text-white">
           Z
         </div>
-        <div>
+        <div className={["sidebar-expanded-only", collapsed ? "hidden" : ""].join(" ")}>
           <div className="text-base font-semibold text-white">ZIOT Console</div>
           <div className="text-xs text-zinc-500">Device Cloud</div>
         </div>
       </div>
-      <nav className="flex-1 space-y-1 px-3 py-5">
+      <nav className={["flex-1 space-y-1 py-5", collapsed ? "px-2" : "px-3"].join(" ")}>
         {visibleItems.map((item) => {
           const Icon = navIcons[item.icon];
 
@@ -75,7 +86,8 @@ export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
             <a
               aria-current={item.active ? "page" : undefined}
               className={[
-                "group flex h-10 items-center gap-3 rounded-md px-3 text-sm transition-colors",
+                "group flex h-10 items-center gap-3 rounded-md text-sm transition-colors",
+                collapsed ? "justify-center px-2" : "px-3",
                 item.active
                   ? "bg-blue-600 text-white shadow-sm shadow-blue-950/40"
                   : "text-zinc-400 hover:bg-white/8 hover:text-white"
@@ -84,12 +96,27 @@ export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
               key={item.label}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              <span className="min-w-0 flex-1 truncate">{item.label}</span>
-              {item.active ? <ChevronRight className="h-4 w-4" /> : null}
+              <span className={["sidebar-expanded-only", collapsed ? "hidden" : "min-w-0 flex-1 truncate"].join(" ")}>{item.label}</span>
+              {item.active && !collapsed ? <ChevronRight className="h-4 w-4" /> : null}
             </a>
           );
         })}
       </nav>
+      <div className={["pb-3", collapsed ? "px-2" : "px-3"].join(" ")}>
+        <button
+          aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"}
+          className={[
+            "flex h-10 w-full items-center rounded-md text-zinc-500 transition-colors hover:bg-white/8 hover:text-zinc-200",
+            collapsed ? "justify-center px-2" : "gap-3 px-3"
+          ].join(" ")}
+          onClick={toggleCollapsed}
+          title={collapsed ? "展开侧边栏" : "收起侧边栏"}
+          type="button"
+        >
+          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          {!collapsed ? <span className="sidebar-expanded-only text-sm">收起侧边栏</span> : null}
+        </button>
+      </div>
     </aside>
   );
 }

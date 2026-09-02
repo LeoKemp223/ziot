@@ -6,7 +6,8 @@ import {
   type FormEvent,
   type InputHTMLAttributes
 } from "react";
-import { RefreshCw, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, RefreshCw, Search } from "lucide-react";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 
 type AuditLog = {
   id: string;
@@ -58,13 +59,14 @@ export function AuditLogPanel() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [pagination, setPagination] = useState<AuditLogList["pagination"]>({
     page: 1,
-    page_size: 20,
+    page_size: 10,
     total: 0,
     total_pages: 1
   });
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   async function load(page = pagination.page, nextFilters = filters) {
     setLoading(true);
@@ -237,9 +239,35 @@ export function AuditLogPanel() {
                       {log.ip}
                     </td>
                     <td className="px-5 py-4">
-                      <pre className="max-h-32 max-w-[360px] overflow-auto rounded-md bg-slate-50 p-2 font-mono text-xs text-slate-600">
-                        {JSON.stringify(log.detail ?? {}, null, 2)}
-                      </pre>
+                      <button
+                        className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 px-2.5 text-xs text-slate-600 hover:bg-slate-50"
+                        onClick={() =>
+                          setExpandedIds((current) => {
+                            const next = new Set(current);
+
+                            if (next.has(log.id)) {
+                              next.delete(log.id);
+                            } else {
+                              next.add(log.id);
+                            }
+
+                            return next;
+                          })
+                        }
+                        type="button"
+                      >
+                        {expandedIds.has(log.id) ? (
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        ) : (
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        )}
+                        {expandedIds.has(log.id) ? "收起" : "展开"}
+                      </button>
+                      {expandedIds.has(log.id) ? (
+                        <pre className="mt-2 max-h-32 max-w-[360px] overflow-auto rounded-md bg-slate-50 p-2 font-mono text-xs text-slate-600">
+                          {JSON.stringify(log.detail ?? {}, null, 2)}
+                        </pre>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -247,27 +275,11 @@ export function AuditLogPanel() {
             </table>
           </div>
         )}
-        <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
-          <button
-            className="h-8 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-            disabled={loading || pagination.page <= 1}
-            onClick={() => void load(pagination.page - 1)}
-            type="button"
-          >
-            上一页
-          </button>
-          <span className="text-sm text-slate-500">
-            {pagination.page} / {pagination.total_pages}
-          </span>
-          <button
-            className="h-8 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-            disabled={loading || pagination.page >= pagination.total_pages}
-            onClick={() => void load(pagination.page + 1)}
-            type="button"
-          >
-            下一页
-          </button>
-        </div>
+        <PaginationBar
+          disabled={loading}
+          onPageChange={(page) => void load(page)}
+          pagination={pagination}
+        />
       </section>
     </div>
   );
