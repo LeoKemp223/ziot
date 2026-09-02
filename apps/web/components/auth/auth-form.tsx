@@ -123,7 +123,6 @@ export function AuthForm({ mode }: AuthFormProps) {
             className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-slate-50/70 px-3 font-mono text-sm uppercase outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
             maxLength={10}
             name="invitation_code"
-            placeholder="INVG6R35ZS"
             required
           />
         </label>
