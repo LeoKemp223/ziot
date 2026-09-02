@@ -15,6 +15,7 @@ import { FirmwareStatusBadge, TaskStatusBadge } from "@/components/ota/ota-statu
 type Product = {
   id: string;
   name: string;
+  device_count: number;
 };
 
 type ProductList = {
@@ -389,7 +390,9 @@ export function OtaConsolePanel() {
     void load();
   }, []);
 
-  const defaultProductId = products[0]?.id ?? "";
+  // 默认选有设备的产品,避免上传后建任务才发现"目标设备为空"
+  const defaultProductId =
+    products.find((product) => product.device_count > 0)?.id ?? products[0]?.id ?? "";
   const releasedFirmwares = allFirmwares.filter(
     (firmware) => firmware.status !== "deprecated"
   );

@@ -275,7 +275,7 @@ describe("auth service", () => {
       max_uses: 1,
       used_count: 0,
       status: "active",
-      expires_at: new Date("2026-05-01T08:00:00.000Z"),
+      expires_at: new Date("2099-05-01T08:00:00.000Z"),
       organization: { id: "org_default", name: "默认组织" },
       role: { id: "role_org_admin", name: "组织管理员" }
     };
@@ -476,7 +476,7 @@ describe("auth service", () => {
         findUnique: vi.fn().mockResolvedValue({
           id: "rft_old",
           revoked_at: null,
-          expires_at: new Date("2026-05-01T08:00:00.000Z"),
+          expires_at: new Date("2099-05-01T08:00:00.000Z"),
           user: user()
         }),
         update: vi.fn().mockResolvedValue({}),

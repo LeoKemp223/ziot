@@ -198,7 +198,7 @@ async function findActiveProduct(
       deleted_at: null,
       ...ownerFilter(input)
     },
-    include: { _count: { select: { devices: true } } }
+    include: { _count: { select: { devices: { where: { deleted_at: null } } } } }
   });
 
   if (!product) {
@@ -232,7 +232,7 @@ export async function listProducts(db: ProductListDb, input: ListProductsInput) 
       orderBy: { created_at: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: { _count: { select: { devices: true } } }
+      include: { _count: { select: { devices: { where: { deleted_at: null } } } } }
     })
   ]);
 
@@ -285,7 +285,7 @@ export async function createProduct(
       data_format: input.data_format ?? "json",
       thing_model: defaultThingModel()
     },
-    include: { _count: { select: { devices: true } } }
+    include: { _count: { select: { devices: { where: { deleted_at: null } } } } }
   });
 
   return mapProduct(product);
@@ -324,7 +324,7 @@ export async function updateProduct(
   const product = await db.product.update({
     where: { id: input.productId },
     data,
-    include: { _count: { select: { devices: true } } }
+    include: { _count: { select: { devices: { where: { deleted_at: null } } } } }
   });
 
   return mapProduct(product);
@@ -359,7 +359,7 @@ export async function deleteProduct(
   const product = await db.product.update({
     where: { id: input.productId },
     data: { deleted_at: new Date() },
-    include: { _count: { select: { devices: true } } }
+    include: { _count: { select: { devices: { where: { deleted_at: null } } } } }
   });
 
   return {

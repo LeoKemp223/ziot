@@ -138,7 +138,7 @@ describe("product service", () => {
           services: []
         }
       }),
-      include: { _count: { select: { devices: true } } }
+      include: { _count: { select: { devices: { where: { deleted_at: null } } } } }
     });
     expect(result.id).toBe("prd_new");
   });
@@ -162,7 +162,7 @@ describe("product service", () => {
         product_key: expect.stringMatching(/^pk_[a-f0-9]{12}$/),
         protocols: ["mqtt"]
       }),
-      include: { _count: { select: { devices: true } } }
+      include: { _count: { select: { devices: { where: { deleted_at: null } } } } }
     });
   });
 
@@ -257,12 +257,12 @@ describe("product service", () => {
         org_id: "org_default",
         deleted_at: null
       },
-      include: { _count: { select: { devices: true } } }
+      include: { _count: { select: { devices: { where: { deleted_at: null } } } } }
     });
     expect(db.product.update).toHaveBeenCalledWith({
       where: { id: "prd_demo" },
       data: { name: "更新后的产品" },
-      include: { _count: { select: { devices: true } } }
+      include: { _count: { select: { devices: { where: { deleted_at: null } } } } }
     });
     expect(result.name).toBe("更新后的产品");
   });
@@ -309,7 +309,7 @@ describe("product service", () => {
         deleted_at: null,
         created_by: "usr_member"
       },
-      include: { _count: { select: { devices: true } } }
+      include: { _count: { select: { devices: { where: { deleted_at: null } } } } }
     });
   });
 
@@ -355,7 +355,7 @@ describe("product service", () => {
     expect(db.product.update).toHaveBeenCalledWith({
       where: { id: "prd_demo" },
       data: { deleted_at: expect.any(Date) },
-      include: { _count: { select: { devices: true } } }
+      include: { _count: { select: { devices: { where: { deleted_at: null } } } } }
     });
     expect(result).toEqual({
       id: "prd_demo",
