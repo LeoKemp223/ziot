@@ -96,11 +96,15 @@ function getRedisClient() {
     return null;
   }
 
-  redisClient ??= new Redis(process.env.REDIS_URL, {
-    lazyConnect: true,
-    maxRetriesPerRequest: 1,
-    enableOfflineQueue: false
-  });
+  if (!redisClient) {
+    redisClient = new Redis(process.env.REDIS_URL, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false
+    });
+    // lazyConnect 不会自动建连,首次命令会在连接建立前直接失败,这里主动触发
+    void redisClient.connect().catch(() => undefined);
+  }
 
   return redisClient;
 }
@@ -126,16 +130,23 @@ export function createMemoryNonceStore(): NonceStore {
 }
 
 export function createRedisNonceStore(): NonceStore {
+  const fallback = createMemoryNonceStore();
+
   return {
     async reserve(key: string, ttlSeconds: number) {
       const redis = getRedisClient();
 
       if (!redis) {
-        return createMemoryNonceStore().reserve(key, ttlSeconds);
+        return fallback.reserve(key, ttlSeconds);
       }
 
-      const result = await redis.set(key, "1", "EX", ttlSeconds, "NX");
-      return result === "OK";
+      try {
+        const result = await redis.set(key, "1", "EX", ttlSeconds, "NX");
+        return result === "OK";
+      } catch {
+        // 连接尚未就绪或 Redis 不可用时退化为内存防重放,避免冷启动首个设备请求 500
+        return fallback.reserve(key, ttlSeconds);
+      }
     }
   };
 }

@@ -56,11 +56,15 @@ function getRedisClient() {
     return null;
   }
 
-  redisClient ??= new Redis(redisUrl, {
-    lazyConnect: true,
-    maxRetriesPerRequest: 1,
-    enableOfflineQueue: false
-  });
+  if (!redisClient) {
+    redisClient = new Redis(redisUrl, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false
+    });
+    // lazyConnect 不会自动建连,首次命令会在连接建立前直接失败,这里主动触发
+    void redisClient.connect().catch(() => undefined);
+  }
 
   return redisClient;
 }
