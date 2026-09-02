@@ -15,6 +15,8 @@ import {
   PanelLeftOpen
 } from "lucide-react";
 import { filterNavItemsForPermissions, type NavItem } from "./dashboard-data";
+import Link from "next/link";
+import { getCachedMe, loadMe } from "@/lib/identity/me-cache";
 
 const navIcons = {
   home: Home,
@@ -31,16 +33,9 @@ type ConsoleSidebarProps = {
   items: NavItem[];
 };
 
-type MeResponse = {
-  code: number;
-  data?: {
-    permissions: string[];
-  };
-};
-
 export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [permissions, setPermissions] = useState<string[] | null>(null);
+  const [permissions, setPermissions] = useState<string[] | null>(() => getCachedMe()?.permissions ?? null);
   const visibleItems = useMemo(
     () => filterNavItemsForPermissions(items, permissions ?? []),
     [items, permissions]
@@ -48,16 +43,7 @@ export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
 
   useEffect(() => {
     setCollapsed(localStorage.getItem("ziot-sidebar-collapsed") === "true");
-    void fetch("/api/v1/me")
-      .then((response) => response.json() as Promise<MeResponse>)
-      .then((body) => {
-        if (body.code === 0 && body.data) {
-          setPermissions(body.data.permissions);
-        }
-      })
-      .catch(() => {
-        setPermissions([]);
-      });
+    void loadMe().then((me) => setPermissions(me?.permissions ?? []));
   }, []);
 
   function toggleCollapsed() {
@@ -83,7 +69,7 @@ export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
           const Icon = navIcons[item.icon];
 
           return (
-            <a
+            <Link
               aria-current={item.active ? "page" : undefined}
               className={[
                 "group flex h-10 items-center gap-3 rounded-md text-sm transition-colors",
@@ -98,7 +84,7 @@ export function ConsoleSidebar({ items }: ConsoleSidebarProps) {
               <Icon className="h-4 w-4 shrink-0" />
               <span className={["sidebar-expanded-only", collapsed ? "hidden" : "min-w-0 flex-1 truncate"].join(" ")}>{item.label}</span>
               {item.active && !collapsed ? <ChevronRight className="h-4 w-4" /> : null}
-            </a>
+            </Link>
           );
         })}
       </nav>

@@ -84,7 +84,7 @@ describe("device service", () => {
     expect(result).toMatchObject({
       id: "dev_new",
       device_key: "dk_sensor",
-      device_secret: expect.stringMatching(/^ds_/)
+      device_secret: expect.stringMatching(/^[a-f0-9]{48}$/)
     });
     expect(createArgs.data.device_secret).toBeUndefined();
     expect(createArgs.data.created_by).toBe("usr_member");
@@ -324,7 +324,7 @@ describe("device service", () => {
       data: { device_secret_hash: string; device_secret?: string };
     };
 
-    expect(result.device_secret).toMatch(/^ds_/);
+    expect(result.device_secret).toMatch(/^[a-f0-9]{48}$/);
     expect(updateArgs.data.device_secret).toBeUndefined();
     await expect(
       bcrypt.compare(result.device_secret ?? "", updateArgs.data.device_secret_hash)

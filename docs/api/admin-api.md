@@ -1117,7 +1117,7 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 
 ### `DELETE /api/v1/firmwares/{firmware_id}`
 
-删除固件。需要 `ota:write` 权限。固件被任何升级任务引用时无法删除（`409001 固件已被升级任务引用，无法删除`）。
+删除固件。需要 `ota:write` 权限。固件被任何升级任务引用时无法删除（`409001 固件已被升级任务引用，请先删除相关任务`）。
 删除会同时清理本地 `public/uploads/firmwares/` 下的固件文件（外部 URL 不受影响）并释放该用户的固件配额名额，操作不可恢复。写入 `firmware.delete` 审计日志。
 
 ### `POST /api/v1/firmwares/{firmware_id}/upload-url`
@@ -1127,7 +1127,7 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 
 ### `GET /api/v1/ota/tasks`
 
-查询 OTA 任务列表。需要 `ota:read` 权限。支持 `page` / `page_size` 分页参数（默认每页 20），返回 `{ items, pagination }`；`product_id` 可选过滤。
+查询 OTA 任务列表。需要 `ota:read` 权限。支持 `page` / `page_size` 分页参数（默认每页 20），返回 `{ items, pagination }`；`product_id`、`firmware_id` 可选过滤。
 
 ### `POST /api/v1/ota/tasks`
 
@@ -1167,6 +1167,12 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 停止/取消 OTA 任务。需要 `ota:execute` 权限。`finished` / `cancelled` 状态的任务无法再取消（`409001`）。
 
 取消后：任务状态变为 `cancelled` 并写入 `finished_at`；所有未到终态（`created`/`scheduled`/`notified`/`downloading`/`installing`）的设备记录置为 `cancelled`（错误信息为“任务已取消”），已成功/失败的记录保持不变；已取消的设备记录后续收到设备上报会被拒绝（`409001 升级记录已取消`）。
+
+### `DELETE /api/v1/ota/tasks/{task_id}`
+
+删除 OTA 任务。需要 `ota:write` 权限。仅 `finished` / `cancelled` 状态可删除，未结束的任务需先取消（`409001 升级任务未结束，请先取消后再删除`）。
+
+任务下的设备升级记录（ota_records）随任务级联删除，操作不可恢复；写入 `ota.delete` 审计日志。删除引用固件的任务后，该固件即可删除。
 
 ### `GET /api/v1/ota/tasks/{task_id}/records`
 

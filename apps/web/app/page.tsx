@@ -27,9 +27,6 @@ export default function HomePage() {
                 <h1 className="text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
                   控制台概览
                 </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                  查看当前组织设备在线、数据上报、控制命令和 OTA 运行状态。
-                </p>
               </div>
             </div>
             <div className="mt-6">

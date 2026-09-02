@@ -347,13 +347,29 @@ export async function deleteFirmware(
   });
 
   if (taskCount > 0) {
-    throw otaError(409001, "固件已被升级任务引用，无法删除");
+    throw otaError(409001, "固件已被升级任务引用，请先删除相关任务");
   }
 
   await removeLocalFirmwareFile(firmware.file_url);
   await db.firmware.delete({ where: { id: firmware.id } });
 
   return { id: firmware.id, deleted: true };
+}
+
+export async function deleteOtaTask(
+  db: Db,
+  input: AccessScope & { orgId: string; taskId: string }
+) {
+  const task = await findTaskForScope(db, input);
+
+  // 未结束的任务先取消才能删,避免设备还在上报时记录被清掉
+  if (!["finished", "cancelled"].includes(task.status)) {
+    throw otaError(409001, "升级任务未结束，请先取消后再删除");
+  }
+
+  await db.otaTask.delete({ where: { id: task.id } });
+
+  return { id: task.id, deleted: true };
 }
 
 export async function createFirmwareUploadUrl(
@@ -469,6 +485,7 @@ export async function listOtaTasks(
   input: AccessScope & {
     orgId: string;
     productId?: string;
+    firmwareId?: string;
     page?: number;
     pageSize?: number;
   }
@@ -478,7 +495,8 @@ export async function listOtaTasks(
   const where = {
     org_id: input.orgId,
     product: ownerFilter(input),
-    ...(input.productId ? { product_id: input.productId } : {})
+    ...(input.productId ? { product_id: input.productId } : {}),
+    ...(input.firmwareId ? { firmware_id: input.firmwareId } : {})
   };
   const [total, tasks] = await Promise.all([
     db.otaTask.count({ where }),

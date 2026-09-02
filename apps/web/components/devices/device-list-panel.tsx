@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { PaginationBar } from "@/components/ui/pagination-bar";
-import { Copy, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { Copy, Eye, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import type { ProductDto } from "@/lib/products/product-service";
 import { usePermissions } from "@/components/console/use-permissions";
@@ -312,6 +312,10 @@ export function DeviceListPanel() {
     product_id: string;
   } | null>(null);
   const [deletingDevice, setDeletingDevice] = useState<DeviceItem | null>(null);
+  const [secretDevice, setSecretDevice] = useState<DeviceItem | null>(null);
+  const [confirmSecretDevice, setConfirmSecretDevice] = useState<DeviceItem | null>(null);
+  const [deviceSecret, setDeviceSecret] = useState("");
+  const [secretCopied, setSecretCopied] = useState(false);
 
   async function loadData(
     showLoading = true,
@@ -439,6 +443,26 @@ export function DeviceListPanel() {
     }
   }
 
+  async function viewDeviceSecret(device: DeviceItem) {
+    setPending(true);
+    setError("");
+    setSecretCopied(false);
+    try {
+      const response = await fetch(`/api/v1/devices/${device.id}/secret`, { method: "POST" });
+      const body = (await response.json()) as ApiResponse<DeviceItem>;
+      if (!response.ok || body.code !== 0 || !body.data?.device_secret) {
+        setError(body.message || "获取设备密钥失败，请稍后重试。");
+        return;
+      }
+      setDeviceSecret(body.data.device_secret);
+      setSecretDevice(device);
+    } catch {
+      setError("获取设备密钥失败，请稍后重试。");
+    } finally {
+      setPending(false);
+    }
+  }
+
   useEffect(() => {
     void loadData(true, selectedProductId, 1);
 
@@ -513,6 +537,53 @@ export function DeviceListPanel() {
               >
                 {pending ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
                 确认删除
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {secretDevice ? (
+        <div aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4" role="dialog">
+          <div className="w-full max-w-xl rounded-lg bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">设备密钥</h2>
+                <p className="mt-1 text-sm text-amber-600">密钥已重新生成，旧密钥立即失效。请妥善保存。</p>
+              </div>
+              <button aria-label="关闭" className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900" onClick={() => setSecretDevice(null)} type="button"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="px-5 py-5">
+              <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+                <div className="text-xs font-medium text-blue-700">{secretDevice.name} / {secretDevice.device_key}</div>
+                <div className="mt-2 break-all font-mono text-sm text-blue-950">{deviceSecret}</div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50" onClick={async () => { const copied = await copyTextToClipboard(deviceSecret); setSecretCopied(copied); }} type="button"><Copy className="h-4 w-4" />{secretCopied ? "已复制" : "复制密钥"}</button>
+              <button className="inline-flex h-10 items-center rounded-md bg-slate-950 px-4 text-sm font-medium text-white hover:bg-slate-800" onClick={() => setSecretDevice(null)} type="button">关闭</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {confirmSecretDevice ? (
+        <div aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4" role="dialog">
+          <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">重新生成设备密钥</h2>
+                <p className="mt-1 text-sm text-slate-500">{confirmSecretDevice.name} / {confirmSecretDevice.device_key}</p>
+              </div>
+              <button aria-label="关闭" className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900" onClick={() => setConfirmSecretDevice(null)} type="button"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="px-5 py-5 text-sm text-slate-600">
+              旧密钥将立即失效，确认后只能查看一次新密钥。确定继续吗？
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50" onClick={() => setConfirmSecretDevice(null)} type="button">取消</button>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60" disabled={pending} onClick={() => { const device = confirmSecretDevice; setConfirmSecretDevice(null); void viewDeviceSecret(device); }} type="button">
+                {pending ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}确认生成
               </button>
             </div>
           </div>
@@ -695,6 +766,15 @@ export function DeviceListPanel() {
                     <div className="flex justify-end gap-2">
                       {canWriteDevices ? (
                         <>
+                          <button
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                            disabled={pending}
+                            onClick={() => setConfirmSecretDevice(device)}
+                            title="查看密钥（将重新生成）"
+                            type="button"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
                           <button
                             className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-60"
                             disabled={pending}

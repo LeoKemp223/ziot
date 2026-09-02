@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { BookOpen, Bell, LogOut, PanelLeft } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import Link from "next/link";
+import { clearCachedMe, getCachedMe, loadMe } from "@/lib/identity/me-cache";
 
 type MeResponse = {
   code: number;
@@ -13,23 +15,17 @@ type MeResponse = {
 };
 
 export function ConsoleHeader() {
-  const [me, setMe] = useState<MeResponse["data"] | null>(null);
+  const [me, setMe] = useState<MeResponse["data"] | null>(() => getCachedMe());
   const pathname = usePathname();
   const docsActive = pathname === "/integration-docs";
 
   useEffect(() => {
-    void fetch("/api/v1/me")
-      .then((response) => response.json() as Promise<MeResponse>)
-      .then((body) => {
-        if (body.code === 0 && body.data) {
-          setMe(body.data);
-        }
-      })
-      .catch(() => {});
+    void loadMe().then(setMe);
   }, []);
 
   async function logout() {
     await fetch("/api/v1/auth/logout", { method: "POST" });
+    clearCachedMe();
     window.location.href = "/login";
   }
 
@@ -46,7 +42,7 @@ export function ConsoleHeader() {
       </div>
       <div className="flex items-center gap-2">
         <ThemeToggle />
-        <a
+        <Link
           aria-current={docsActive ? "page" : undefined}
           className={[
             "hidden h-9 items-center gap-2 rounded-md border px-3 text-sm font-medium transition md:inline-flex",
@@ -58,7 +54,7 @@ export function ConsoleHeader() {
         >
           <BookOpen className="h-4 w-4" />
           接入文档
-        </a>
+        </Link>
         <button
           aria-label="通知"
           className="relative flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-600"

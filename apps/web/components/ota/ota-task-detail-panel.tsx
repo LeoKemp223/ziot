@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw, Square } from "lucide-react";
+import { RefreshCw, Square, Trash2 } from "lucide-react";
 import { PaginationBar, type ListPagination } from "@/components/ui/pagination-bar";
 import { RecordStatusBadge, TaskStatusBadge } from "@/components/ota/ota-status";
 
@@ -42,6 +42,7 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [stopping, setStopping] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
 
   async function load(page = pagination.page) {
@@ -108,6 +109,29 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
     }
   }
 
+  async function deleteTask() {
+    setDeleting(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/v1/ota/tasks/${taskId}`, {
+        method: "DELETE"
+      });
+      const body = (await response.json()) as ApiResponse<OtaTask>;
+
+      if (!response.ok || body.code !== 0) {
+        setError(body.message);
+        setDeleting(false);
+        return;
+      }
+
+      window.location.href = "/ota";
+    } catch {
+      setError("删除任务失败，请稍后重试。");
+      setDeleting(false);
+    }
+  }
+
   useEffect(() => {
     void load();
   }, [taskId]);
@@ -142,7 +166,17 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
                 <Square className="h-4 w-4" />
                 {stopping ? "取消中..." : "取消任务"}
               </button>
-            ) : null}
+            ) : (
+              <button
+                className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 px-3 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={deleting}
+                onClick={() => void deleteTask()}
+                type="button"
+              >
+                <Trash2 className="h-4 w-4" />
+                {deleting ? "删除中..." : "删除任务"}
+              </button>
+            )}
             <button
               className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
               onClick={() => void load()}

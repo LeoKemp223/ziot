@@ -38,6 +38,9 @@ export async function GET(request: NextRequest) {
           ),
           ...(request.nextUrl.searchParams.has("product_id")
             ? { productId: request.nextUrl.searchParams.get("product_id") ?? "" }
+            : {}),
+          ...(request.nextUrl.searchParams.has("firmware_id")
+            ? { firmwareId: request.nextUrl.searchParams.get("firmware_id") ?? "" }
             : {})
         }),
         requestId

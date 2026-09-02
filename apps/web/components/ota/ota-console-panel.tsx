@@ -82,7 +82,11 @@ export function OtaConsolePanel() {
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [firmwarePending, setFirmwarePending] = useState(false);
   const [deletingFirmware, setDeletingFirmware] = useState<Firmware | null>(null);
+  const [deletingTask, setDeletingTask] = useState<OtaTask | null>(null);
   const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [blockingTasks, setBlockingTasks] = useState<OtaTask[] | null>(null);
+  const [blockActionId, setBlockActionId] = useState("");
   const [taskPending, setTaskPending] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -189,9 +193,15 @@ export function OtaConsolePanel() {
         return;
       }
 
+      const uploaded = body.data;
       formElement.reset();
       setFirmwareFileName("");
-      setLastUploadedFirmware(body.data);
+      setLastUploadedFirmware(uploaded);
+      // 立即并入固件列表,任务弹窗下拉马上能选中,不等列表刷新
+      setAllFirmwares((current) => [
+        uploaded,
+        ...current.filter((item) => item.id !== uploaded.id)
+      ]);
       // 上传后自动衔接:预填升级任务并打开创建任务弹窗
       setSelectedFirmwareId(body.data.id);
       setTaskName(`${body.data.product_name} ${body.data.version} 升级`);
@@ -206,24 +216,76 @@ export function OtaConsolePanel() {
     }
   }
 
+  async function loadBlockingTasks(firmwareId: string) {
+    try {
+      const response = await fetch(
+        `/api/v1/ota/tasks?firmware_id=${firmwareId}&page_size=100`,
+        { cache: "no-store" }
+      );
+      const body = (await response.json()) as ApiResponse<PaginatedList<OtaTask>>;
+
+      if (body.code === 0 && body.data) {
+        setBlockingTasks(body.data.items);
+      }
+    } catch {
+      setBlockingTasks([]);
+    }
+  }
+
   async function deleteFirmware(firmwareId: string) {
     setDeletePending(true);
-    setMessage("");
-    setError("");
+    setDeleteError("");
     const response = await fetch(`/api/v1/firmwares/${firmwareId}`, {
       method: "DELETE"
     });
     const body = (await response.json()) as ApiResponse<{ id: string }>;
 
     if (!response.ok || body.code !== 0) {
-      setError(body.message);
+      setDeleteError(body.message);
+      // 被任务引用时不关弹窗,列出引用任务供用户就地删除
+      if (body.message.includes("请先删除相关任务")) {
+        await loadBlockingTasks(firmwareId);
+      }
     } else {
       setMessage("固件已删除。");
-      await load();
+      setDeletingFirmware(null);
+      setBlockingTasks(null);
+      // 删掉当前页最后一条时回退上一页,避免停留在空页
+      const nextPage =
+        firmwares.length === 1 && firmwarePagination.page > 1
+          ? firmwarePagination.page - 1
+          : firmwarePagination.page;
+      await load(nextPage);
     }
 
     setDeletePending(false);
-    setDeletingFirmware(null);
+  }
+
+  async function blockingTaskAction(task: OtaTask, action: "cancel" | "delete") {
+    if (!deletingFirmware) {
+      return;
+    }
+
+    setBlockActionId(task.id);
+    setDeleteError("");
+    const response = await fetch(
+      action === "delete"
+        ? `/api/v1/ota/tasks/${task.id}`
+        : `/api/v1/ota/tasks/${task.id}/cancel`,
+      { method: action === "delete" ? "DELETE" : "POST" }
+    );
+    const body = (await response.json()) as ApiResponse<{ id: string }>;
+
+    if (!response.ok || body.code !== 0) {
+      setDeleteError(body.message);
+    } else {
+      await Promise.all([
+        loadBlockingTasks(deletingFirmware.id),
+        load()
+      ]);
+    }
+
+    setBlockActionId("");
   }
 
   async function createTask(event: FormEvent<HTMLFormElement>) {
@@ -262,6 +324,31 @@ export function OtaConsolePanel() {
     } finally {
       setTaskPending(false);
     }
+  }
+
+  async function deleteTask(taskId: string) {
+    setDeletePending(true);
+    setMessage("");
+    setError("");
+    const response = await fetch(`/api/v1/ota/tasks/${taskId}`, {
+      method: "DELETE"
+    });
+    const body = (await response.json()) as ApiResponse<{ id: string }>;
+
+    if (!response.ok || body.code !== 0) {
+      setError(body.message);
+    } else {
+      setMessage("OTA 任务已删除。");
+      // 删掉当前页最后一条时回退上一页,避免停留在空页
+      const nextPage =
+        tasks.length === 1 && taskPagination.page > 1
+          ? taskPagination.page - 1
+          : taskPagination.page;
+      await load(undefined, nextPage);
+    }
+
+    setDeletePending(false);
+    setDeletingTask(null);
   }
 
   async function startTask(taskId: string) {
@@ -414,6 +501,8 @@ export function OtaConsolePanel() {
                 onClick={() => {
                   setMessage("");
                   setError("");
+                  setDeleteError("");
+                  setBlockingTasks(null);
                   setDeletingFirmware(firmware);
                 }}
                 type="button"
@@ -448,28 +537,45 @@ export function OtaConsolePanel() {
             task.firmware_version,
             <TaskStatusBadge key={task.id} value={task.status} />,
             `${task.record_counts.success}/${task.record_counts.total} 成功`,
-            canExecuteOta &&
             !["finished", "cancelled"].includes(task.status) ? (
-              <div className="flex justify-end gap-2" key={task.id}>
-                {["created", "scheduled"].includes(task.status) ? (
+              canExecuteOta ? (
+                <div className="flex justify-end gap-2" key={task.id}>
+                  {["created", "scheduled"].includes(task.status) ? (
+                    <button
+                      className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                      onClick={() => void startTask(task.id)}
+                      type="button"
+                    >
+                      <Play className="h-3 w-3" />
+                      启动
+                    </button>
+                  ) : null}
                   <button
-                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
-                    onClick={() => void startTask(task.id)}
+                    className="inline-flex items-center gap-1 rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-700 hover:bg-rose-50"
+                    onClick={() => void cancelTask(task.id)}
                     type="button"
                   >
-                    <Play className="h-3 w-3" />
-                    启动
+                    <Square className="h-3 w-3" />
+                    取消
                   </button>
-                ) : null}
-                <button
-                  className="inline-flex items-center gap-1 rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-700 hover:bg-rose-50"
-                  onClick={() => void cancelTask(task.id)}
-                  type="button"
-                >
-                  <Square className="h-3 w-3" />
-                  取消
-                </button>
-              </div>
+                </div>
+              ) : (
+                "-"
+              )
+            ) : canWriteOta ? (
+              <button
+                className="inline-flex items-center gap-1 rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-700 hover:bg-rose-50"
+                key={task.id}
+                onClick={() => {
+                  setMessage("");
+                  setError("");
+                  setDeletingTask(task);
+                }}
+                type="button"
+              >
+                <Trash2 className="h-3 w-3" />
+                删除
+              </button>
             ) : (
               "-"
             )
@@ -600,7 +706,10 @@ export function OtaConsolePanel() {
               <button
                 aria-label="关闭"
                 className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                onClick={() => setDeletingFirmware(null)}
+                onClick={() => {
+                  setDeletingFirmware(null);
+                  setBlockingTasks(null);
+                }}
                 type="button"
               >
                 <X className="h-4 w-4" />
@@ -616,15 +725,74 @@ export function OtaConsolePanel() {
                   {deletingFirmware.sha256}
                 </div>
               </div>
-              {error ? (
-                <div className="mt-3 text-sm text-rose-600">{error}</div>
+              {deleteError ? (
+                <div className="mt-3 text-sm text-rose-600">{deleteError}</div>
+              ) : null}
+              {blockingTasks !== null && blockingTasks.length > 0 ? (
+                <div className="mt-3">
+                  <div className="text-sm font-medium text-slate-700">
+                    引用该固件的任务（删除全部任务后即可删除固件）
+                  </div>
+                  <div className="mt-2 divide-y divide-slate-100 rounded-md border border-slate-200">
+                    {blockingTasks.map((task) => (
+                      <div
+                        className="flex items-center justify-between gap-3 px-3 py-2"
+                        key={task.id}
+                      >
+                        <div className="min-w-0">
+                          <a
+                            className="block truncate text-sm font-medium text-blue-600 hover:underline"
+                            href={`/ota/tasks/${task.id}`}
+                          >
+                            {task.name}
+                          </a>
+                          <div className="text-xs text-slate-400">
+                            {task.product_name} / {task.firmware_version} ·{" "}
+                            {task.record_counts.total} 条设备记录
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <TaskStatusBadge value={task.status} />
+                          {["finished", "cancelled"].includes(task.status) ? (
+                            <button
+                              className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 px-2 text-xs text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              disabled={blockActionId !== ""}
+                              onClick={() =>
+                                void blockingTaskAction(task, "delete")
+                              }
+                              type="button"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              {blockActionId === task.id ? "删除中" : "删除"}
+                            </button>
+                          ) : (
+                            <button
+                              className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 px-2 text-xs text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              disabled={blockActionId !== ""}
+                              onClick={() =>
+                                void blockingTaskAction(task, "cancel")
+                              }
+                              type="button"
+                            >
+                              <Square className="h-3 w-3" />
+                              {blockActionId === task.id ? "取消中" : "先取消"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ) : null}
             </div>
 
             <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
               <button
                 className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                onClick={() => setDeletingFirmware(null)}
+                onClick={() => {
+                  setDeletingFirmware(null);
+                  setBlockingTasks(null);
+                }}
                 type="button"
               >
                 取消
@@ -633,6 +801,71 @@ export function OtaConsolePanel() {
                 className="inline-flex h-10 items-center gap-2 rounded-md bg-rose-600 px-4 text-sm font-medium text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={deletePending}
                 onClick={() => void deleteFirmware(deletingFirmware.id)}
+                type="button"
+              >
+                {deletePending ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                {blockingTasks !== null && blockingTasks.length > 0
+                  ? "重试删除固件"
+                  : "删除"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deletingTask ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+          role="dialog"
+        >
+          <div className="w-full max-w-xl rounded-lg bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">删除 OTA 任务</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  任务的设备升级进度记录将一并删除，该操作不可恢复。
+                </p>
+              </div>
+              <button
+                aria-label="关闭"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                onClick={() => setDeletingTask(null)}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="px-5 py-5">
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
+                <div className="font-medium text-slate-950">{deletingTask.name}</div>
+                <div className="mt-1 text-slate-500">
+                  {deletingTask.product_name} / {deletingTask.firmware_version} · 共{" "}
+                  {deletingTask.record_counts.total} 条设备记录
+                </div>
+              </div>
+              {error ? (
+                <div className="mt-3 text-sm text-rose-600">{error}</div>
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button
+                className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setDeletingTask(null)}
+                type="button"
+              >
+                取消
+              </button>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-md bg-rose-600 px-4 text-sm font-medium text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={deletePending}
+                onClick={() => void deleteTask(deletingTask.id)}
                 type="button"
               >
                 {deletePending ? (

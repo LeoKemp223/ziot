@@ -24,7 +24,8 @@ function id(prefix: string): string {
 }
 
 function deviceSecret(): string {
-  return `ds_${randomBytes(24).toString("base64url")}`;
+  // Hex encoding keeps the complete secret limited to letters and digits.
+  return randomBytes(24).toString("hex");
 }
 
 function deviceKey(): string {

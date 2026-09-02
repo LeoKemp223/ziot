@@ -173,11 +173,8 @@ export function DashboardPanel() {
   ] as const;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-white/80 bg-white/65 px-4 py-3 shadow-sm backdrop-blur">
-        <div className="text-sm text-slate-500">
-          数据刷新于 {formatDateTime(summary.generated_at)}
-        </div>
+    <div className="relative space-y-6">
+      <div className="flex justify-end md:absolute md:-top-[82px] md:right-0">
         <button
           className="inline-flex h-9 items-center gap-2 rounded-md border border-blue-200 bg-white px-3 text-sm font-medium text-blue-700 shadow-sm hover:border-blue-300 hover:bg-blue-50 disabled:opacity-60"
           disabled={loading}
@@ -283,15 +280,6 @@ export function DashboardPanel() {
       </div>
     </div>
   );
-}
-
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(new Date(value));
 }
 
 function formatShortTime(value: string): string {

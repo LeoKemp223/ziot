@@ -3,6 +3,7 @@ import {
   createFirmware,
   createOtaTask,
   deleteFirmware,
+  deleteOtaTask,
   recordOtaProgress
 } from "./ota-service";
 
@@ -242,9 +243,50 @@ describe("ota service", () => {
       })
     ).rejects.toMatchObject({
       code: 409001,
-      message: "固件已被升级任务引用，无法删除"
+      message: "固件已被升级任务引用，请先删除相关任务"
     });
     expect(db.firmware.delete).not.toHaveBeenCalled();
+  });
+
+  it("deletes a finished OTA task with its records", async () => {
+    const db = {
+      otaTask: {
+        findFirst: vi.fn().mockResolvedValue(task({ status: "finished" })),
+        delete: vi.fn().mockResolvedValue(task({ status: "finished" }))
+      }
+    };
+
+    const result = await deleteOtaTask(db, {
+      orgId: "org_default",
+      userId: "usr_admin",
+      taskId: "ota_demo"
+    });
+
+    expect(db.otaTask.delete).toHaveBeenCalledWith({
+      where: { id: "ota_demo" }
+    });
+    expect(result).toEqual({ id: "ota_demo", deleted: true });
+  });
+
+  it("rejects deleting an unfinished OTA task", async () => {
+    const db = {
+      otaTask: {
+        findFirst: vi.fn().mockResolvedValue(task({ status: "running" })),
+        delete: vi.fn()
+      }
+    };
+
+    await expect(
+      deleteOtaTask(db, {
+        orgId: "org_default",
+        userId: "usr_admin",
+        taskId: "ota_demo"
+      })
+    ).rejects.toMatchObject({
+      code: 409001,
+      message: "升级任务未结束，请先取消后再删除"
+    });
+    expect(db.otaTask.delete).not.toHaveBeenCalled();
   });
 
   it("creates an OTA task for all scoped product devices", async () => {
