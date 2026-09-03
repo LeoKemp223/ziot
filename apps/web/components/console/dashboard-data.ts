@@ -1,6 +1,8 @@
+import type { Route } from "next";
+
 export type NavItem = {
   label: string;
-  href: string;
+  href: Route;
   icon:
     | "home"
     | "box"
