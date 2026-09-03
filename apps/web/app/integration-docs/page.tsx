@@ -490,10 +490,18 @@ curl -s -X POST http://localhost:3000/api/v1/app/devices/<deviceId>/commands:syn
   -d '{"kind":"property_set","params":{"power":true}}'
 
 # 查询命令详情
-curl -s http://localhost:3000/api/v1/app/commands/<commandId> -H "Authorization: Bearer $ACCESS_TOKEN"`}
+curl -s http://localhost:3000/api/v1/app/commands/<commandId> -H "Authorization: Bearer $ACCESS_TOKEN"
+
+# 命令对象（控制响应 data / 命令详情 data 同构，18 字段）：
+# { id, org_id, device_id, device_name, product_key, device_key,
+#   identifier, params, status, request_id, result, error_code,
+#   error_message, timeout_at, sent_at, replied_at, created_at, updated_at }
+# · id 即命令 ID（不是 command_id）；params 原样回显
+# · kind 不回显：identifier === "property.set" 表示属性设置，否则为服务标识
+# · 时间字段均为 ISO 8601；result/replied_at 投递语义下通常为 null`}
                   />
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    命令状态为<b>投递语义</b>：pending → success / failed，success 表示平台已成功发布到 Broker，不代表设备已执行——确认执行看 SSE 推送或影子 reported 是否收敛到设置值。identifier 与 params 的取值由产品固件定义（见上方 MQTT 第 5/6 节），需与设备侧约定对齐。
+                    <b>命令状态</b>为投递语义：pending → success / failed，success 表示平台已成功发布到 Broker，不代表设备已执行——确认执行看 SSE 推送或影子 reported 是否收敛到设置值。identifier 与 params 的取值由产品固件定义（见上方 MQTT 第 5/6 节），需与设备侧约定对齐。
                   </p>
                 </DocBlock>
                 <DocBlock title="8. 别名与解绑">

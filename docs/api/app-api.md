@@ -361,9 +361,84 @@ body:
 
 body 同上。投递完成即返回终态命令对象(通常几十毫秒内),接口兼容保留给既有调用方。
 
+### 命令对象(Command)
+
+`commands` / `commands:sync` 的响应 `data`、`GET /api/v1/app/commands/{commandId}` 的响应 `data` 均为同一结构:
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | `string` | 命令 ID(**字段名就是 `id`**,不是 command_id) |
+| `org_id` | `string` | 组织 ID |
+| `device_id` | `string` | 目标设备 ID |
+| `device_name` | `string` | 设备名称 |
+| `product_key` | `string` | 产品标识 |
+| `device_key` | `string` | 设备标识 |
+| `identifier` | `string` | `property.set`(属性设置)或服务标识(服务调用)。**请求里的 `kind` 不回显**,靠它区分 |
+| `params` | `unknown` | 请求参数**原样回显** |
+| `status` | `string` | `pending` / `success` / `failed`(存量历史可能出现 `sent` / `timeout`) |
+| `request_id` | `string` | MQTT 报文关联 ID,与 `id` 同值 |
+| `result` | `unknown \| null` | 设备应答透传数据;投递语义下通常为 `null`(设备未回复) |
+| `error_code` | `string \| null` | 失败错误码,如 `publish_failed` |
+| `error_message` | `string \| null` | 失败原因(中文/英文描述),UI 失败提示可直接用 |
+| `timeout_at` | `string`(ISO 8601) | 兼容保留的超时时刻,不再影响结果 |
+| `sent_at` | `string \| null` | 发布到 Broker 的时间 |
+| `replied_at` | `string \| null` | 收到设备可选应答的时间(通常 `null`) |
+| `created_at` | `string`(ISO 8601) | 创建时间 |
+| `updated_at` | `string`(ISO 8601) | 状态最后更新时间 |
+
+示例(同步控制成功响应的 `data`):
+
+```json
+{
+  "id": "cmd_ab12cd34ef56a7b8",
+  "org_id": "org_default",
+  "device_id": "dev_xxx",
+  "device_name": "客厅空调",
+  "product_key": "pk_xxx",
+  "device_key": "dk_xxx",
+  "identifier": "reboot",
+  "params": {},
+  "status": "success",
+  "request_id": "cmd_ab12cd34ef56a7b8",
+  "result": null,
+  "error_code": null,
+  "error_message": null,
+  "timeout_at": "2026-09-03T08:00:15.000Z",
+  "sent_at": "2026-09-03T08:00:00.120Z",
+  "replied_at": null,
+  "created_at": "2026-09-03T08:00:00.000Z",
+  "updated_at": "2026-09-03T08:00:00.130Z"
+}
+```
+
+TypeScript 参考:
+
+```ts
+interface AppCommand {
+  id: string;
+  org_id: string;
+  device_id: string;
+  device_name: string;
+  product_key: string;
+  device_key: string;
+  identifier: string; // "property.set" 或服务标识
+  params: unknown;
+  status: "pending" | "success" | "failed" | string; // 存量含 sent/timeout
+  request_id: string;
+  result: unknown;
+  error_code: string | null;
+  error_message: string | null;
+  timeout_at: string;
+  sent_at: string | null;
+  replied_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+```
+
 ### `GET /api/v1/app/commands/{commandId}`
 
-命令详情,仅命令发起者或对该设备仍有有效绑定的用户可查。
+命令详情(结构同上),仅命令发起者或对该设备仍有有效绑定的用户可查。
 
 命令状态机:`pending → success / failed`(投递语义)。存量历史命令可能出现 `sent`/`timeout`(旧版等待设备应答的语义)。
 
