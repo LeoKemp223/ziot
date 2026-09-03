@@ -11,6 +11,7 @@ import {
   markDeviceOfflineInCache,
   markDeviceOnlineInCache
 } from "@/lib/devices/online-status";
+import { publishDeviceEvent } from "@/lib/events/device-events";
 
 type Db = { [key: string]: any };
 
@@ -26,6 +27,7 @@ type DeviceRecord = {
   device_key: string;
   device_secret_hash: string;
   status: string;
+  online_status: string;
   product: {
     id: string;
     product_key: string;
@@ -305,6 +307,17 @@ export async function recordMqttWebhookEvent(
         }
   });
 
+  // 状态真正翻转才推事件(重复 connect 不刷屏)
+  const nextStatus = isConnected ? "online" : "offline";
+  if (device.online_status !== nextStatus) {
+    await publishDeviceEvent({
+      type: "device.status.changed",
+      device_id: device.id,
+      online_status: nextStatus,
+      occurred_at: now.toISOString()
+    });
+  }
+
   if (isConnected) {
     await markDeviceOnlineInCache(device.id);
   } else {
@@ -385,13 +398,26 @@ export async function recordMqttReport(
         params
       );
 
-      await db.deviceShadow.update({
+      const updatedShadow = await db.deviceShadow.update({
         where: { device_id: device.id },
         data: {
           reported: merged.reported,
           version: { increment: 1 }
         }
       });
+
+      if (updatedShadow) {
+        await publishDeviceEvent({
+          type: "device.shadow.updated",
+          device_id: device.id,
+          reported: updatedShadow.reported ?? merged.reported,
+          version: Number(updatedShadow.version),
+          updated_at:
+            updatedShadow.updated_at instanceof Date
+              ? updatedShadow.updated_at.toISOString()
+              : new Date().toISOString()
+        });
+      }
     }
   }
 

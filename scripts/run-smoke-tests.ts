@@ -98,6 +98,46 @@ function sha256Hex(value: string) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
+// 从 SSE 流中读取指定事件(带超时;心跳保证 read 不会无限阻塞)
+async function readSseEvent(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  eventName: string,
+  timeoutMs: number
+): Promise<Record<string, unknown>> {
+  const decoder = new TextDecoder();
+  const deadline = Date.now() + timeoutMs;
+  let buffer = "";
+
+  while (Date.now() < deadline) {
+    const { value, done } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+
+    let separator = buffer.indexOf("\n\n");
+    while (separator >= 0) {
+      const frame = buffer.slice(0, separator);
+      buffer = buffer.slice(separator + 2);
+      separator = buffer.indexOf("\n\n");
+      const lines = frame.split("\n");
+      const event = lines
+        .find((line) => line.startsWith("event: "))
+        ?.slice(7)
+        .trim();
+      const dataLine = lines.find((line) => line.startsWith("data: "));
+
+      if (event === eventName && dataLine) {
+        return JSON.parse(dataLine.slice(5)) as Record<string, unknown>;
+      }
+    }
+  }
+
+  throw new Error(`sse event ${eventName} not received within ${timeoutMs}ms`);
+}
+
 async function waitFor<T>(
   name: string,
   action: () => Promise<T | null | undefined | false>,
@@ -460,6 +500,52 @@ async function main() {
     throw new Error(`app shadow reported: ${JSON.stringify(appShadow.reported)}`);
   }
   logStep("app sync control + shadow");
+
+  // SSE 事件流:开流后触发一次属性上报,应实时收到该设备的影子更新推送
+  const sseResponse = await fetch(`${BASE_URL}/api/v1/app/events/stream`, {
+    headers: appAuth
+  });
+  if (
+    sseResponse.status !== 200 ||
+    !(sseResponse.headers.get("content-type") ?? "").includes("text/event-stream")
+  ) {
+    throw new Error(`app sse stream unexpected response ${sseResponse.status}`);
+  }
+
+  const sseReader = sseResponse.body?.getReader();
+
+  try {
+    const ready = await readSseEvent(sseReader!, "ready", 15_000);
+    const readyIds = Array.isArray(ready.device_ids) ? ready.device_ids : [];
+    if (!readyIds.includes(mqttDevice.id)) {
+      throw new Error(`app sse ready device_ids missing bound device: ${JSON.stringify(ready)}`);
+    }
+
+    const sseTemperature = 27.5;
+    await publishMqtt(
+      mqttClient,
+      `/sys/${product.product_key}/${mqttDevice.device_key}/thing/property/post`,
+      {
+        id: `smoke_sse_${stamp}`,
+        params: { temperature: sseTemperature }
+      }
+    );
+    const shadowEvent = await readSseEvent(
+      sseReader!,
+      "device.shadow.updated",
+      15_000
+    );
+    if (
+      shadowEvent.device_id !== mqttDevice.id ||
+      (shadowEvent.reported as Record<string, unknown> | undefined)?.temperature !==
+        sseTemperature
+    ) {
+      throw new Error(`app sse shadow event mismatch: ${JSON.stringify(shadowEvent)}`);
+    }
+  } finally {
+    await sseReader?.cancel();
+  }
+  logStep("app sse events");
 
   // 永久码可多用户复用:第二个 App 用户扫同一张码也能绑定(家庭共享)
   const secondAppSession = await api<{
