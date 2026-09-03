@@ -29,6 +29,23 @@ async function tokenPermissions(token: string): Promise<string[]> {
     : [];
 }
 
+function redirectToLogin(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  url.pathname = "/login";
+  url.search = "";
+  url.searchParams.set("next", request.nextUrl.pathname);
+  return NextResponse.redirect(url);
+}
+
+// access token 过期但刷新令牌还在:先去 session-renew 静默续期再跳回本页
+function redirectToSessionRenew(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  url.pathname = "/api/v1/auth/session-renew";
+  url.search = "";
+  url.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
+  return NextResponse.redirect(url);
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -42,13 +59,11 @@ export async function middleware(request: NextRequest) {
   }
 
   const token = request.cookies.get("ziot_access_token")?.value;
-  const hasSession = Boolean(token);
+  // access cookie 到期即被浏览器删除,刷新令牌 cookie(30 天)通常还在
+  const canRenew = Boolean(request.cookies.get("ziot_refresh_token")?.value);
 
-  if (!hasSession) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+  if (!token) {
+    return canRenew ? redirectToSessionRenew(request) : redirectToLogin(request);
   }
 
   const requiredPermission = protectedPagePermissions.find(({ path }) =>
@@ -62,14 +77,15 @@ export async function middleware(request: NextRequest) {
       if (!permissions.includes(requiredPermission)) {
         const url = request.nextUrl.clone();
         url.pathname = "/";
+        url.search = "";
         url.searchParams.set("forbidden", pathname);
         return NextResponse.redirect(url);
       }
     } catch {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      url.searchParams.set("next", pathname);
-      return NextResponse.redirect(url);
+      // 令牌存在但校验失败(通常已过期):能续期先续期
+      return canRenew
+        ? redirectToSessionRenew(request)
+        : redirectToLogin(request);
     }
   }
 

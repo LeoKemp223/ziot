@@ -9,6 +9,7 @@ import { getCurrentUser } from "@/lib/identity/session";
 import { createRequestId } from "@/lib/request-id";
 import { createFirmware } from "@/features/ota/ota-service";
 import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
+import { requestOrigin } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 
@@ -42,18 +43,6 @@ function safePathSegment(value: string, fallback: string) {
 function safeFileName(value: string) {
   const baseName = path.basename(value || "firmware.bin");
   return safePathSegment(baseName, "firmware.bin");
-}
-
-function requestOrigin(request: NextRequest) {
-  const forwardedProto = request.headers.get("x-forwarded-proto");
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const host = forwardedHost ?? request.headers.get("host");
-
-  if (host) {
-    return `${forwardedProto ?? request.nextUrl.protocol.replace(":", "")}://${host}`;
-  }
-
-  return request.nextUrl.origin;
 }
 
 export async function POST(request: NextRequest) {

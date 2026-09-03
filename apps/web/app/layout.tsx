@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SessionKeepalive } from "@/components/console/session-keepalive";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,7 +22,10 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: `try{var m=document.cookie.match(/(?:^|; )ziot-theme=(dark|light)/);var t=localStorage.getItem('ziot-theme')||(m&&m[1])||'light';var c=localStorage.getItem('ziot-sidebar-collapsed')==='true';document.documentElement.dataset.theme=t;document.documentElement.dataset.sidebarCollapsed=String(c);document.documentElement.classList.toggle('dark',t==='dark')}catch{}` }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <SessionKeepalive />
+        {children}
+      </body>
     </html>
   );
 }
