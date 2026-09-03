@@ -72,7 +72,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           inputMode={mode === "login" ? undefined : "numeric"}
           maxLength={mode === "login" ? undefined : 11}
           name="account"
-          placeholder={mode === "login" ? "13800000001" : "请输入手机号"}
+          placeholder={mode === "login" ? "" : "请输入手机号"}
           pattern={mode === "login" ? undefined : "1[3-9][0-9]{9}"}
           required
           type="tel"

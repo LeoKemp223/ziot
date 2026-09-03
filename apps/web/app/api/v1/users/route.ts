@@ -23,11 +23,14 @@ export async function GET(request: NextRequest) {
         await listUsers(prisma, user.current_org_id, {
           page: Number(request.nextUrl.searchParams.get("page") ?? "1"),
           pageSize: Number(
-            request.nextUrl.searchParams.get("page_size") ?? "20"
-          )
+            request.nextUrl.searchParams.get("page_size") ?? "20",
+          ),
+          phone: request.nextUrl.searchParams.get("phone")?.trim() ?? "",
+          invitationCode:
+            request.nextUrl.searchParams.get("invitation_code")?.trim() ?? "",
         }),
-        requestId
-      )
+        requestId,
+      ),
     );
   } catch (error) {
     return apiErrorResponse(error, requestId);

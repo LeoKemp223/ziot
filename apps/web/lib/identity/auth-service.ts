@@ -70,7 +70,7 @@ const MEMBER_PERMISSION_CODES = [
   "ota:read",
   "ota:write",
   "ota:execute",
-  "log:read"
+  "log:read",
 ];
 
 // 邀请码字母表:去掉易混淆的 0/O/1/I,32 个字符正好可用单字节无偏取模
@@ -78,7 +78,7 @@ const INVITATION_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 function serviceError(
   code: IdentityError["code"],
-  message: string
+  message: string,
 ): IdentityError {
   return Object.assign(new Error(message), { code });
 }
@@ -107,19 +107,19 @@ function addSeconds(seconds: number): Date {
 async function findInvitationByCode(db: Db, invitationCode: string) {
   const invitations = await db.invitation.findMany({
     where: {
-      status: "active"
+      status: "active",
     },
     include: {
       organization: true,
-      role: true
-    }
+      role: true,
+    },
   });
 
   return (
     await Promise.all(
       invitations.map(async (item: any) =>
-        (await bcrypt.compare(invitationCode, item.code_hash)) ? item : null
-      )
+        (await bcrypt.compare(invitationCode, item.code_hash)) ? item : null,
+      ),
     )
   ).find(Boolean);
 }
@@ -183,24 +183,21 @@ function groupOrganizations(memberships: OrgRoleRecord[]) {
   >();
 
   for (const membership of memberships) {
-    const existing =
-      orgs.get(membership.org_id) ??
-      {
-        id: membership.organization.id,
-        name: membership.organization.name,
-        roles: [],
-        permissions: []
-      };
+    const existing = orgs.get(membership.org_id) ?? {
+      id: membership.organization.id,
+      name: membership.organization.name,
+      roles: [],
+      permissions: [],
+    };
 
     existing.roles.push({
       id: membership.role.id,
       code: membership.role.code,
-      name: membership.role.name
+      name: membership.role.name,
     });
     existing.permissions.push(
-      membership.role.role_permissions?.map(
-        (item) => item.permission.code
-      ) ?? []
+      membership.role.role_permissions?.map((item) => item.permission.code) ??
+        [],
     );
     orgs.set(membership.org_id, existing);
   }
@@ -216,7 +213,7 @@ export async function toSessionUser(
     status: string;
     user_org_roles?: OrgRoleRecord[];
   },
-  currentOrgId?: string
+  currentOrgId?: string,
 ): Promise<SessionUser> {
   if (user.status !== "active") {
     throw serviceError(403001, "用户已被禁用");
@@ -240,19 +237,21 @@ export async function toSessionUser(
     account: user.account,
     display_name: user.display_name,
     current_org_id: activeOrg.id,
-    organizations: organizations.map(({ permissions: _permissions, ...org }) => org),
-    permissions: mergePermissions(activeOrg.permissions)
+    organizations: organizations.map(
+      ({ permissions: _permissions, ...org }) => org,
+    ),
+    permissions: mergePermissions(activeOrg.permissions),
   };
 }
 
 export async function loadSessionUser(
   db: Db,
   userId: string,
-  currentOrgId?: string
+  currentOrgId?: string,
 ): Promise<SessionUser> {
   const user = await db.user.findUnique({
     where: { id: userId },
-    include: sessionUserInclude()
+    include: sessionUserInclude(),
   });
 
   if (!user) {
@@ -272,13 +271,13 @@ function sessionUserInclude() {
           include: {
             role_permissions: {
               include: {
-                permission: true
-              }
-            }
-          }
-        }
-      }
-    }
+                permission: true,
+              },
+            },
+          },
+        },
+      },
+    },
   };
 }
 
@@ -290,7 +289,7 @@ async function signAccessToken(user: SessionUser): Promise<{
   const token = await new SignJWT({
     account: user.account,
     current_org_id: user.current_org_id,
-    permissions: user.permissions
+    permissions: user.permissions,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(user.id)
@@ -317,11 +316,16 @@ export async function verifyAccessToken(token: string): Promise<{
     throw serviceError(401001, "会话已失效，请重新登录");
   }
 
+  // 控制台会话与 App 会话共用 JWT_SECRET,凭 utype 声明互相隔离
+  if (payload.utype === "app") {
+    throw serviceError(401001, "会话已失效，请重新登录");
+  }
+
   return {
     userId: payload.sub,
     ...(typeof payload.current_org_id === "string"
       ? { currentOrgId: payload.current_org_id }
-      : {})
+      : {}),
   };
 }
 
@@ -334,7 +338,7 @@ async function createSession(
     status: string;
     user_org_roles?: OrgRoleRecord[];
   },
-  currentOrgId?: string
+  currentOrgId?: string,
 ): Promise<AuthSession> {
   const sessionUser = await toSessionUser(user, currentOrgId);
   const access = await signAccessToken(sessionUser);
@@ -346,8 +350,8 @@ async function createSession(
       id: id("rft"),
       user_id: user.id,
       token_hash: sha256(refreshToken),
-      expires_at: refreshTokenExpiresAt
-    }
+      expires_at: refreshTokenExpiresAt,
+    },
   });
 
   return {
@@ -355,7 +359,7 @@ async function createSession(
     accessToken: access.token,
     refreshToken,
     accessTokenExpiresAt: access.expiresAt,
-    refreshTokenExpiresAt
+    refreshTokenExpiresAt,
   };
 }
 
@@ -365,12 +369,12 @@ export async function loginUser(
     account: string;
     password: string;
     currentOrgId?: string;
-  }
+  },
 ): Promise<AuthSession> {
   const account = normalizeAccount(input.account);
   const user = await db.user.findUnique({
     where: { account },
-    include: sessionUserInclude()
+    include: sessionUserInclude(),
   });
 
   if (!user || !(await bcrypt.compare(input.password, user.password_hash))) {
@@ -379,7 +383,7 @@ export async function loginUser(
 
   await db.user.update({
     where: { id: user.id },
-    data: { last_login_at: new Date() }
+    data: { last_login_at: new Date() },
   });
 
   return createSession(db, user, input.currentOrgId);
@@ -388,16 +392,16 @@ export async function loginUser(
 export async function refreshSession(
   db: Db,
   refreshToken: string,
-  currentOrgId?: string
+  currentOrgId?: string,
 ): Promise<AuthSession> {
   const tokenHash = sha256(refreshToken);
   const record = await db.refreshToken.findUnique({
     where: { token_hash: tokenHash },
     include: {
       user: {
-        include: sessionUserInclude()
-      }
-    }
+        include: sessionUserInclude(),
+      },
+    },
   });
 
   if (!record || record.revoked_at || record.expires_at <= new Date()) {
@@ -406,7 +410,7 @@ export async function refreshSession(
 
   await db.refreshToken.update({
     where: { id: record.id },
-    data: { revoked_at: new Date() }
+    data: { revoked_at: new Date() },
   });
 
   return createSession(db, record.user, currentOrgId);
@@ -420,9 +424,9 @@ export async function logoutUser(db: Db, refreshToken: string | undefined) {
   await db.refreshToken.updateMany({
     where: {
       token_hash: sha256(refreshToken),
-      revoked_at: null
+      revoked_at: null,
     },
-    data: { revoked_at: new Date() }
+    data: { revoked_at: new Date() },
   });
 }
 
@@ -433,7 +437,7 @@ export async function registerWithInvitation(
     password: string;
     display_name: string;
     invitation_code: string;
-  }
+  },
 ): Promise<AuthSession> {
   const account = normalizeAccount(input.account);
   const displayName = input.display_name.trim();
@@ -464,9 +468,9 @@ export async function registerWithInvitation(
         id: id("usr"),
         account,
         password_hash: passwordHash,
-        display_name: displayName
+        display_name: displayName,
       },
-      include: sessionUserInclude()
+      include: sessionUserInclude(),
     });
 
     await tx.userOrgRole.create({
@@ -474,12 +478,12 @@ export async function registerWithInvitation(
         id: id("uor"),
         user_id: user.id,
         org_id: invitation.org_id,
-        role_id: invitation.role_id
-      }
+        role_id: invitation.role_id,
+      },
     });
     await tx.invitation.update({
       where: { id: invitation.id },
-      data: { used_count: { increment: 1 } }
+      data: { used_count: { increment: 1 } },
     });
     await tx.invitationUsage.create({
       data: {
@@ -487,13 +491,13 @@ export async function registerWithInvitation(
         invitation_id: invitation.id,
         user_id: user.id,
         org_id: invitation.org_id,
-        role_id: invitation.role_id
-      }
+        role_id: invitation.role_id,
+      },
     });
 
     return tx.user.findUnique({
       where: { id: user.id },
-      include: sessionUserInclude()
+      include: sessionUserInclude(),
     });
   };
   const user = db.$transaction ? await db.$transaction(run) : await run(db);
@@ -507,7 +511,7 @@ export async function resetPasswordWithInvitation(
     account: string;
     password: string;
     invitation_code: string;
-  }
+  },
 ): Promise<{ user_id: string; account: string; org_id: string }> {
   const account = normalizeAccount(input.account);
   const invitationCode = input.invitation_code.trim().toUpperCase();
@@ -517,12 +521,6 @@ export async function resetPasswordWithInvitation(
 
   const user = await db.user.findUnique({
     where: { account },
-    include: {
-      user_org_roles: {
-        where: { status: "active" },
-        select: { org_id: true }
-      }
-    }
   });
 
   if (!user) {
@@ -533,42 +531,28 @@ export async function resetPasswordWithInvitation(
     throw serviceError(403001, "用户已被禁用");
   }
 
-  const invitation = await findInvitationByCode(db, invitationCode);
+  // 注册流程写入的第一条使用记录，固定为该账号的注册邀请码。
+  const registrationUsage = await db.invitationUsage.findFirst({
+    where: { user_id: user.id },
+    orderBy: { used_at: "asc" },
+    include: { invitation: true },
+  });
 
-  if (!invitation) {
+  if (
+    !registrationUsage ||
+    !(await bcrypt.compare(
+      invitationCode,
+      registrationUsage.invitation.code_hash,
+    ))
+  ) {
     throw serviceError(400001, "邀请码无效");
-  }
-
-  assertInvitationUsable(invitation);
-
-  const memberOrgIds = new Set(
-    user.user_org_roles.map(
-      (membership: { org_id: string }) => membership.org_id
-    )
-  );
-
-  if (!memberOrgIds.has(invitation.org_id)) {
-    throw serviceError(400001, "邀请码与账号所在组织不匹配");
   }
 
   const passwordHash = await bcrypt.hash(input.password, 10);
   const run = async (tx: Db) => {
     await tx.user.update({
       where: { id: user.id },
-      data: { password_hash: passwordHash }
-    });
-    await tx.invitation.update({
-      where: { id: invitation.id },
-      data: { used_count: { increment: 1 } }
-    });
-    await tx.invitationUsage.create({
-      data: {
-        id: id("inu"),
-        invitation_id: invitation.id,
-        user_id: user.id,
-        org_id: invitation.org_id,
-        role_id: invitation.role_id
-      }
+      data: { password_hash: passwordHash },
     });
   };
 
@@ -582,12 +566,16 @@ export async function resetPasswordWithInvitation(
   await db.refreshToken.updateMany({
     where: {
       user_id: user.id,
-      revoked_at: null
+      revoked_at: null,
     },
-    data: { revoked_at: new Date() }
+    data: { revoked_at: new Date() },
   });
 
-  return { user_id: user.id, account: user.account, org_id: invitation.org_id };
+  return {
+    user_id: user.id,
+    account: user.account,
+    org_id: registrationUsage.invitation.org_id,
+  };
 }
 
 export async function createInvitations(
@@ -599,7 +587,7 @@ export async function createInvitations(
     count?: number;
     maxUses?: number;
     expiresAt?: Date;
-  }
+  },
 ) {
   const maxUses = input.maxUses ?? 1;
   const count = input.count ?? 1;
@@ -617,9 +605,9 @@ export async function createInvitations(
     db.role.findFirst({
       where: {
         id: input.roleId,
-        org_id: input.orgId
-      }
-    })
+        org_id: input.orgId,
+      },
+    }),
   ]);
 
   if (!org || !role) {
@@ -639,17 +627,17 @@ export async function createInvitations(
         role_id: input.roleId,
         max_uses: maxUses,
         expires_at: input.expiresAt ?? addSeconds(30 * 24 * 60 * 60),
-        created_by: input.createdBy
+        created_by: input.createdBy,
       },
       include: {
         organization: true,
-        role: true
-      }
+        role: true,
+      },
     });
 
     results.push({
       ...mapInvitation(invitation),
-      code
+      code,
     });
   }
 
@@ -659,7 +647,7 @@ export async function createInvitations(
 export async function listInvitations(
   db: Db,
   orgId: string,
-  input?: { page?: number; pageSize?: number }
+  input?: { page?: number; pageSize?: number },
 ) {
   const page = clampPage(input?.page);
   const pageSize = clampPageSize(input?.pageSize);
@@ -673,33 +661,37 @@ export async function listInvitations(
       take: pageSize,
       include: {
         organization: true,
-        role: true
-      }
-    })
+        role: true,
+      },
+    }),
   ]);
 
   return {
     items: invitations.map(mapInvitation),
-    pagination: buildPagination(page, pageSize, total)
+    pagination: buildPagination(page, pageSize, total),
   };
 }
 
-export async function getInvitation(db: Db, orgId: string, invitationId: string) {
+export async function getInvitation(
+  db: Db,
+  orgId: string,
+  invitationId: string,
+) {
   const invitation = await db.invitation.findFirst({
     where: {
       id: invitationId,
-      org_id: orgId
+      org_id: orgId,
     },
     include: {
       organization: true,
       role: true,
       usages: {
         include: {
-          user: true
+          user: true,
         },
-        orderBy: { used_at: "desc" }
-      }
-    }
+        orderBy: { used_at: "desc" },
+      },
+    },
   });
 
   if (!invitation) {
@@ -713,15 +705,15 @@ export async function getInvitation(db: Db, orgId: string, invitationId: string)
       user_id: usage.user_id,
       account: usage.user.account,
       display_name: usage.user.display_name,
-      used_at: usage.used_at.toISOString()
-    }))
+      used_at: usage.used_at.toISOString(),
+    })),
   };
 }
 
 export async function disableInvitation(
   db: Db,
   orgId: string,
-  invitationId: string
+  invitationId: string,
 ) {
   await getInvitation(db, orgId, invitationId);
 
@@ -730,8 +722,8 @@ export async function disableInvitation(
     data: { status: "disabled" },
     include: {
       organization: true,
-      role: true
-    }
+      role: true,
+    },
   });
 
   return mapInvitation(invitation);
@@ -742,30 +734,30 @@ export async function ensureDefaultOrgRoles(db: Db, orgId: string) {
     where: {
       org_id_code: {
         org_id: orgId,
-        code: MEMBER_ROLE_CODE
-      }
+        code: MEMBER_ROLE_CODE,
+      },
     },
     update: {
-      name: MEMBER_ROLE_NAME
+      name: MEMBER_ROLE_NAME,
     },
     create: {
       id: id("rol"),
       org_id: orgId,
       code: MEMBER_ROLE_CODE,
       name: MEMBER_ROLE_NAME,
-      description: "可查看产品、设备、OTA 和日志的普通成员"
-    }
+      description: "可查看产品、设备、OTA 和日志的普通成员",
+    },
   });
 
   const permissions = await db.permission.findMany({
     where: {
       code: {
-        in: MEMBER_PERMISSION_CODES
-      }
+        in: MEMBER_PERMISSION_CODES,
+      },
     },
     select: {
-      id: true
-    }
+      id: true,
+    },
   });
 
   await Promise.all(
@@ -774,16 +766,16 @@ export async function ensureDefaultOrgRoles(db: Db, orgId: string) {
         where: {
           role_id_permission_id: {
             role_id: role.id,
-            permission_id: permission.id
-          }
+            permission_id: permission.id,
+          },
         },
         update: {},
         create: {
           role_id: role.id,
-          permission_id: permission.id
-        }
-      })
-    )
+          permission_id: permission.id,
+        },
+      }),
+    ),
   );
 
   return role;
@@ -799,19 +791,52 @@ export async function listRoles(db: Db, orgId: string) {
       id: true,
       code: true,
       name: true,
-      description: true
-    }
+      description: true,
+    },
   });
 }
 
 export async function listUsers(
   db: Db,
   orgId: string,
-  input?: { page?: number; pageSize?: number }
+  input?: {
+    page?: number;
+    pageSize?: number;
+    phone?: string;
+    invitationCode?: string;
+  },
 ) {
   const page = clampPage(input?.page);
   const pageSize = clampPageSize(input?.pageSize);
-  const where = { org_id: orgId };
+  const phone = input?.phone?.trim().slice(0, 32) ?? "";
+  const invitationCode =
+    input?.invitationCode?.trim().toUpperCase().slice(0, 32) ?? "";
+  const where: Record<string, unknown> = { org_id: orgId };
+
+  if (phone) {
+    where.user = { account: { contains: phone } };
+  }
+
+  if (invitationCode) {
+    const invitations = await db.invitation.findMany({
+      where: { org_id: orgId },
+      select: { id: true, code_hash: true },
+    });
+    const invitation = (
+      await Promise.all(
+        invitations.map(async (item: { id: string; code_hash: string }) =>
+          (await bcrypt.compare(invitationCode, item.code_hash)) ? item : null,
+        ),
+      )
+    ).find(Boolean);
+
+    where.user = {
+      ...(phone ? { account: { contains: phone } } : {}),
+      invitation_usages: invitation
+        ? { some: { invitation_id: invitation.id, org_id: orgId } }
+        : { some: { invitation_id: "__no_matching_invitation__" } },
+    };
+  }
   const [total, memberships] = await Promise.all([
     db.userOrgRole.count({ where }),
     db.userOrgRole.findMany({
@@ -820,11 +845,19 @@ export async function listUsers(
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
-        user: true,
+        user: {
+          include: {
+            invitation_usages: {
+              orderBy: { used_at: "asc" },
+              take: 1,
+              include: { invitation: { select: { code: true } } },
+            },
+          },
+        },
         role: true,
-        organization: true
-      }
-    })
+        organization: true,
+      },
+    }),
   ]);
 
   return {
@@ -836,16 +869,18 @@ export async function listUsers(
       role: {
         id: membership.role.id,
         code: membership.role.code,
-        name: membership.role.name
+        name: membership.role.name,
       },
       organization: {
         id: membership.organization.id,
-        name: membership.organization.name
+        name: membership.organization.name,
       },
       created_at: membership.user.created_at.toISOString(),
-      last_login_at: membership.user.last_login_at?.toISOString() ?? null
+      last_login_at: membership.user.last_login_at?.toISOString() ?? null,
+      registration_invitation_code:
+        membership.user.invitation_usages?.[0]?.invitation?.code ?? null,
     })),
-    pagination: buildPagination(page, pageSize, total)
+    pagination: buildPagination(page, pageSize, total),
   };
 }
 
@@ -861,6 +896,6 @@ function mapInvitation(invitation: any) {
     used_count: invitation.used_count,
     status: invitation.status,
     expires_at: invitation.expires_at.toISOString(),
-    created_at: invitation.created_at.toISOString()
+    created_at: invitation.created_at.toISOString(),
   };
 }

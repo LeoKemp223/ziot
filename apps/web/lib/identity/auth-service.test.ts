@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import {
   createInvitations,
   ensureDefaultOrgRoles,
+  listUsers,
   listRoles,
   loginUser,
   refreshSession,
@@ -44,11 +45,44 @@ function user(overrides: Record<string, unknown> = {}) {
 }
 
 describe("auth service", () => {
+  it("filters organization users by phone and invitation code", async () => {
+    const invitationCode = "INVA2B3C4D";
+    const db = {
+      invitation: {
+        findMany: vi
+          .fn()
+          .mockResolvedValue([
+            { id: "inv_1", code_hash: await bcrypt.hash(invitationCode, 4) }
+          ])
+      },
+      userOrgRole: {
+        count: vi.fn().mockResolvedValue(1),
+        findMany: vi.fn().mockResolvedValue([])
+      }
+    };
+
+    await listUsers(db, "org_default", { phone: "138", invitationCode });
+
+    expect(db.userOrgRole.count).toHaveBeenCalledWith({
+      where: {
+        org_id: "org_default",
+        user: {
+          account: { contains: "138" },
+          invitation_usages: {
+            some: { invitation_id: "inv_1", org_id: "org_default" }
+          }
+        }
+      }
+    });
+  });
+
   it("logs in with a valid password and creates a refresh token", async () => {
     const passwordHash = await bcrypt.hash("Admin123456", 10);
     const db = {
       user: {
-        findUnique: vi.fn().mockResolvedValue(user({ password_hash: passwordHash })),
+        findUnique: vi
+          .fn()
+          .mockResolvedValue(user({ password_hash: passwordHash })),
         update: vi.fn().mockResolvedValue({})
       },
       refreshToken: {
@@ -96,10 +130,14 @@ describe("auth service", () => {
   it("creates a batch of invitations with unique plain codes", async () => {
     const db = {
       organization: {
-        findUnique: vi.fn().mockResolvedValue({ id: "org_default", name: "默认组织" })
+        findUnique: vi
+          .fn()
+          .mockResolvedValue({ id: "org_default", name: "默认组织" })
       },
       role: {
-        findFirst: vi.fn().mockResolvedValue({ id: "role_org_admin", name: "组织管理员" })
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ id: "role_org_admin", name: "组织管理员" })
       },
       invitation: {
         create: vi.fn().mockImplementation(({ data }) =>
@@ -126,7 +164,9 @@ describe("auth service", () => {
     for (const invitation of invitations) {
       expect(invitation.code).toMatch(/^INV[A-HJ-NP-Z2-9]{7}$/);
     }
-    expect(new Set(invitations.map((invitation) => invitation.code)).size).toBe(3);
+    expect(new Set(invitations.map((invitation) => invitation.code)).size).toBe(
+      3
+    );
     expect(db.invitation.create).toHaveBeenCalledTimes(3);
     expect(db.invitation.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -144,10 +184,14 @@ describe("auth service", () => {
   it("rejects invalid invitation batch counts", async () => {
     const db = {
       organization: {
-        findUnique: vi.fn().mockResolvedValue({ id: "org_default", name: "默认组织" })
+        findUnique: vi
+          .fn()
+          .mockResolvedValue({ id: "org_default", name: "默认组织" })
       },
       role: {
-        findFirst: vi.fn().mockResolvedValue({ id: "role_org_admin", name: "组织管理员" })
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ id: "role_org_admin", name: "组织管理员" })
       },
       invitation: { create: vi.fn() }
     };
@@ -176,10 +220,12 @@ describe("auth service", () => {
         })
       },
       permission: {
-        findMany: vi.fn().mockResolvedValue([
-          { id: "perm_product_read" },
-          { id: "perm_device_read" }
-        ])
+        findMany: vi
+          .fn()
+          .mockResolvedValue([
+            { id: "perm_product_read" },
+            { id: "perm_device_read" }
+          ])
       },
       rolePermission: {
         upsert: vi.fn().mockResolvedValue({})
@@ -286,8 +332,11 @@ describe("auth service", () => {
     });
     const db = {
       user: {
-        findUnique: vi.fn().mockResolvedValueOnce(null).mockResolvedValue(createdUser),
-        create: vi.fn().mockResolvedValue(user({ id: "usr_new" })),
+        findUnique: vi
+          .fn()
+          .mockResolvedValueOnce(null)
+          .mockResolvedValue(createdUser),
+        create: vi.fn().mockResolvedValue(user({ id: "usr_new" }))
       },
       invitation: {
         findMany: vi.fn().mockResolvedValue([invitation]),
@@ -337,7 +386,7 @@ describe("auth service", () => {
     });
   });
 
-  it("resets a password with an org-matched invitation", async () => {
+  it("resets a password with the registration invitation even after it expires", async () => {
     const code = "INVRST9999";
     const codeHash = await bcrypt.hash(code, 10);
     const invitation = {
@@ -346,23 +395,17 @@ describe("auth service", () => {
       org_id: "org_default",
       role_id: "role_org_admin",
       max_uses: 1,
-      used_count: 0,
-      status: "active",
-      expires_at: new Date("2099-05-01T08:00:00.000Z"),
-      organization: { id: "org_default", name: "默认组织" },
-      role: { id: "role_org_admin", name: "组织管理员" }
+      used_count: 1,
+      status: "expired",
+      expires_at: new Date("2020-05-01T08:00:00.000Z")
     };
     const db = {
       user: {
         findUnique: vi.fn().mockResolvedValue(user()),
         update: vi.fn().mockResolvedValue({})
       },
-      invitation: {
-        findMany: vi.fn().mockResolvedValue([invitation]),
-        update: vi.fn().mockResolvedValue({})
-      },
       invitationUsage: {
-        create: vi.fn().mockResolvedValue({})
+        findFirst: vi.fn().mockResolvedValue({ invitation })
       },
       refreshToken: {
         updateMany: vi.fn().mockResolvedValue({})
@@ -387,29 +430,23 @@ describe("auth service", () => {
     });
     const updateArg = db.user.update.mock.calls.at(0)?.[0];
     expect(
-      await bcrypt.compare("NewPass123456", updateArg?.data?.password_hash ?? "")
+      await bcrypt.compare(
+        "NewPass123456",
+        updateArg?.data?.password_hash ?? ""
+      )
     ).toBe(true);
-    expect(db.invitation.update).toHaveBeenCalledWith({
-      where: { id: "inv_reset" },
-      data: { used_count: { increment: 1 } }
+    expect(db.invitationUsage.findFirst).toHaveBeenCalledWith({
+      where: { user_id: "usr_admin" },
+      orderBy: { used_at: "asc" },
+      include: { invitation: true }
     });
-    expect(db.invitationUsage.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          invitation_id: "inv_reset",
-          user_id: "usr_admin",
-          org_id: "org_default",
-          role_id: "role_org_admin"
-        })
-      })
-    );
     expect(db.refreshToken.updateMany).toHaveBeenCalledWith({
       where: { user_id: "usr_admin", revoked_at: null },
       data: { revoked_at: expect.any(Date) }
     });
   });
 
-  it("rejects a reset invitation from another organization", async () => {
+  it("rejects a reset invitation other than the registration invitation", async () => {
     const code = "INVOTHER01";
     const codeHash = await bcrypt.hash(code, 10);
     const invitation = {
@@ -425,15 +462,15 @@ describe("auth service", () => {
       role: { id: "role_org_admin", name: "组织管理员" }
     };
     const db = {
-      user: {
-        findUnique: vi.fn().mockResolvedValue(user()),
-        update: vi.fn()
+      user: { findUnique: vi.fn().mockResolvedValue(user()), update: vi.fn() },
+      invitationUsage: {
+        findFirst: vi.fn().mockResolvedValue({
+          invitation: {
+            ...invitation,
+            code_hash: await bcrypt.hash("INVREGISTER", 10)
+          }
+        })
       },
-      invitation: {
-        findMany: vi.fn().mockResolvedValue([invitation]),
-        update: vi.fn()
-      },
-      invitationUsage: { create: vi.fn() },
       refreshToken: { updateMany: vi.fn() }
     };
 
@@ -445,16 +482,15 @@ describe("auth service", () => {
       })
     ).rejects.toMatchObject({
       code: 400001,
-      message: "邀请码与账号所在组织不匹配"
+      message: "邀请码无效"
     });
-    expect(db.invitation.update).not.toHaveBeenCalled();
     expect(db.user.update).not.toHaveBeenCalled();
   });
 
   it("rejects a reset for an unknown account", async () => {
     const db = {
       user: { findUnique: vi.fn().mockResolvedValue(null) },
-      invitation: { findMany: vi.fn() }
+      invitationUsage: { findFirst: vi.fn() }
     };
 
     await expect(
@@ -467,7 +503,7 @@ describe("auth service", () => {
       code: 404001,
       message: "账号不存在"
     });
-    expect(db.invitation.findMany).not.toHaveBeenCalled();
+    expect(db.invitationUsage.findFirst).not.toHaveBeenCalled();
   });
 
   it("rotates a valid refresh token", async () => {
