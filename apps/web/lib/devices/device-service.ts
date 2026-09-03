@@ -548,7 +548,8 @@ export async function listDeviceRecords(
   const reportWhere = {
     org_id: input.orgId,
     device_id: input.deviceId,
-    type: { in: ["property", "event", "log"] }
+    // lifecycle = EMQX 上下线事件,也纳入设备记录时间线
+    type: { in: ["property", "event", "log", "lifecycle"] }
   };
 
   const [commandTotal, reportTotal, commands, reports] = await Promise.all([

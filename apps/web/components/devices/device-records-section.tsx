@@ -202,6 +202,8 @@ export function DeviceRecordsSection({
                             {record.request_id}
                           </div>
                         </>
+                      ) : record.type === "lifecycle" ? (
+                        <LifecycleBadge value={lifecycleEvent(record.content)} />
                       ) : (
                         <ReportTypeBadge value={record.type} />
                       )}
@@ -253,7 +255,10 @@ function RecordContent({
   onToggle: () => void;
 }) {
   const value = record.source === "command" ? record.params : record.content;
-  const summary = JSON.stringify(value) ?? String(value);
+  const summary =
+    record.source === "report" && record.type === "lifecycle"
+      ? lifecycleSummary(record.content)
+      : JSON.stringify(value) ?? String(value);
 
   return (
     <div>
@@ -351,6 +356,45 @@ function ReportTypeBadge({ value }: { value: string }) {
       : value === "event"
         ? { label: "事件", className: "bg-blue-50 text-blue-700" }
         : { label: "日志", className: "bg-amber-50 text-amber-700" };
+
+  return (
+    <span
+      className={[
+        "inline-flex rounded-md px-2 py-1 text-xs font-medium",
+        meta.className
+      ].join(" ")}
+    >
+      {meta.label}
+    </span>
+  );
+}
+
+function lifecycleEvent(content: unknown): string {
+  if (typeof content === "object" && content !== null && "event" in content) {
+    return String((content as Record<string, unknown>).event);
+  }
+
+  return "";
+}
+
+function lifecycleSummary(content: unknown): string {
+  if (typeof content === "object" && content !== null && "client_id" in content) {
+    const clientId = (content as Record<string, unknown>).client_id;
+    if (clientId) {
+      return `client_id: ${String(clientId)}`;
+    }
+  }
+
+  return JSON.stringify(content) ?? "";
+}
+
+function LifecycleBadge({ value }: { value: string }) {
+  const meta =
+    value === "client.connected"
+      ? { label: "上线", className: "bg-emerald-50 text-emerald-700" }
+      : value === "client.disconnected"
+        ? { label: "下线", className: "bg-slate-100 text-slate-600" }
+        : { label: "生命周期", className: "bg-slate-100 text-slate-600" };
 
   return (
     <span

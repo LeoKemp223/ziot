@@ -628,7 +628,7 @@ describe("device service", () => {
         ])
       },
       deviceLog: {
-        count: vi.fn().mockResolvedValue(1),
+        count: vi.fn().mockResolvedValue(2),
         findMany: vi.fn().mockResolvedValue([
           {
             id: "dlg_b",
@@ -638,6 +638,15 @@ describe("device service", () => {
             content: { payload: { params: { temperature: 23.5 } } },
             occurred_at: new Date("2026-04-28T08:00:02.000Z"),
             created_at: new Date("2026-04-28T08:00:02.000Z")
+          },
+          {
+            id: "dlg_life",
+            device_id: "dev_demo",
+            type: "lifecycle",
+            level: "info",
+            content: { event: "client.connected", client_id: "dk_demo" },
+            occurred_at: new Date("2026-04-28T08:00:02.500Z"),
+            created_at: new Date("2026-04-28T08:00:02.500Z")
           }
         ])
       }
@@ -668,25 +677,27 @@ describe("device service", () => {
       where: {
         org_id: "org_default",
         device_id: "dev_demo",
-        type: { in: ["property", "event", "log"] }
+        type: { in: ["property", "event", "log", "lifecycle"] }
       },
       orderBy: { occurred_at: "desc" },
       take: 20
     });
     expect(result.items.map((item) => item.id)).toEqual([
       "cmd_a",
+      "dlg_life",
       "dlg_b",
       "cmd_c"
     ]);
     expect(result.items.map((item) => item.source)).toEqual([
       "command",
       "report",
+      "report",
       "command"
     ]);
     expect(result.pagination).toEqual({
       page: 1,
       page_size: 20,
-      total: 3,
+      total: 4,
       total_pages: 1
     });
   });
