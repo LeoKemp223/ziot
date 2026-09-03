@@ -132,7 +132,7 @@ export default function IntegrationDocsPage() {
                 <DocBlock title="1. 连接参数">
                   <KeyValueTable
                     rows={[
-                      ["Broker", "localhost:1883，生产环境替换为实际 MQTT 域名或 IP"],
+                      ["Broker", "www.ziot.asia:1883（明文）；www.ziot.asia:8883（TLS，Let's Encrypt 证书）"],
                       ["Client ID", "推荐使用 device_key，或使用包含 device_key 的唯一客户端 ID"],
                       ["Username", "{product_key}:{device_key}"],
                       ["Password", "device_secret"]
@@ -206,7 +206,7 @@ export default function IntegrationDocsPage() {
                 <DocBlock title="5. Demo 验证">
                   <CodeBlock
                     value={`python3 -m pip install paho-mqtt
-MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/mqtt-python-demo.py
+MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/mqtt-python-demo.py
 
 PAHO_EMBEDDED_C_DIR=/tmp/paho.mqtt.embedded-c
 gcc docs/device-integration/mqtt-c-demo.c \\
@@ -217,7 +217,7 @@ gcc docs/device-integration/mqtt-c-demo.c \\
   "$PAHO_EMBEDDED_C_DIR/MQTTPacket/src/MQTTDeserializePublish.c" \\
   "$PAHO_EMBEDDED_C_DIR/MQTTPacket/src/MQTTPacket.c" \\
   -o /tmp/ziot-mqtt-c-demo
-MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-mqtt-c-demo`}
+MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-mqtt-c-demo`}
                   />
                 </DocBlock>
               </div>

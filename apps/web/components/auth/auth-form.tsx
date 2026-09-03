@@ -72,7 +72,6 @@ export function AuthForm({ mode }: AuthFormProps) {
           maxLength={mode === "login" ? undefined : 11}
           name="account"
           pattern={mode === "login" ? undefined : "1[3-9][0-9]{9}"}
-          placeholder="13800000001"
           required
           type="tel"
         />

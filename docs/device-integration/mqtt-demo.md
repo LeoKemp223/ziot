@@ -4,7 +4,8 @@
 
 | 字段          | 默认值            |
 | ------------- | ----------------- |
-| Broker        | `localhost:1883`  |
+| Broker（明文）| `www.ziot.asia:1883` |
+| Broker（TLS） | `www.ziot.asia:8883`（Let's Encrypt 证书，验证服务器名即可） |
 | Product Key   | `pk_demo`         |
 | Device Key    | `dk_mqtt_demo`    |
 | Device Secret | `DeviceSecret123` |
@@ -51,7 +52,7 @@ pnpm --filter @ziot/db exec prisma migrate deploy --schema prisma/schema.prisma
 DATABASE_URL=postgresql://ziot:ziot@localhost:5432/ziot pnpm --filter @ziot/db seed
 ```
 
-确认 `localhost:1883` 可连接后再运行下面的设备 demo。
+确认 `www.ziot.asia:1883`（明文）或 `www.ziot.asia:8883`（TLS）可连接后再运行下面的设备 demo。
 
 ## Topic
 
@@ -127,13 +128,13 @@ python3 docs/device-integration/mqtt-python-demo.py
 指定设备参数：
 
 ```bash
-MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/mqtt-python-demo.py
+MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/mqtt-python-demo.py
 ```
 
 调整定时属性上报间隔，单位秒，默认 `10`：
 
 ```bash
-REPORT_INTERVAL_SECONDS=5 MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/mqtt-python-demo.py
+REPORT_INTERVAL_SECONDS=5 MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/mqtt-python-demo.py
 ```
 
 ## C Demo
@@ -167,13 +168,13 @@ gcc docs/device-integration/mqtt-c-demo.c \
 指定设备参数：
 
 ```bash
-MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-mqtt-c-demo
+MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-mqtt-c-demo
 ```
 
 调整定时属性上报间隔，单位秒，默认 `10`：
 
 ```bash
-REPORT_INTERVAL_SECONDS=5 MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-mqtt-c-demo
+REPORT_INTERVAL_SECONDS=5 MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-mqtt-c-demo
 ```
 
 两个 demo 都会在连接成功后订阅属性设置、服务调用和 OTA 通知 Topic，立即上报一条属性数据，并按 `REPORT_INTERVAL_SECONDS` 定时上报属性。收到属性设置后，会再次上报属性；收到服务调用后，会自动向对应的 reply Topic 回复 `code=0`。TypeScript MQTT simulator 收到 OTA 通知后会自动上报下载、安装和成功结果。

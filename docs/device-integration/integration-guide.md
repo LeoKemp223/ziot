@@ -16,8 +16,8 @@ Connection:
 
 | Field | Value |
 | --- | --- |
-| Host | `localhost` |
-| Port | `1883` |
+| Host | `www.ziot.asia` |
+| Port | `1883`（明文）/ `8883`（TLS，Let's Encrypt 证书） |
 | Username | `{product_key}:{device_key}` |
 | Password | `{device_secret}` |
 
@@ -38,7 +38,7 @@ Main topics:
 Run the demos:
 
 ```bash
-MQTT_HOST=localhost MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/mqtt-python-demo.py
+MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 python3 docs/device-integration/mqtt-python-demo.py
 pnpm --filter @ziot/device-simulator mqtt
 ```
 
