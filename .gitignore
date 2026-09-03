@@ -11,3 +11,7 @@ apps/web/public/uploads/
 .env
 .env.local
 !.env.example
+
+# 生产部署凭证与证书
+deploy/prod.env
+deploy/certs/

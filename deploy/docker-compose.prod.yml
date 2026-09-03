@@ -1,0 +1,214 @@
+# 生产编排：对外只暴露 80/443（HTTPS 控制台与 API）、1883（MQTT）、8883（MQTT over TLS）。
+# 凭证统一放 deploy/prod.env（已 gitignore），启动：docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml up -d
+name: ziot
+
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    environment:
+      POSTGRES_DB: ziot
+      POSTGRES_USER: ziot
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./lightweight/postgres.conf:/etc/postgresql/postgresql.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ziot -d ziot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.45"
+          memory: 640M
+
+  redis:
+    image: redis:7-alpine
+    # 生产用 noeviction：BullMQ 要求，allkeys-lru 会丢任务
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - ./prod/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.20"
+          memory: 256M
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ACCESS_KEY}"
+      MINIO_ROOT_PASSWORD: "${MINIO_SECRET_KEY}"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.20"
+          memory: 384M
+
+  minio-init:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ACCESS_KEY}"
+      MINIO_ROOT_PASSWORD: "${MINIO_SECRET_KEY}"
+      MINIO_BUCKET: "${MINIO_BUCKET}"
+    entrypoint: >
+      sh -c "
+      mc alias set local http://minio:9000 \"$$MINIO_ROOT_USER\" \"$$MINIO_ROOT_PASSWORD\" &&
+      mc mb --ignore-existing \"local/$$MINIO_BUCKET\"
+      "
+    logging: *default-logging
+    restart: "no"
+
+  web:
+    image: ziot-app:prod
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.prod
+    environment: &app-env
+      DATABASE_URL: postgresql://ziot:${POSTGRES_PASSWORD}@postgres:5432/ziot
+      REDIS_URL: redis://redis:6379
+      EMQX_API_URL: http://emqx:18083
+      EMQX_DASHBOARD_USERNAME: "${EMQX_DASHBOARD_USERNAME}"
+      EMQX_DASHBOARD_PASSWORD: "${EMQX_DASHBOARD_PASSWORD}"
+      JWT_SECRET: "${JWT_SECRET}"
+      PUBLIC_APP_URL: "${PUBLIC_APP_URL}"
+      # presigned URL 给浏览器直传固件用：走 nginx 的 https 反代（/ziot-firmwares/ → minio:9000，保留 Host 签名）
+      MINIO_ENDPOINT: "${PUBLIC_DOMAIN}"
+      MINIO_PORT: "443"
+      MINIO_USE_SSL: "true"
+      MINIO_BUCKET: "${MINIO_BUCKET}"
+      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY}"
+      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY}"
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/v1/health >/dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 768M
+
+  worker:
+    image: ziot-app:prod
+    command: pnpm --filter @ziot/worker exec tsx src/index.ts
+    environment: *app-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "ps | grep -v grep | grep -q 'src/index.ts'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.20"
+          memory: 384M
+
+  emqx:
+    image: emqx/emqx:5.10
+    environment:
+      EMQX_NAME: ziot-emqx
+      EMQX_HOST: emqx
+      EMQX_DASHBOARD__DEFAULT_USERNAME: "${EMQX_DASHBOARD_USERNAME}"
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: "${EMQX_DASHBOARD_PASSWORD}"
+    ports:
+      - "1883:1883"
+      - "8883:8883"
+      - "127.0.0.1:18083:18083"
+    volumes:
+      - ./prod/emqx.conf:/opt/emqx/etc/emqx.conf:ro
+      - ./certs:/etc/emqx/certs:ro
+    depends_on:
+      web:
+        condition: service_started
+    healthcheck:
+      # emqx ctl status 在 docker exec(root) 下有 erlang cookie 问题，改探 dashboard /status
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:18083/status >/dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.45"
+          memory: 640M
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./prod/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+      - ./certbot-www:/var/www/certbot:ro
+    depends_on:
+      web:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 128M
+
+volumes:
+  postgres-data:
+  minio-data:

@@ -2,6 +2,9 @@
 
 This guide starts the ZiOT MVP on one private Docker Compose host.
 
+> 生产部署（HTTPS 域名 + MQTT TLS + 国内源构建）见 [production.md](./production.md)；
+> 无 root 环境见 [no-root-setup.md](./no-root-setup.md)。
+
 ## Host Profile
 
 - 2 CPU cores, 4 GB RAM, 70 GB disk.
