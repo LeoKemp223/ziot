@@ -33,7 +33,7 @@ export default async function DeviceDetailPage({ params }: DeviceDetailPageProps
                 设备详情
               </h1>
               <p className="mt-1 text-sm text-slate-500">
-                查看设备身份、更新基础信息和维护设备影子。
+                查看设备身份、更新基础信息并追踪命令与上报记录。
               </p>
             </div>
             <div className="mt-6">

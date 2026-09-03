@@ -21,7 +21,7 @@ export default function ControlsPage() {
             <div>
               <h1 className="text-2xl font-semibold text-slate-950">设备控制</h1>
               <p className="mt-1 text-sm text-slate-500">
-                面向单台设备下发服务调用或属性设置，并查看命令回执。
+                面向单台设备下发服务调用或属性设置，并查看命令与上报记录。
               </p>
             </div>
             <div className="mt-6">

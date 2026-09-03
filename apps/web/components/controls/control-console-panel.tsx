@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { PaginationBar } from "@/components/ui/pagination-bar";
+import { DeviceRecordsSection } from "@/components/devices/device-records-section";
 import { RefreshCw, Send } from "lucide-react";
 
 type DeviceItem = {
@@ -16,20 +16,7 @@ type DeviceItem = {
 
 type DeviceCommand = {
   id: string;
-  identifier: string;
-  params: unknown;
-  status: string;
   request_id: string;
-  result: unknown;
-  error_message: string | null;
-  created_at: string;
-};
-
-type Pagination = {
-  page: number;
-  page_size: number;
-  total: number;
-  total_pages: number;
 };
 
 type ApiResponse<T> = {
@@ -40,24 +27,12 @@ type ApiResponse<T> = {
 
 type DevicesResponse = ApiResponse<{
   items: DeviceItem[];
-  pagination: Pagination;
-}>;
-
-type CommandsResponse = ApiResponse<{
-  items: DeviceCommand[];
-  pagination: Pagination;
 }>;
 
 export function ControlConsolePanel() {
   const [devices, setDevices] = useState<DeviceItem[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
-  const [commands, setCommands] = useState<DeviceCommand[]>([]);
-  const [commandPagination, setCommandPagination] = useState<Pagination>({
-    page: 1,
-    page_size: 10,
-    total: 0,
-    total_pages: 1
-  });
+  const [recordsRefreshKey, setRecordsRefreshKey] = useState(0);
   const [kind, setKind] = useState<"service" | "property_set">("service");
   const [identifier, setIdentifier] = useState("setSwitch");
   const [paramsText, setParamsText] = useState("{}");
@@ -96,41 +71,6 @@ export function ControlConsolePanel() {
     }
   }
 
-  async function loadCommands(deviceId = selectedDeviceId, page = commandPagination.page) {
-    if (!deviceId) {
-      setCommands([]);
-      setCommandPagination((current) => ({
-        ...current,
-        page: 1,
-        total: 0,
-        total_pages: 1
-      }));
-      return;
-    }
-
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        page_size: String(commandPagination.page_size)
-      });
-      const response = await fetch(
-        `/api/v1/devices/${deviceId}/commands?${params.toString()}`,
-        { cache: "no-store" }
-      );
-      const body = (await response.json()) as CommandsResponse;
-
-      if (!response.ok || body.code !== 0 || !body.data) {
-        setError(body.message);
-        return;
-      }
-
-      setCommands(body.data.items);
-      setCommandPagination(body.data.pagination);
-    } catch {
-      setError("加载命令记录失败。");
-    }
-  }
-
   async function submitCommand(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
@@ -162,7 +102,7 @@ export function ControlConsolePanel() {
         return;
       }
 
-      await loadCommands(selectedDeviceId, 1);
+      setRecordsRefreshKey((key) => key + 1);
       setMessage("控制指令已下发。");
     } catch (sendError) {
       setError(
@@ -178,10 +118,6 @@ export function ControlConsolePanel() {
   useEffect(() => {
     void loadDevices();
   }, []);
-
-  useEffect(() => {
-    void loadCommands(selectedDeviceId, 1);
-  }, [selectedDeviceId]);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
@@ -278,66 +214,10 @@ export function ControlConsolePanel() {
         </form>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div>
-            <h2 className="text-base font-semibold text-slate-950">命令记录</h2>
-            <p className="mt-1 text-sm text-slate-500">当前设备最近控制指令。</p>
-          </div>
-          <button
-            className="inline-flex h-8 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50"
-            onClick={() => void loadCommands(selectedDeviceId, commandPagination.page)}
-            type="button"
-          >
-            <RefreshCw className="h-4 w-4" />
-            刷新
-          </button>
-        </div>
-        {commands.length === 0 ? (
-          <div className="p-8 text-sm text-slate-500">暂无命令记录。</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-              <thead className="bg-slate-50 text-xs font-medium text-slate-500">
-                <tr>
-                  <th className="px-5 py-3">指令</th>
-                  <th className="px-4 py-3">状态</th>
-                  <th className="px-4 py-3">参数</th>
-                  <th className="px-5 py-3">创建时间</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {commands.map((command) => (
-                  <tr className="align-top hover:bg-slate-50" key={command.id}>
-                    <td className="px-5 py-4">
-                      <div className="font-medium text-slate-950">
-                        {command.identifier}
-                      </div>
-                      <div className="mt-1 font-mono text-xs text-slate-400">
-                        {command.request_id}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">{command.status}</td>
-                    <td className="px-4 py-4">
-                      <pre className="max-h-28 overflow-auto rounded-md bg-slate-50 p-2 font-mono text-xs text-slate-600">
-                        {JSON.stringify(command.params, null, 2)}
-                      </pre>
-                    </td>
-                    <td className="px-5 py-4 whitespace-nowrap text-slate-500">
-                      {formatDateTime(command.created_at)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <PaginationBar
-          disabled={!selectedDeviceId}
-          onPageChange={(page) => void loadCommands(selectedDeviceId, page)}
-          pagination={commandPagination}
-        />
-      </section>
+      <DeviceRecordsSection
+        deviceId={selectedDeviceId}
+        refreshKey={recordsRefreshKey}
+      />
     </div>
   );
 }
@@ -375,13 +255,4 @@ function OnlineStatusBadge({ value }: { value: string }) {
       {meta.label}
     </span>
   );
-}
-
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(new Date(value));
 }

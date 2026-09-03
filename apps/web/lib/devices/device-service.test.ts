@@ -4,6 +4,7 @@ import {
   addDeviceToGroup,
   createDevice,
   getDevice,
+  listDeviceRecords,
   listDeviceReports,
   listDeviceTopics,
   listDevices,
@@ -595,5 +596,217 @@ describe("device service", () => {
         created_at: now.toISOString()
       }
     ]);
+  });
+
+  it("merges commands and reports into time-desc device records", async () => {
+    const commandFixture = (id: string, createdAt: Date) => ({
+      id,
+      org_id: "org_default",
+      device_id: "dev_demo",
+      identifier: "setSwitch",
+      params: { power: true },
+      status: "success",
+      request_id: id,
+      result: null,
+      error_code: null,
+      error_message: null,
+      timeout_at: createdAt,
+      sent_at: createdAt,
+      replied_at: null,
+      created_at: createdAt,
+      updated_at: createdAt
+    });
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device({ created_by: "usr_member" }))
+      },
+      deviceCommand: {
+        count: vi.fn().mockResolvedValue(2),
+        findMany: vi.fn().mockResolvedValue([
+          commandFixture("cmd_a", new Date("2026-04-28T08:00:03.000Z")),
+          commandFixture("cmd_c", new Date("2026-04-28T08:00:01.000Z"))
+        ])
+      },
+      deviceLog: {
+        count: vi.fn().mockResolvedValue(1),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "dlg_b",
+            device_id: "dev_demo",
+            type: "property",
+            level: "info",
+            content: { payload: { params: { temperature: 23.5 } } },
+            occurred_at: new Date("2026-04-28T08:00:02.000Z"),
+            created_at: new Date("2026-04-28T08:00:02.000Z")
+          }
+        ])
+      }
+    };
+
+    const result = await listDeviceRecords(db, {
+      orgId: "org_default",
+      userId: "usr_member",
+      canAccessAll: false,
+      deviceId: "dev_demo"
+    });
+
+    expect(db.device.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: "dev_demo",
+        org_id: "org_default",
+        deleted_at: null,
+        created_by: "usr_member"
+      },
+      include: { product: true }
+    });
+    expect(db.deviceCommand.findMany).toHaveBeenCalledWith({
+      where: { org_id: "org_default", device_id: "dev_demo" },
+      orderBy: { created_at: "desc" },
+      take: 20
+    });
+    expect(db.deviceLog.findMany).toHaveBeenCalledWith({
+      where: {
+        org_id: "org_default",
+        device_id: "dev_demo",
+        type: { in: ["property", "event", "log"] }
+      },
+      orderBy: { occurred_at: "desc" },
+      take: 20
+    });
+    expect(result.items.map((item) => item.id)).toEqual([
+      "cmd_a",
+      "dlg_b",
+      "cmd_c"
+    ]);
+    expect(result.items.map((item) => item.source)).toEqual([
+      "command",
+      "report",
+      "command"
+    ]);
+    expect(result.pagination).toEqual({
+      page: 1,
+      page_size: 20,
+      total: 3,
+      total_pages: 1
+    });
+  });
+
+  it("slices merged device records by page", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device())
+      },
+      deviceCommand: {
+        count: vi.fn().mockResolvedValue(2),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "cmd_a",
+            identifier: "setSwitch",
+            params: {},
+            status: "success",
+            request_id: "cmd_a",
+            result: null,
+            error_message: null,
+            created_at: new Date("2026-04-28T08:00:03.000Z")
+          },
+          {
+            id: "cmd_c",
+            identifier: "property.set",
+            params: { humidity: 45 },
+            status: "success",
+            request_id: "cmd_c",
+            result: null,
+            error_message: null,
+            created_at: new Date("2026-04-28T08:00:01.000Z")
+          }
+        ])
+      },
+      deviceLog: {
+        count: vi.fn().mockResolvedValue(1),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "dlg_b",
+            type: "property",
+            level: "info",
+            content: {},
+            occurred_at: new Date("2026-04-28T08:00:02.000Z")
+          }
+        ])
+      }
+    };
+
+    const result = await listDeviceRecords(db, {
+      orgId: "org_default",
+      canAccessAll: true,
+      deviceId: "dev_demo",
+      page: 2,
+      pageSize: 2
+    });
+
+    expect(db.deviceCommand.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ take: 4 })
+    );
+    expect(result.items.map((item) => item.id)).toEqual(["cmd_c"]);
+    expect(result.pagination).toEqual({
+      page: 2,
+      page_size: 2,
+      total: 3,
+      total_pages: 2
+    });
+  });
+
+  it("caps the per-source fetch window for deep pages", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device())
+      },
+      deviceCommand: {
+        count: vi.fn().mockResolvedValue(2500),
+        findMany: vi.fn().mockResolvedValue([])
+      },
+      deviceLog: {
+        count: vi.fn().mockResolvedValue(0),
+        findMany: vi.fn().mockResolvedValue([])
+      }
+    };
+
+    const result = await listDeviceRecords(db, {
+      orgId: "org_default",
+      canAccessAll: true,
+      deviceId: "dev_demo",
+      page: 200,
+      pageSize: 10
+    });
+
+    expect(db.deviceCommand.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ take: 1000 })
+    );
+    expect(db.deviceLog.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ take: 1000 })
+    );
+    expect(result.items).toEqual([]);
+    expect(result.pagination).toEqual({
+      page: 200,
+      page_size: 10,
+      total: 2500,
+      total_pages: 250
+    });
+  });
+
+  it("rejects merged device records for another creator's device", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(null)
+      }
+    };
+
+    await expect(
+      listDeviceRecords(db, {
+        orgId: "org_default",
+        userId: "usr_member",
+        canAccessAll: false,
+        deviceId: "dev_other"
+      })
+    ).rejects.toMatchObject({ code: 404001 });
   });
 });

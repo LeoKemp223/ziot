@@ -1,5 +1,6 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
+import { buildPagination } from "@/lib/pagination";
 import { compensateOnlineStatuses } from "./online-status";
 
 type Db = { [key: string]: any };
@@ -498,6 +499,103 @@ export async function listDeviceReports(
     occurred_at: report.occurred_at.toISOString(),
     created_at: report.created_at.toISOString()
   }));
+}
+
+// 命令下发与设备上报合并后的统一记录(按时间倒序)
+export type DeviceRecordItem =
+  | {
+      id: string;
+      source: "command";
+      time: string;
+      identifier: string;
+      request_id: string;
+      status: string;
+      params: unknown;
+      result: unknown;
+      error_message: string | null;
+    }
+  | {
+      id: string;
+      source: "report";
+      time: string;
+      type: string;
+      level: string;
+      content: unknown;
+    };
+
+// 合并取数时单个数据源最多取的行数,避免深分页时单次查询过大
+const MAX_RECORDS_WINDOW = 1000;
+
+export async function listDeviceRecords(
+  db: Db,
+  input: AccessScope & {
+    orgId: string;
+    deviceId: string;
+    page?: number;
+    pageSize?: number;
+  }
+) {
+  await getDevice(db, input);
+
+  const page = clampPage(input.page);
+  const pageSize = clampPageSize(input.pageSize);
+  // 合并后第 page 页的记录必然落在两个数据源各自的前 page*pageSize 行内
+  const windowSize = Math.min(page * pageSize, MAX_RECORDS_WINDOW);
+  const commandWhere = {
+    org_id: input.orgId,
+    device_id: input.deviceId
+  };
+  const reportWhere = {
+    org_id: input.orgId,
+    device_id: input.deviceId,
+    type: { in: ["property", "event", "log"] }
+  };
+
+  const [commandTotal, reportTotal, commands, reports] = await Promise.all([
+    db.deviceCommand.count({ where: commandWhere }),
+    db.deviceLog.count({ where: reportWhere }),
+    db.deviceCommand.findMany({
+      where: commandWhere,
+      orderBy: { created_at: "desc" },
+      take: windowSize
+    }),
+    db.deviceLog.findMany({
+      where: reportWhere,
+      orderBy: { occurred_at: "desc" },
+      take: windowSize
+    })
+  ]);
+
+  const merged: DeviceRecordItem[] = [
+    ...(commands as any[]).map((command) => ({
+      id: command.id,
+      source: "command" as const,
+      time: command.created_at.toISOString(),
+      identifier: command.identifier,
+      request_id: command.request_id,
+      status: command.status,
+      params: command.params,
+      result: command.result,
+      error_message: command.error_message
+    })),
+    ...(reports as any[]).map((report) => ({
+      id: report.id,
+      source: "report" as const,
+      time: report.occurred_at.toISOString(),
+      type: report.type,
+      level: report.level,
+      content: report.content
+    }))
+  ].sort((a, b) =>
+    a.time === b.time ? (a.id < b.id ? 1 : -1) : a.time < b.time ? 1 : -1
+  );
+
+  const offset = (page - 1) * pageSize;
+
+  return {
+    items: merged.slice(offset, offset + pageSize),
+    pagination: buildPagination(page, pageSize, commandTotal + reportTotal)
+  };
 }
 
 export async function updateDeviceDesiredShadow(
