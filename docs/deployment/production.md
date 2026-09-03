@@ -135,6 +135,9 @@ git pull && docker compose --env-file deploy/prod.env -f deploy/docker-compose.p
 docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml logs -f web worker
 docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml ps
 
+# 清理构建缓存与悬空镜像（保留最近 2GB 缓存，deps 层命中时重建约 30s；--full 全清）
+scripts/docker-cleanup.sh
+
 # 数据库备份（custom 格式，见 docs/deployment/backup-restore.md）
 docker exec ziot-postgres-1 pg_dump -U ziot -Fc ziot > backups/ziot-$(date +%Y%m%dT%H%M%SZ).dump
 
