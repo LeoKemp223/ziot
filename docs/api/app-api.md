@@ -1,10 +1,10 @@
 # App 端 API 文档(扫码绑定 / 控制 / 状态)
 
-版本：v0.1
+版本：v0.2
 更新日期：2026-09-03
 当前状态：本文档记录已实现并验证的 App 端接口。App 用户是与控制台用户完全独立的体系(`app_users` 表),认证走 `Authorization: Bearer`,与控制台的 httpOnly Cookie 会话互不通用。
 
-> **APP 开发人员请先读 `docs/app-integration/integration-guide.md`**(接入指南:令牌存储与刷新策略、二维码解析规范、轮询与控制实践、curl 联调脚本);本文是接口字段级参考。
+> **APP 开发人员请先读 `docs/app-integration/integration-guide.md`**(接入指南:令牌存储与刷新策略、二维码解析规范、SSE 与轮询实践、curl 联调脚本);本文是接口字段级参考。
 
 ## 1. 概览与绑定流程
 
@@ -15,13 +15,13 @@
 │ 控制台用户  │ ───────────────────────────────▶ │  ziot 平台  │
 └────────────┘  (设备列表 → 二维码按钮,可印刷)   └─────┬──────┘
       │ 出厂印刷二维码到产品标签                         │
-      ▼                                              │
-┌────────────┐  2. 用户扫码取 fragment 中的绑定码     │
-│   手机 APP  │ ────────────────────────────────────▶ │
-│            │  3. POST /api/v1/app/devices/bind     │
+      ▼                                              ▼
+┌────────────┐  2. 用户扫码取 fragment 中的绑定码     ┌────────────┐
+│   手机 APP  │ ────────────────────────────────────▶ │  ziot 平台  │
+│            │  3. POST /api/v1/app/devices/bind     │            │
 │            │ ◀──────────────────────────────────── │ 建立 user_devices 绑定
-└─────┬──────┘                                      │
-      │ 4. 控制设备 / 读状态 / 改别名 / 解绑          │
+└─────┬──────┘                                      └─────┬──────┘
+      │ 4. SSE 订阅状态 / 控制设备 / 读影子 / 改别名 / 解绑
       ▼                                              ▼
 ```
 
@@ -32,9 +32,44 @@
 - 设备 `device_secret` 永远不出现在二维码上。
 - 解绑后再扫同一张码可重新绑定。
 
-## 2. 认证
+## 2. 统一响应包络与错误码
 
-### 2.1 App 用户注册(开放,无需邀请码)
+**所有** `/api/v1/app/**` 接口(除 SSE 流)返回统一 JSON 包络:
+
+```json
+// 成功:code = 0,data 为业务数据(DELETE 类接口可能是 {} 或 null)
+{
+  "code": 0,
+  "message": "ok",
+  "request_id": "req_xxx",
+  "data": { "...": "业务数据" }
+}
+
+// 失败:HTTP 状态码与 code 一致,data 恒为 null
+{
+  "code": 401001,
+  "message": "缺少访问令牌",
+  "request_id": "req_xxx",
+  "data": null
+}
+```
+
+完整错误码表(`message` 为中文描述,可直连展示;`request_id` 用于向平台反馈问题):
+
+| code | HTTP | 场景 |
+| --- | --- | --- |
+| `0` | 200/201 | 成功 |
+| `400001` | 400 | 参数错误:手机号/密码/别名格式不合法、绑定码格式错误或不存在(含已被轮换的旧码、已删除设备,统一返回此码防枚举)、JSON 体不合法等 |
+| `401001` | 401 | 未登录 / access_token 缺失或过期 / refresh_token 无效、已吊销或过期 / 账号或密码错误 |
+| `403001` | 403 | 账号已禁用 / 设备已禁用 / 未绑定该设备就访问其子资源 |
+| `404001` | 404 | 设备或命令不存在(含曾绑定但已解绑) |
+| `409001` | 409 | 手机号已注册 |
+| `429001` | 429 | 请求过于频繁(注册 5/分/IP、登录 10/分/IP、绑定 20/分/用户) |
+| `500001` | 500 | 服务器内部错误(`message` 固定为"服务器内部错误",细节看服务端日志) |
+
+## 3. 认证
+
+### 3.1 App 用户注册(开放,无需邀请码)
 
 `POST /api/v1/app/auth/register`
 
@@ -54,7 +89,7 @@
 - `password`:8-128 位。
 - `nickname`:可选,1-128 位,缺省为 `用户` + 手机尾 4 位。
 
-响应 `data`(令牌在响应体返回,APP 自行存储;不使用 Cookie):
+响应 `data`:
 
 ```json
 {
@@ -72,26 +107,59 @@
 }
 ```
 
-### 2.2 登录
+令牌在响应体返回,APP 自行存储(建议 Keychain/Keystore);**不使用 Cookie**。登录/刷新的响应结构与本节完全相同,下文不再重复。
 
-`POST /api/v1/app/auth/login`,body `{ "phone": "...", "password": "..." }`。限流 10 次/分钟/IP。响应同上。账号或密码错误返回 `401001`,账号禁用返回 `403001`。
+### 3.2 登录
 
-### 2.3 刷新令牌(旋转式)
+`POST /api/v1/app/auth/login`
 
-`POST /api/v1/app/auth/refresh`,body `{ "refresh_token": "art_xxx" }`。旧 refresh_token 每次刷新后立即吊销并下发新的一对令牌。无效/已吊销/已过期返回 `401001`。
+限流:10 次/分钟/IP。请求体:
+
+```json
+{
+  "phone": "13912345678",
+  "password": "Pass1234"
+}
+```
+
+响应 `data` 同注册(3.1)。账号或密码错误返回 `401001`,账号禁用返回 `403001`。
+
+### 3.3 刷新令牌(旋转式)
+
+`POST /api/v1/app/auth/refresh`
+
+请求体:
+
+```json
+{
+  "refresh_token": "art_xxx"
+}
+```
+
+响应 `data` 同注册(3.1),但 `access_token` / `refresh_token` 都是新签发的。**旧 `refresh_token` 在本次刷新成功后立即吊销**——APP 必须原子地替换存储,收到 `401001` 时应引导用户重新登录。
 
 - access_token:JWT,15 分钟,声明 `utype: "app"` + `aud: "ziot-app"`,与控制台会话(同一 `JWT_SECRET`)双向隔离,互不可用。
-- refresh_token:30 天,不透明随机串,服务端只存 sha256。
+- refresh_token:30 天,不透明随机串(`art_` 前缀),服务端只存 sha256。
 
-### 2.4 登出
+### 3.4 登出
 
-`POST /api/v1/app/auth/logout`,body `{ "refresh_token": "art_xxx" }`,吊销该刷新令牌。
+`POST /api/v1/app/auth/logout`
 
-### 2.5 当前用户
+请求体:
 
-`GET /api/v1/app/me`,请求头 `Authorization: Bearer <access_token>`,返回注册响应中的 `user` 对象。
+```json
+{
+  "refresh_token": "art_xxx"
+}
+```
 
-## 3. 扫码绑定
+吊销该刷新令牌。响应 `data` 为 `{}`。access_token 未过期前仍有效(最多 15 分钟),介意可由 APP 端立即丢弃。
+
+### 3.5 当前用户
+
+`GET /api/v1/app/me`,请求头 `Authorization: Bearer <access_token>`,返回 3.1 中的 `user` 对象。
+
+## 4. 扫码绑定
 
 ### `POST /api/v1/app/devices/bind`
 
@@ -107,51 +175,97 @@
 
 输入自动 trim + 转大写,支持手动输码兜底。永久码可多次使用(家庭共享)。
 
-成功响应 `data`(绑定后的设备对象):
+成功响应 `data` 为[设备对象](#设备对象-device),见下文字段表。错误:绑定码格式不正确/不存在(含已被轮换的旧码、已删除设备)`400001`(防枚举)、设备已禁用 `403001`。
+
+### 设备对象(Device)
+
+`bind` 的响应、`GET /api/v1/app/devices` 的列表项、`PATCH .../devices/{id}` 的响应均为同一结构(解绑响应除外):
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `device_id` | `string` | 设备 ID,**所有子资源路径用它**(不是 `device_key`) |
+| `alias` | `string \| null` | 当前用户起的别名,`null` = 未设置(展示时回退 `name`) |
+| `name` | `string` | 控制台侧设备名称 |
+| `product_id` | `string` | 产品 ID |
+| `product_name` | `string` | 产品名称 |
+| `product_key` | `string` | 产品标识(`pk_` 前缀) |
+| `device_key` | `string` | 设备标识(`dk_` 前缀) |
+| `status` | `"active" \| "disabled"` | 设备启用状态 |
+| `online_status` | `"online" \| "offline" \| "unknown"` | 实时在线状态 |
+| `firmware_version` | `string \| null` | 固件版本(OTA 上报后更新) |
+| `bound_at` | `string`(ISO 8601) | 本次绑定时间 |
+| `shadow_reported` | `object` | 影子 `reported` 快照 = 设备最近上报的属性全集;`{}` = 尚无上报 |
+| `shadow_updated_at` | `string \| null` | 影子最后更新时间 |
+
+TypeScript 参考:
+
+```ts
+interface AppDevice {
+  device_id: string;
+  alias: string | null;
+  name: string;
+  product_id: string;
+  product_name: string;
+  product_key: string;
+  device_key: string;
+  status: "active" | "disabled";
+  online_status: "online" | "offline" | "unknown";
+  firmware_version: string | null;
+  bound_at: string;
+  shadow_reported: Record<string, unknown>;
+  shadow_updated_at: string | null;
+}
+```
+
+## 5. 我的设备
+
+### `GET /api/v1/app/devices`
+
+返回当前用户全部有效绑定:
+
+```json
+{
+  "items": [
+    { "device_id": "dev_xxx", "alias": null, "name": "客厅空调", "...": "其余字段同设备对象" }
+  ]
+}
+```
+
+`items` 为设备对象数组(可能为空数组)。设备离线时 `online_status` 变 `offline`,快照字段保留最近值。
+
+### `PATCH /api/v1/app/devices/{deviceId}`
+
+改设备别名。请求体:
+
+```json
+{
+  "alias": "客厅的空调"
+}
+```
+
+`alias` 1-128 位,传空串 `""` 清除别名(回到 `null`)。响应 `data` 为更新后的设备对象。无有效绑定返回 `404001`,格式非法返回 `400001`。
+
+### `DELETE /api/v1/app/devices/{deviceId}`(解绑)
+
+解绑当前用户与该设备的绑定(软删除,绑定历史保留,再扫同一张码可重新绑定;不影响其他用户的绑定)。**设备管理页必备**。
+
+响应 `data`:
 
 ```json
 {
   "device_id": "dev_xxx",
-  "alias": null,
-  "name": "客厅空调",
-  "product_id": "prd_xxx",
-  "product_name": "智能空调",
-  "product_key": "pk_xxx",
-  "device_key": "dk_xxx",
-  "status": "active",
-  "online_status": "online",
-  "firmware_version": "1.0.0",
-  "bound_at": "2026-09-03T08:00:00.000Z",
-  "shadow_reported": { "temperature": 24.5 },
-  "shadow_updated_at": "2026-09-03T07:59:30.000Z"
+  "org_id": "org_xxx",
+  "unbound_at": "2026-09-03T09:00:00.000Z"
 }
 ```
 
-错误:码格式不正确/不存在(含已被轮换的旧码、已删除设备)`400001`(防枚举)、设备已禁用 `403001`。
+无有效绑定(或已解绑过)返回 `404001`。解绑后对该设备的 shadow/commands 等子资源访问返回 `403001`。
 
-## 4. 我的设备
+## 6. 设备状态:影子 + 实时事件流
 
-### `GET /api/v1/app/devices`
+### 6.1 影子(拉)
 
-返回当前用户全部有效绑定(含设备在线状态与 reported 影子快照):
-
-```json
-{
-  "items": [ { "device_id": "...", "alias": "...", "...": "同 bind 响应" } ]
-}
-```
-
-### `PATCH /api/v1/app/devices/{deviceId}`
-
-改设备别名。body `{ "alias": "客厅的空调" }`,1-128 位,传空串清除。无绑定返回 `404001`。
-
-### `DELETE /api/v1/app/devices/{deviceId}`
-
-解绑(软删除,绑定历史保留,可重新扫码绑定)。
-
-## 5. 读取设备状态
-
-### `GET /api/v1/app/devices/{deviceId}/shadow`
+`GET /api/v1/app/devices/{deviceId}/shadow`
 
 设备影子 `reported` 是设备最近一次上报的属性全集(设备端 `property/post` → 平台合并):
 
@@ -165,11 +279,47 @@
 }
 ```
 
-设备在线状态看 `GET /api/v1/app/devices` 列表里的 `online_status`(`online` / `offline` / `unknown`)。
+`version` 单调递增,可用于变更检测。`desired` 是期望值(通常与最近一次 property_set 一致)。
 
-> MVP 采用轮询(建议 3-10s)。SSE 实时推送属性变化与上下线事件是规划中的扩展,当前 `/api/v1/events/stream` 仅面向控制台且只推命令状态。
+### 6.2 事件流(推,SSE)
 
-## 6. 控制设备
+`GET /api/v1/app/events/stream`
+
+请求头:`Authorization: Bearer <access_token>`(仅**建立连接时**校验一次)。响应 `content-type: text/event-stream`,长连接持续推送。
+
+**只推送当前用户有效绑定的设备**,绑定集每 60 秒重载(连接期间新绑定/解绑自动生效)。**无历史重放**:断线重连后请先拉一次 `GET /api/v1/app/devices` + shadow 对齐状态,再继续收流。
+
+事件类型:
+
+| event | data | 说明 |
+| --- | --- | --- |
+| `ready` | `{ "device_ids": ["dev_xxx"] }` | 连接建立后的初始事件,列出当前会推送的设备 |
+| `device.shadow.updated` | `{ "type": "...", "device_id": "...", "reported": {...}, "version": 12, "updated_at": "ISO" }` | 设备属性上报合并进影子后推送 |
+| `device.status.changed` | `{ "type": "...", "device_id": "...", "online_status": "online", "occurred_at": "ISO" }` | 设备真实上下线翻转时推送 |
+| `heartbeat` | `{ "now": "ISO" }` | 每 20 秒一次,保活(反代不超时断连) |
+| `error` | `{ "message": "..." }` | 服务端内部异常(连接保持) |
+
+帧示例:
+
+```text
+event: device.shadow.updated
+data: {"type":"device.shadow.updated","device_id":"dev_xxx","reported":{"temperature":24.5},"version":12,"updated_at":"2026-09-03T07:59:30.000Z"}
+
+event: device.status.changed
+data: {"type":"device.status.changed","device_id":"dev_xxx","online_status":"online","occurred_at":"2026-09-03T08:00:00.000Z"}
+```
+
+客户端注意:
+
+- 浏览器原生 `EventSource` **不支持自定义请求头**,请用 fetch 流式读取或带 header 的 SSE 库(如 `event-source-polyfill`、OkHttp/`URLSession` 自行解析)。
+- 服务端已输出 `x-accel-buffering: no`,自建 nginx 反代时确认未开启缓冲。
+- 该接口依赖平台配置 `REDIS_URL`;未配置时返回 `500001`。
+
+### 6.3 推荐的状态同步策略
+
+前台页面:优先 SSE(6.2)实时刷新;轮询降级兜底(3-10s,`version` 变了才刷 UI)。后台/进程被杀:停止拉流,需要通知用户的场景接厂商推送通道(平台后续规划)。
+
+## 7. 控制设备
 
 ### `POST /api/v1/app/devices/{deviceId}/commands`(异步)
 
@@ -188,7 +338,7 @@ body:
 - `params`:JSON 对象。
 - `timeout_ms`:1000-120000,默认 15000。**传输语义下仅兼容保留,新命令创建即终态,该参数不再影响结果。**
 
-返回 201 + 命令对象。命令状态只反映**投递结果**:EMQX 发布成功即 `success`,发布失败(重试耗尽)即 `failed`,不等设备业务应答。设备是否真正执行,请通过属性上报/影子(`reported`)或设备日志判断。
+返回 201 + 命令对象。命令状态只反映**投递结果**:EMQX 发布成功即 `success`,发布失败(重试耗尽)即 `failed`,不等设备业务应答。设备是否真正执行,通过 SSE `device.shadow.updated` / 影子 `reported` 或设备日志判断。
 
 ### `POST /api/v1/app/devices/{deviceId}/commands:sync`(同步)
 
@@ -199,18 +349,6 @@ body 同上。投递完成即返回终态命令对象(通常几十毫秒内),接
 命令详情,仅命令发起者或对该设备仍有有效绑定的用户可查。
 
 命令状态机:`pending → success / failed`(投递语义)。存量历史命令可能出现 `sent`/`timeout`(旧版等待设备应答的语义)。
-
-## 7. 错误码汇总(App 侧新增)
-
-| code | HTTP | 说明 |
-| --- | --- | --- |
-| `400001` | 400 | 参数错误(含绑定码格式/无效) |
-| `401001` | 401 | 未登录 / 令牌失效 / 账号或密码错误 |
-| `403001` | 403 | 账号禁用 / 未绑定该设备 / 设备禁用 |
-| `404001` | 404 | 设备或命令不存在 |
-| `409001` | 409 | 手机号已注册 |
-| `429001` | 429 | 请求过于频繁(注册/登录/绑定限流) |
-| `500001` | 500 | 服务器内部错误 |
 
 ## 8. 控制台侧配套接口(设备永久二维码)
 
@@ -230,23 +368,28 @@ curl http://localhost:3000/api/v1/devices/<devId>/binding-code \
   -b 'ziot_access_token=<console-token>'
 # 记下 data.code(永久有效;需要作废旧码时改 POST 同路径 = 轮换)
 
-# 2. App 注册
+# 2. App 注册(登录把 register 换成 login,body 为 {phone,password};
+#    刷新用 {refresh_token})
 curl -X POST http://localhost:3000/api/v1/app/auth/register \
   -H 'content-type: application/json' \
   -d '{"phone":"13912345678","password":"Pass1234","nickname":"小明"}'
 # 记下 data.access_token
 
-# 3. 扫码绑定
+# 3. 扫码绑定 / 我的设备 / 解绑
 curl -X POST http://localhost:3000/api/v1/app/devices/bind \
   -H 'content-type: application/json' \
   -H "Authorization: Bearer $AT" -d '{"code":"BDXXXXXXXXXXXXXXXX"}'
-
-# 4. 我的设备 / 影子 / 同步控制
 curl http://localhost:3000/api/v1/app/devices -H "Authorization: Bearer $AT"
+curl -X DELETE http://localhost:3000/api/v1/app/devices/<devId> -H "Authorization: Bearer $AT"
+
+# 4. 影子 / 同步控制
 curl http://localhost:3000/api/v1/app/devices/<devId>/shadow -H "Authorization: Bearer $AT"
 curl -X POST http://localhost:3000/api/v1/app/devices/<devId>/commands:sync \
   -H 'content-type: application/json' -H "Authorization: Bearer $AT" \
   -d '{"kind":"service","identifier":"reboot","params":{}}'
+
+# 5. 实时事件流(设备上报属性/上下线时打印推送)
+curl -N http://localhost:3000/api/v1/app/events/stream -H "Authorization: Bearer $AT"
 ```
 
 ## 10. 环境变量
@@ -254,3 +397,4 @@ curl -X POST http://localhost:3000/api/v1/app/devices/<devId>/commands:sync \
 | 变量 | 默认 | 说明 |
 | --- | --- | --- |
 | `APP_BIND_QR_BASE_URL` | `http://localhost:3000` | 二维码内容前缀,生产应设为 APP 可达域名(如 `https://www.ziot.asia`) |
+| `REDIS_URL`(web 侧) | 未配置则 SSE 不可用 | 设备事件总线(pub/sub)。web 服务需配置,未配置时 `/app/events/stream` 返回 `500001` |

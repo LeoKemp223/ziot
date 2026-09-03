@@ -291,15 +291,22 @@ curl -s -X POST http://localhost:3000/api/v1/app/devices/bind \\
 curl -s http://localhost:3000/api/v1/app/devices -H "Authorization: Bearer $ACCESS_TOKEN"
 
 # 设备影子（reported = 设备当前上报的属性全集）
-curl -s http://localhost:3000/api/v1/app/devices/<deviceId>/shadow -H "Authorization: Bearer $ACCESS_TOKEN"`}
+curl -s http://localhost:3000/api/v1/app/devices/<deviceId>/shadow -H "Authorization: Bearer $ACCESS_TOKEN"
+
+# 实时事件流（SSE 长连接，只推当前用户绑定的设备）
+#   device.shadow.updated = 属性上报合并进影子；device.status.changed = 上下线翻转
+curl -N http://localhost:3000/api/v1/app/events/stream -H "Authorization: Bearer $ACCESS_TOKEN"`}
                   />
+                  <p className="mt-2 text-sm text-slate-600">
+                    前台推荐 SSE 实时刷新（断线重连后先拉一次列表和 shadow 对齐），轮询 3-10s 作为兜底。浏览器原生 EventSource 不能带 Authorization 头，需用 fetch 流式或支持自定义 header 的 SSE 库。
+                  </p>
                 </DocBlock>
                 <DocBlock title="4. 控制设备">
                   <CodeBlock
-                    value={`# 同步控制（推荐：阻塞到设备应答或超时，timeout_ms 建议 5000-15000）
+                    value={`# 同步控制（推荐：投递完成即返回终态命令对象，通常几十毫秒）
 curl -s -X POST http://localhost:3000/api/v1/app/devices/<deviceId>/commands:sync \\
   -H 'content-type: application/json' -H "Authorization: Bearer $ACCESS_TOKEN" \\
-  -d '{"kind":"service","identifier":"reboot","params":{},"timeout_ms":15000}'
+  -d '{"kind":"service","identifier":"reboot","params":{}}'
 
 # 属性设置（kind=property_set 不需要 identifier）
 curl -s -X POST http://localhost:3000/api/v1/app/devices/<deviceId>/commands:sync \\
@@ -307,14 +314,27 @@ curl -s -X POST http://localhost:3000/api/v1/app/devices/<deviceId>/commands:syn
   -d '{"kind":"property_set","params":{"power":true}}'`}
                   />
                   <p className="mt-2 text-sm text-slate-600">
-                    命令状态机：pending → sent → success / failed / timeout。identifier 与 params 的取值由产品固件定义，需与设备侧约定对齐。
+                    命令状态为投递语义：pending → success / failed，success 表示平台已成功发布到 Broker，不代表设备已执行——确认执行看 SSE 推送或影子 reported 是否收敛。identifier 与 params 的取值由产品固件定义，需与设备侧约定对齐。
                   </p>
                 </DocBlock>
-                <DocBlock title="5. 完整文档">
+                <DocBlock title="5. 别名与解绑">
+                  <CodeBlock
+                    value={`# 改别名（1-128 位，空串清除；响应为更新后的设备对象）
+curl -s -X PATCH http://localhost:3000/api/v1/app/devices/<deviceId> \\
+  -H 'content-type: application/json' -H "Authorization: Bearer $ACCESS_TOKEN" \\
+  -d '{"alias":"客厅的空调"}'
+
+# 解绑（软删除，仅影响自己；再扫同一张码可重新绑定）
+curl -s -X DELETE http://localhost:3000/api/v1/app/devices/<deviceId> \\
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+# 响应 data: { device_id, org_id, unbound_at }`}
+                  />
+                </DocBlock>
+                <DocBlock title="6. 完整文档">
                   <KeyValueTable
                     rows={[
-                      ["APP 接入指南（令牌管理、二维码解析、轮询实践）", "docs/app-integration/integration-guide.md"],
-                      ["App 端 API 字段级参考（含错误码表）", "docs/api/app-api.md"]
+                      ["APP 接入指南（令牌管理、二维码解析、SSE 与轮询实践）", "docs/app-integration/integration-guide.md"],
+                      ["App 端 API 字段级参考（统一包络、错误码表、设备对象类型定义）", "docs/api/app-api.md"]
                     ]}
                   />
                 </DocBlock>
@@ -329,7 +349,7 @@ curl -s -X POST http://localhost:3000/api/v1/app/devices/<deviceId>/commands:syn
                     调试位置
                   </h2>
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    MQTT 连接状态在设备列表和设备详情页显示；属性、事件、日志上报在设备详情页的上报记录和日志中心查看；控制下发结果在设备详情页或控制台的命令记录查看；OTA 进度在 OTA 任务详情页查看。设备二维码（App 扫码绑定）在设备列表行的「二维码」按钮弹窗查看与重新生成，已绑定的 App 用户（手机号脱敏）也在该弹窗查看。
+                    MQTT 连接状态在设备列表和设备详情页显示；命令下发与设备上报（含上下线事件）在设备详情页和控制台的「设备记录」统一时间线查看，日志明细在日志中心；OTA 进度在 OTA 任务详情页查看。设备二维码（App 扫码绑定）在设备列表行的「二维码」按钮弹窗查看与重新生成，已绑定的 App 用户（手机号脱敏）也在该弹窗查看。
                   </p>
                 </div>
               </div>

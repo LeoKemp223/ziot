@@ -87,10 +87,13 @@ POST /api/v1/app/devices/bind   {"code":"BD7K2M9XQ4ABCDEFGH"}   (Bearer)
 
 ## 4. 读取设备状态
 
-- **在线状态**:`GET /api/v1/app/devices` 列表里的 `online_status`(`online` / `offline` / `unknown`)。
+- **在线状态**:`GET /api/v1/app/devices` 列表里的 `online_status`(`online` / `offline` / `unknown`),或事件流的 `device.status.changed` 推送。
 - **属性状态**:`GET /api/v1/app/devices/{id}/shadow` 的 `reported` = 设备最近上报的属性全集(如 `{"temperature":24.5,"humidity":60}`);`desired` = 期望值(通常与最近一次 property_set 一致);`version` 单调递增可做变更检测。
 
-轮询建议:MVP 阶段 APP 拉取即可,**前台 3-10s、后台停止**;配合 `version`/`updated_at` 判断有无变化再刷 UI。SSE 实时推送是规划中的扩展(见 app-api.md 第 5 节),接口形态届时保持向下兼容。
+**推荐:前台用 SSE 实时接收,轮询做兜底。**
+
+- **SSE(实时,推荐前台)**:`GET /api/v1/app/events/stream`(Bearer,长连接)。设备属性上报合并进影子时推 `device.shadow.updated`(含完整 `reported` + `version`),真实上下线翻转时推 `device.status.changed`,20s 一次 `heartbeat` 保活。只推当前用户绑定的设备;**无历史重放,断线重连后先拉一次设备列表 + shadow 对齐,再继续收流**。浏览器原生 `EventSource` 不能带 Authorization 头,用 fetch 流式或支持自定义 header 的 SSE 库。字段级规范见 app-api.md 6.2 节。
+- **轮询(兜底/低频场景)**:前台 3-10s、后台停止;配合 `version`/`updated_at` 判断有无变化再刷 UI。
 
 ## 5. 控制设备
 
@@ -101,7 +104,7 @@ POST /api/v1/app/devices/bind   {"code":"BD7K2M9XQ4ABCDEFGH"}   (Bearer)
 | 同步(推荐先做) | `POST .../commands:sync` | "点开关"类交互:投递完成即返回终态(通常几十毫秒),UI 上配合 loading 即可 |
 | 异步 | `POST .../commands` | 批量/不关心即时结果的场景:返回 201 + 命令 id,用 `GET /api/v1/app/commands/{id}` 查询 |
 
-命令状态机(投递语义):`pending → success | failed`。`success` = 平台已成功投递到 MQTT Broker,**不代表设备已执行**;`failed` = 发布失败,看 `error_message`。要确认设备实际状态,轮询 `GET .../devices/{id}/shadow` 看 `reported`(设备属性上报)是否收敛到设置值。存量历史命令可能出现 `sent`/`timeout`(旧版等待设备应答的语义)。
+命令状态机(投递语义):`pending → success | failed`。`success` = 平台已成功投递到 MQTT Broker,**不代表设备已执行**;`failed` = 发布失败,看 `error_message`。要确认设备实际状态,看 SSE 的 `device.shadow.updated` 推送或轮询 `GET .../devices/{id}/shadow` 的 `reported`(设备属性上报)是否收敛到设置值。存量历史命令可能出现 `sent`/`timeout`(旧版等待设备应答的语义)。
 
 参数规则:
 - `kind: "service"` 需 `identifier`(设备物模型服务标识,如 `reboot`,字母/下划线开头)。
@@ -144,6 +147,8 @@ curl -s $BASE/api/v1/app/devices/<devId>/shadow -H "Authorization: Bearer $AT"
 curl -s -X POST $BASE/api/v1/app/devices/<devId>/commands:sync \
   -H "Authorization: Bearer $AT" -H 'content-type: application/json' \
   -d '{"kind":"service","identifier":"reboot","params":{}}'
+# ⑥ 实时事件流(设备上报/上下线时持续打印;Ctrl+C 退出)
+curl -N $BASE/api/v1/app/events/stream -H "Authorization: Bearer $AT"
 ```
 
-本地全链路也可以直接跑 `pnpm smoke`(覆盖注册→绑定→同步控制→影子→复用拒绝→解绑)。
+本地全链路也可以直接跑 `pnpm smoke`(覆盖注册→绑定→同步控制→影子→SSE 实时推送→复用共享→解绑)。

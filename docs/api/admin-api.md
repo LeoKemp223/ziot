@@ -206,6 +206,10 @@ curl http://localhost:3000/api/v1/health
 
 使用 refresh token Cookie 换发新 session，并撤销旧 refresh token。
 
+### `GET /api/v1/auth/session-renew`
+
+页面导航用的静默续期入口（middleware 在 access token 过期、refresh Cookie 仍存在时 302 到本接口）：`next` 参数为站内相对路径。续期成功 → 轮换登录 Cookie 并 307 回 `next`；refresh 无效 → 307 到 `/login?next=...`。APP 端不用本接口（App 走 `/api/v1/app/auth/refresh`）。
+
 ### `POST /api/v1/auth/logout`
 
 撤销当前 refresh token 并清空登录 Cookie。
@@ -1022,6 +1026,43 @@ HTTP 状态码：`200`
 属性上报会同步合并到设备影子的 `reported` 字段，并递增 `version`。
 命令记录只记录平台主动下发的控制指令；设备主动上报应使用本接口查询。
 
+### `GET /api/v1/devices/{device_id}/records`
+
+查询设备的**统一记录时间线**：命令下发（`device_commands`）与设备上报（`device_logs` 的 `property`/`event`/`log`/`lifecycle`，含上下线事件）按时间倒序合并分页。需要 `device:read` 权限。查询前会先过期翻牌存量 `sent` 命令。
+
+查询参数：`page`（默认 1）、`page_size`（默认 20，最大 100）。控制台设备详情页与控制台的「设备记录」表格即本接口。
+
+成功响应 `data`：
+
+```json
+{
+  "items": [
+    {
+      "id": "cmd_xxx",
+      "source": "command",
+      "time": "2026-09-03T04:33:09.084Z",
+      "identifier": "reboot",
+      "request_id": "cmd_xxx",
+      "status": "success",
+      "params": { "delay": 1 },
+      "result": null,
+      "error_message": null
+    },
+    {
+      "id": "dlg_xxx",
+      "source": "report",
+      "time": "2026-09-03T04:33:09.979Z",
+      "type": "lifecycle",
+      "level": "info",
+      "content": { "event": "client.disconnected", "client_id": "dk_demo" }
+    }
+  ],
+  "pagination": { "page": 1, "page_size": 20, "total": 7, "total_pages": 1 }
+}
+```
+
+`source` 判别联合：`command` 记录取 `identifier/request_id/status/params/result/error_message`（`time` = 命令 `created_at`）；`report` 记录取 `type/level/content`（`time` = 上报 `occurred_at`，`type=lifecycle` 为上下线事件，`content.event` 为 `client.connected`/`client.disconnected`）。分页为两源合并后的窗口分页（单源最多取 1000 行，深分页返回空 `items` 但 `total` 真实）。
+
 ### `GET /api/v1/commands/{command_id}`
 
 查询单条控制指令。需要 `device:read` 权限。
@@ -1316,6 +1357,7 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 | `POST /api/v1/devices/{device_id}/commands` | 返回命令记录并通过 EMQX 发布下发消息 |
 | `GET /api/v1/devices/{device_id}/commands` | 返回设备最近命令记录 |
 | `GET /api/v1/devices/{device_id}/reports` | 返回设备最近主动上报记录 |
+| `GET /api/v1/devices/{device_id}/records` | 返回命令下发与设备上报（含上下线）合并的时间线，分页 |
 | `GET /api/v1/commands/{command_id}` | 返回单条命令记录 |
 | `GET /api/v1/device-groups` | 返回设备分组列表 |
 | `POST /api/v1/device-groups` | 可创建同产品分组并添加设备成员 |
