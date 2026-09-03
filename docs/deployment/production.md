@@ -111,7 +111,8 @@ EMQX_API_URL=http://localhost:18083 ZIOT_WEBHOOK_BASE_URL=http://web:3000 \
   bash scripts/setup-emqx-webhook.sh
 ```
 
-（脚本可重复执行；规则存在 EMQX 数据目录，容器重建不丢。）
+（脚本可重复执行；规则存在 `emqx-data` 卷，emqx 容器重建不丢。`scripts/prod-deploy.sh`
+检测到 emqx 重建时会自动重跑一遍做双保险。）
 
 ### 6. 验证
 
@@ -119,17 +120,20 @@ EMQX_API_URL=http://localhost:18083 ZIOT_WEBHOOK_BASE_URL=http://web:3000 \
 curl https://www.ziot.asia/api/v1/health
 docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml \
   run --rm --no-deps -e BASE_URL=https://www.ziot.asia -e MQTT_BROKER_URL=mqtt://www.ziot.asia:1883 \
+  -e ADMIN_ACCOUNT=<管理员账号> -e ADMIN_PASSWORD=<管理员密码> \
   web pnpm --filter @ziot/device-simulator exec tsx ../../scripts/run-smoke-tests.ts
+# 脚本默认用 seed 账号 13800000001/Admin123456；线上账号已改，必须显式传 ADMIN_ACCOUNT/ADMIN_PASSWORD
 openssl s_client -connect www.ziot.asia:8883 -servername www.ziot.asia </dev/null 2>/dev/null | grep subject=
 ```
 
 ## 日常运维
 
 ```bash
-# 更新发布（注意：web 重建后 IP 变化，nginx 启动时只解析一次 upstream 主机名，必须连带重启）
-git pull && docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml build web \
-  && docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml up -d \
-  && docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml restart nginx
+# 更新发布（构建 → 结构同步[有差异才推] → up -d → 重启 nginx → 健康验证，一步到位）
+git pull && scripts/prod-deploy.sh
+# 按模块更新：app = web+worker（共享镜像）｜web｜worker｜db（只同步结构）｜infra（nginx/emqx 配置变更后重建）
+# 其它 compose 服务名（postgres/redis/minio/emqx/nginx）也可作参数，force-recreate 应用配置变更
+scripts/prod-deploy.sh app
 
 # 日志 / 状态
 docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml logs -f web worker
@@ -159,6 +163,7 @@ ssh -L 18083:127.0.0.1:18083 ubuntu@43.132.209.107 后访问 http://localhost:18
 | 单文件 bind mount + 编辑器改文件 | inode 变了，容器里还是旧内容（nginx 一直报旧错误） | 改配置后 `up -d --force-recreate <svc>` |
 | typedRoutes 生产构建失败 | `next dev` 不做类型检查，`next build` 时 `Type 'string' is not assignable to 'RouteImpl'` | `NavItem.href` 用 `import type { Route } from "next"`（已修，`components/console/dashboard-data.ts`） |
 | presigned URL 直传 MinIO | 内网 endpoint 浏览器不可达 | `MINIO_ENDPOINT=www.ziot.asia:443(useSSL)`，nginx 反代 `/ziot-firmwares/` 且**保留原始 Host**（SigV4 签名含 Host） |
+| Prisma 7 移除 `--from-schema-datasource` | `migrate diff` 直接报错，exit 1 若被当成"有差异"会空跑 db push | 用 `--from-config-datasource --to-schema <file> --exit-code`，并区分 rc：0=一致、2=有差异、1=命令出错（`scripts/prod-deploy.sh` 已按此实现） |
 
 ## 安全清单
 

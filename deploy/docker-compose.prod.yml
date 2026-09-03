@@ -167,6 +167,8 @@ services:
     volumes:
       - ./prod/emqx.conf:/opt/emqx/etc/emqx.conf:ro
       - ./certs:/etc/emqx/certs:ro
+      # webhook 规则/认证数据持久化：否则容器重建即丢，必须重跑 setup-emqx-webhook.sh
+      - emqx-data:/opt/emqx/data
     depends_on:
       web:
         condition: service_started
@@ -212,3 +214,4 @@ services:
 volumes:
   postgres-data:
   minio-data:
+  emqx-data:
