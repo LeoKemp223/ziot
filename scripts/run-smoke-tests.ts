@@ -606,6 +606,40 @@ async function main() {
   }
   logStep("app permanent code sharing + rotate + unbind");
 
+  // 修改密码:旧密码校验 → 全量吊销刷新令牌 → 返回新会话;旧 refresh_token 必须失效
+  const renewedSession = await api<{
+    access_token: string;
+    refresh_token: string;
+  }>("/api/v1/app/auth/change-password", {
+    method: "POST",
+    headers: appAuth,
+    json: {
+      old_password: "Smoke123456",
+      new_password: "NewSmoke123456"
+    }
+  });
+  if (!renewedSession.refresh_token.startsWith("art_")) {
+    throw new Error("change-password did not return a new session");
+  }
+
+  const oldRefreshResponse = await fetch(`${BASE_URL}/api/v1/app/auth/refresh`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ refresh_token: appSession.refresh_token })
+  });
+  const oldRefreshBody = (await oldRefreshResponse.json()) as Envelope<unknown>;
+  if (oldRefreshResponse.status !== 401 || oldRefreshBody.code !== 401001) {
+    throw new Error(
+      `old refresh token expected 401/401001, got ${oldRefreshResponse.status}/${oldRefreshBody.code}`
+    );
+  }
+
+  await api<{ access_token: string }>("/api/v1/app/auth/login", {
+    method: "POST",
+    json: { phone: appPhone, password: "NewSmoke123456" }
+  });
+  logStep("app change password");
+
   const firmware = await api<{ id: string }>("/api/v1/firmwares", {
     method: "POST",
     jar: adminJar,

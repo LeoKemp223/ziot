@@ -268,6 +268,37 @@ export async function refreshAppSession(
   return createAppSession(db, record.app_user);
 }
 
+export async function changeAppUserPassword(
+  db: Db,
+  input: { appUserId: string; oldPassword: string; newPassword: string }
+): Promise<AppAuthSession> {
+  assertPassword(input.newPassword);
+
+  const user = await db.appUser.findUnique({ where: { id: input.appUserId } });
+
+  if (!user) {
+    throw serviceError(401001, "登录已过期，请重新登录");
+  }
+
+  if (!(await bcrypt.compare(input.oldPassword, user.password_hash))) {
+    throw serviceError(401001, "原密码不正确");
+  }
+
+  const passwordHash = await bcrypt.hash(input.newPassword, 10);
+  await db.appUser.update({
+    where: { id: user.id },
+    data: { password_hash: passwordHash }
+  });
+
+  // 改密即登出其它所有设备:吊销全部刷新令牌,当前设备拿新会话无感续用
+  await db.appRefreshToken.updateMany({
+    where: { app_user_id: user.id, revoked_at: null },
+    data: { revoked_at: new Date() }
+  });
+
+  return createAppSession(db, user);
+}
+
 export async function logoutAppUser(
   db: Db,
   refreshToken: string | undefined

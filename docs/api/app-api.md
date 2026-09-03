@@ -159,6 +159,23 @@
 
 `GET /api/v1/app/me`,请求头 `Authorization: Bearer <access_token>`,返回 3.1 中的 `user` 对象。
 
+### 3.6 修改密码
+
+`POST /api/v1/app/auth/change-password`,请求头 `Authorization: Bearer <access_token>`。限流:10 次/分钟/IP。
+
+请求体:
+
+```json
+{
+  "old_password": "Pass1234",
+  "new_password": "NewPass5678"
+}
+```
+
+- `new_password`:8-128 位;`old_password` 错误返回 `401001`(提示「原密码不正确」)。
+- 成功行为:更新密码 → **吊销该用户全部 refresh_token(其它设备全部登出,它们下次刷新会收到 `401001`)** → 响应 `data` 为**新签发的会话**(结构同 3.1),当前设备原子替换本地令牌后无感续用。
+- 写入审计日志 `app.auth.change_password`。
+
 ## 4. 扫码绑定
 
 ### `POST /api/v1/app/devices/bind`
@@ -369,7 +386,7 @@ curl http://localhost:3000/api/v1/devices/<devId>/binding-code \
 # 记下 data.code(永久有效;需要作废旧码时改 POST 同路径 = 轮换)
 
 # 2. App 注册(登录把 register 换成 login,body 为 {phone,password};
-#    刷新用 {refresh_token})
+#    刷新用 {refresh_token};改密用 {old_password,new_password} + Bearer)
 curl -X POST http://localhost:3000/api/v1/app/auth/register \
   -H 'content-type: application/json' \
   -d '{"phone":"13912345678","password":"Pass1234","nickname":"小明"}'

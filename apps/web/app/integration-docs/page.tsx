@@ -385,6 +385,7 @@ MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_de
                       ["注册（开放，无需邀请码）", "POST /api/v1/app/auth/register"],
                       ["登录", "POST /api/v1/app/auth/login"],
                       ["刷新令牌（旋转式）", "POST /api/v1/app/auth/refresh"],
+                      ["修改密码", "POST /api/v1/app/auth/change-password"],
                       ["登出", "POST /api/v1/app/auth/logout"],
                       ["当前用户", "GET /api/v1/app/me"],
                       ["认证方式", "Authorization: Bearer <access_token>"],
@@ -392,7 +393,7 @@ MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_de
                     ]}
                   />
                   <CodeBlock
-                    value={`# 注册/登录/刷新的响应 data 结构相同：
+                    value={`# 注册/登录/刷新/改密的响应 data 结构相同（均为一对新令牌 + user）：
 {
   "user": { "id": "app_xxx", "phone": "13912345678", "nickname": "小明",
             "status": "active", "created_at": "..." },
@@ -408,7 +409,9 @@ curl -s -X POST http://localhost:3000/api/v1/app/auth/register \\
 
 # 登录 body：{ "phone": "...", "password": "..." }
 # 刷新 body：{ "refresh_token": "art_xxx" }  ← 旋转式：旧 refresh_token 用一次即作废，
-#                                          必须原子替换存储；返回 401001 则引导重新登录`}
+#                                          必须原子替换存储；返回 401001 则引导重新登录
+# 改密 body：{ "old_password": "...", "new_password": "..." }（Bearer）
+#   → 吊销全部刷新令牌（其它设备全部登出），响应返回新令牌对，当前设备无感续用`}
                   />
                   <p className="mt-2 text-sm text-slate-600">
                     令牌在响应体返回（不下发 Cookie），APP 自行安全存储（建议 Keychain/Keystore），不进 URL、不进日志。

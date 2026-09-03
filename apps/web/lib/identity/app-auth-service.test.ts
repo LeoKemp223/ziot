@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import {
+  changeAppUserPassword,
   loginAppUser,
   mapAppAuthSession,
   refreshAppSession,
@@ -114,6 +115,83 @@ describe("app auth service", () => {
     await expect(
       loginAppUser(db, { phone: "13912345678", password: "Wrong123" })
     ).rejects.toMatchObject({ code: 401001 });
+  });
+
+  it("changes password, revokes all refresh tokens and returns a new session", async () => {
+    const passwordHash = await bcrypt.hash("Pass1234", 4);
+    const update = vi.fn().mockResolvedValue({});
+    const db = {
+      appUser: {
+        findUnique: vi
+          .fn()
+          .mockResolvedValue(appUserRecord({ password_hash: passwordHash })),
+        update,
+      },
+      appRefreshToken: {
+        updateMany: vi.fn().mockResolvedValue({ count: 3 }),
+        create: vi.fn().mockResolvedValue({}),
+      },
+    };
+
+    const session = await changeAppUserPassword(db, {
+      appUserId: "app_user1",
+      oldPassword: "Pass1234",
+      newPassword: "NewPass5678",
+    });
+
+    expect(update).toHaveBeenCalledWith({
+      where: { id: "app_user1" },
+      data: { password_hash: expect.any(String) },
+    });
+    const newHash = update.mock.calls[0]?.[0]?.data
+      .password_hash as string;
+    expect(await bcrypt.compare("NewPass5678", newHash)).toBe(true);
+    expect(db.appRefreshToken.updateMany).toHaveBeenCalledWith({
+      where: { app_user_id: "app_user1", revoked_at: null },
+      data: { revoked_at: expect.any(Date) },
+    });
+    expect(session.refreshToken).toMatch(/^art_/);
+  });
+
+  it("rejects password change with a wrong old password", async () => {
+    const passwordHash = await bcrypt.hash("Pass1234", 4);
+    const update = vi.fn().mockResolvedValue({});
+    const db = {
+      appUser: {
+        findUnique: vi
+          .fn()
+          .mockResolvedValue(appUserRecord({ password_hash: passwordHash })),
+        update,
+      },
+    };
+
+    await expect(
+      changeAppUserPassword(db, {
+        appUserId: "app_user1",
+        oldPassword: "Wrong123",
+        newPassword: "NewPass5678",
+      })
+    ).rejects.toMatchObject({ code: 401001 });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("validates the new password length on change", async () => {
+    const passwordHash = await bcrypt.hash("Pass1234", 4);
+    const db = {
+      appUser: {
+        findUnique: vi
+          .fn()
+          .mockResolvedValue(appUserRecord({ password_hash: passwordHash })),
+      },
+    };
+
+    await expect(
+      changeAppUserPassword(db, {
+        appUserId: "app_user1",
+        oldPassword: "Pass1234",
+        newPassword: "short",
+      })
+    ).rejects.toMatchObject({ code: 400001 });
   });
 
   it("rotates refresh tokens and revokes the old one", async () => {

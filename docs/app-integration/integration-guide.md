@@ -44,6 +44,12 @@ POST /api/v1/app/auth/login      {"phone":"13912345678","password":"Pass1234"}
 - 密码修改、登出、服务端吊销都会使刷新失败,统一按"会话过期"处理。
 - `POST /api/v1/app/auth/logout` 传当前 refresh_token,用于主动登出(丢弃本地令牌即可,logout 只是服务端吊销)。
 
+### 2.3 修改密码
+
+`POST /api/v1/app/auth/change-password`(Bearer),body `{"old_password":"...","new_password":"..."}`(新密码 8-128 位,原密码错误返回 `401001`)。
+
+行为:校验原密码 → 更新密码 → **吊销该用户全部刷新令牌(其它设备全部登出)** → 响应返回**新签发的一对令牌**(结构同注册/登录),当前设备**原子替换**本地令牌后无感续用。限流 10 次/分钟/IP。
+
 ## 3. 扫码绑定
 
 ### 3.1 二维码内容规范
