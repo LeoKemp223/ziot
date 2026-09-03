@@ -31,6 +31,7 @@ export type DeviceMinAggregateOutputType = {
   product_id: string | null
   device_key: string | null
   device_secret_hash: string | null
+  binding_code: string | null
   name: string | null
   status: $Enums.ResourceStatus | null
   online_status: $Enums.OnlineStatus | null
@@ -38,6 +39,7 @@ export type DeviceMinAggregateOutputType = {
   last_online_at: Date | null
   last_offline_at: Date | null
   last_heartbeat_at: Date | null
+  binding_code_generated_at: Date | null
   created_at: Date | null
   updated_at: Date | null
   deleted_at: Date | null
@@ -50,6 +52,7 @@ export type DeviceMaxAggregateOutputType = {
   product_id: string | null
   device_key: string | null
   device_secret_hash: string | null
+  binding_code: string | null
   name: string | null
   status: $Enums.ResourceStatus | null
   online_status: $Enums.OnlineStatus | null
@@ -57,6 +60,7 @@ export type DeviceMaxAggregateOutputType = {
   last_online_at: Date | null
   last_offline_at: Date | null
   last_heartbeat_at: Date | null
+  binding_code_generated_at: Date | null
   created_at: Date | null
   updated_at: Date | null
   deleted_at: Date | null
@@ -69,6 +73,7 @@ export type DeviceCountAggregateOutputType = {
   product_id: number
   device_key: number
   device_secret_hash: number
+  binding_code: number
   name: number
   status: number
   online_status: number
@@ -77,6 +82,7 @@ export type DeviceCountAggregateOutputType = {
   last_online_at: number
   last_offline_at: number
   last_heartbeat_at: number
+  binding_code_generated_at: number
   created_at: number
   updated_at: number
   deleted_at: number
@@ -91,6 +97,7 @@ export type DeviceMinAggregateInputType = {
   product_id?: true
   device_key?: true
   device_secret_hash?: true
+  binding_code?: true
   name?: true
   status?: true
   online_status?: true
@@ -98,6 +105,7 @@ export type DeviceMinAggregateInputType = {
   last_online_at?: true
   last_offline_at?: true
   last_heartbeat_at?: true
+  binding_code_generated_at?: true
   created_at?: true
   updated_at?: true
   deleted_at?: true
@@ -110,6 +118,7 @@ export type DeviceMaxAggregateInputType = {
   product_id?: true
   device_key?: true
   device_secret_hash?: true
+  binding_code?: true
   name?: true
   status?: true
   online_status?: true
@@ -117,6 +126,7 @@ export type DeviceMaxAggregateInputType = {
   last_online_at?: true
   last_offline_at?: true
   last_heartbeat_at?: true
+  binding_code_generated_at?: true
   created_at?: true
   updated_at?: true
   deleted_at?: true
@@ -129,6 +139,7 @@ export type DeviceCountAggregateInputType = {
   product_id?: true
   device_key?: true
   device_secret_hash?: true
+  binding_code?: true
   name?: true
   status?: true
   online_status?: true
@@ -137,6 +148,7 @@ export type DeviceCountAggregateInputType = {
   last_online_at?: true
   last_offline_at?: true
   last_heartbeat_at?: true
+  binding_code_generated_at?: true
   created_at?: true
   updated_at?: true
   deleted_at?: true
@@ -222,6 +234,7 @@ export type DeviceGroupByOutputType = {
   product_id: string
   device_key: string
   device_secret_hash: string
+  binding_code: string | null
   name: string
   status: $Enums.ResourceStatus
   online_status: $Enums.OnlineStatus
@@ -230,6 +243,7 @@ export type DeviceGroupByOutputType = {
   last_online_at: Date | null
   last_offline_at: Date | null
   last_heartbeat_at: Date | null
+  binding_code_generated_at: Date | null
   created_at: Date
   updated_at: Date
   deleted_at: Date | null
@@ -263,6 +277,7 @@ export type DeviceWhereInput = {
   product_id?: Prisma.StringFilter<"Device"> | string
   device_key?: Prisma.StringFilter<"Device"> | string
   device_secret_hash?: Prisma.StringFilter<"Device"> | string
+  binding_code?: Prisma.StringNullableFilter<"Device"> | string | null
   name?: Prisma.StringFilter<"Device"> | string
   status?: Prisma.EnumResourceStatusFilter<"Device"> | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFilter<"Device"> | $Enums.OnlineStatus
@@ -271,6 +286,7 @@ export type DeviceWhereInput = {
   last_online_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
   last_offline_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
   last_heartbeat_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
+  binding_code_generated_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
   created_at?: Prisma.DateTimeFilter<"Device"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Device"> | Date | string
   deleted_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
@@ -282,6 +298,7 @@ export type DeviceWhereInput = {
   commands?: Prisma.DeviceCommandListRelationFilter
   ota_records?: Prisma.OtaRecordListRelationFilter
   device_logs?: Prisma.DeviceLogListRelationFilter
+  user_devices?: Prisma.UserDeviceListRelationFilter
 }
 
 export type DeviceOrderByWithRelationInput = {
@@ -291,6 +308,7 @@ export type DeviceOrderByWithRelationInput = {
   product_id?: Prisma.SortOrder
   device_key?: Prisma.SortOrder
   device_secret_hash?: Prisma.SortOrder
+  binding_code?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   status?: Prisma.SortOrder
   online_status?: Prisma.SortOrder
@@ -299,6 +317,7 @@ export type DeviceOrderByWithRelationInput = {
   last_online_at?: Prisma.SortOrderInput | Prisma.SortOrder
   last_offline_at?: Prisma.SortOrderInput | Prisma.SortOrder
   last_heartbeat_at?: Prisma.SortOrderInput | Prisma.SortOrder
+  binding_code_generated_at?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -310,10 +329,12 @@ export type DeviceOrderByWithRelationInput = {
   commands?: Prisma.DeviceCommandOrderByRelationAggregateInput
   ota_records?: Prisma.OtaRecordOrderByRelationAggregateInput
   device_logs?: Prisma.DeviceLogOrderByRelationAggregateInput
+  user_devices?: Prisma.UserDeviceOrderByRelationAggregateInput
 }
 
 export type DeviceWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  binding_code?: string
   product_id_device_key?: Prisma.DeviceProduct_idDevice_keyCompoundUniqueInput
   AND?: Prisma.DeviceWhereInput | Prisma.DeviceWhereInput[]
   OR?: Prisma.DeviceWhereInput[]
@@ -331,6 +352,7 @@ export type DeviceWhereUniqueInput = Prisma.AtLeast<{
   last_online_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
   last_offline_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
   last_heartbeat_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
+  binding_code_generated_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
   created_at?: Prisma.DateTimeFilter<"Device"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Device"> | Date | string
   deleted_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
@@ -342,7 +364,8 @@ export type DeviceWhereUniqueInput = Prisma.AtLeast<{
   commands?: Prisma.DeviceCommandListRelationFilter
   ota_records?: Prisma.OtaRecordListRelationFilter
   device_logs?: Prisma.DeviceLogListRelationFilter
-}, "id" | "product_id_device_key">
+  user_devices?: Prisma.UserDeviceListRelationFilter
+}, "id" | "binding_code" | "product_id_device_key">
 
 export type DeviceOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -351,6 +374,7 @@ export type DeviceOrderByWithAggregationInput = {
   product_id?: Prisma.SortOrder
   device_key?: Prisma.SortOrder
   device_secret_hash?: Prisma.SortOrder
+  binding_code?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   status?: Prisma.SortOrder
   online_status?: Prisma.SortOrder
@@ -359,6 +383,7 @@ export type DeviceOrderByWithAggregationInput = {
   last_online_at?: Prisma.SortOrderInput | Prisma.SortOrder
   last_offline_at?: Prisma.SortOrderInput | Prisma.SortOrder
   last_heartbeat_at?: Prisma.SortOrderInput | Prisma.SortOrder
+  binding_code_generated_at?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   deleted_at?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -377,6 +402,7 @@ export type DeviceScalarWhereWithAggregatesInput = {
   product_id?: Prisma.StringWithAggregatesFilter<"Device"> | string
   device_key?: Prisma.StringWithAggregatesFilter<"Device"> | string
   device_secret_hash?: Prisma.StringWithAggregatesFilter<"Device"> | string
+  binding_code?: Prisma.StringNullableWithAggregatesFilter<"Device"> | string | null
   name?: Prisma.StringWithAggregatesFilter<"Device"> | string
   status?: Prisma.EnumResourceStatusWithAggregatesFilter<"Device"> | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusWithAggregatesFilter<"Device"> | $Enums.OnlineStatus
@@ -385,6 +411,7 @@ export type DeviceScalarWhereWithAggregatesInput = {
   last_online_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Device"> | Date | string | null
   last_offline_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Device"> | Date | string | null
   last_heartbeat_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Device"> | Date | string | null
+  binding_code_generated_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Device"> | Date | string | null
   created_at?: Prisma.DateTimeWithAggregatesFilter<"Device"> | Date | string
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"Device"> | Date | string
   deleted_at?: Prisma.DateTimeNullableWithAggregatesFilter<"Device"> | Date | string | null
@@ -394,6 +421,7 @@ export type DeviceCreateInput = {
   id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -402,6 +430,7 @@ export type DeviceCreateInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -413,6 +442,7 @@ export type DeviceCreateInput = {
   commands?: Prisma.DeviceCommandCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceUncheckedCreateInput = {
@@ -422,6 +452,7 @@ export type DeviceUncheckedCreateInput = {
   product_id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -430,6 +461,7 @@ export type DeviceUncheckedCreateInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -438,12 +470,14 @@ export type DeviceUncheckedCreateInput = {
   commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordUncheckedCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogUncheckedCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -452,6 +486,7 @@ export type DeviceUpdateInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -463,6 +498,7 @@ export type DeviceUpdateInput = {
   commands?: Prisma.DeviceCommandUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceUncheckedUpdateInput = {
@@ -472,6 +508,7 @@ export type DeviceUncheckedUpdateInput = {
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -480,6 +517,7 @@ export type DeviceUncheckedUpdateInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -488,6 +526,7 @@ export type DeviceUncheckedUpdateInput = {
   commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUncheckedUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUncheckedUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceCreateManyInput = {
@@ -497,6 +536,7 @@ export type DeviceCreateManyInput = {
   product_id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -505,6 +545,7 @@ export type DeviceCreateManyInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -514,6 +555,7 @@ export type DeviceUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -522,6 +564,7 @@ export type DeviceUpdateManyMutationInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -534,6 +577,7 @@ export type DeviceUncheckedUpdateManyInput = {
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -542,6 +586,7 @@ export type DeviceUncheckedUpdateManyInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -569,6 +614,7 @@ export type DeviceCountOrderByAggregateInput = {
   product_id?: Prisma.SortOrder
   device_key?: Prisma.SortOrder
   device_secret_hash?: Prisma.SortOrder
+  binding_code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   status?: Prisma.SortOrder
   online_status?: Prisma.SortOrder
@@ -577,6 +623,7 @@ export type DeviceCountOrderByAggregateInput = {
   last_online_at?: Prisma.SortOrder
   last_offline_at?: Prisma.SortOrder
   last_heartbeat_at?: Prisma.SortOrder
+  binding_code_generated_at?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   deleted_at?: Prisma.SortOrder
@@ -589,6 +636,7 @@ export type DeviceMaxOrderByAggregateInput = {
   product_id?: Prisma.SortOrder
   device_key?: Prisma.SortOrder
   device_secret_hash?: Prisma.SortOrder
+  binding_code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   status?: Prisma.SortOrder
   online_status?: Prisma.SortOrder
@@ -596,6 +644,7 @@ export type DeviceMaxOrderByAggregateInput = {
   last_online_at?: Prisma.SortOrder
   last_offline_at?: Prisma.SortOrder
   last_heartbeat_at?: Prisma.SortOrder
+  binding_code_generated_at?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   deleted_at?: Prisma.SortOrder
@@ -608,6 +657,7 @@ export type DeviceMinOrderByAggregateInput = {
   product_id?: Prisma.SortOrder
   device_key?: Prisma.SortOrder
   device_secret_hash?: Prisma.SortOrder
+  binding_code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   status?: Prisma.SortOrder
   online_status?: Prisma.SortOrder
@@ -615,6 +665,7 @@ export type DeviceMinOrderByAggregateInput = {
   last_online_at?: Prisma.SortOrder
   last_offline_at?: Prisma.SortOrder
   last_heartbeat_at?: Prisma.SortOrder
+  binding_code_generated_at?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   deleted_at?: Prisma.SortOrder
@@ -797,6 +848,20 @@ export type DeviceUpdateOneRequiredWithoutCommandsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.DeviceUpdateToOneWithWhereWithoutCommandsInput, Prisma.DeviceUpdateWithoutCommandsInput>, Prisma.DeviceUncheckedUpdateWithoutCommandsInput>
 }
 
+export type DeviceCreateNestedOneWithoutUser_devicesInput = {
+  create?: Prisma.XOR<Prisma.DeviceCreateWithoutUser_devicesInput, Prisma.DeviceUncheckedCreateWithoutUser_devicesInput>
+  connectOrCreate?: Prisma.DeviceCreateOrConnectWithoutUser_devicesInput
+  connect?: Prisma.DeviceWhereUniqueInput
+}
+
+export type DeviceUpdateOneRequiredWithoutUser_devicesNestedInput = {
+  create?: Prisma.XOR<Prisma.DeviceCreateWithoutUser_devicesInput, Prisma.DeviceUncheckedCreateWithoutUser_devicesInput>
+  connectOrCreate?: Prisma.DeviceCreateOrConnectWithoutUser_devicesInput
+  upsert?: Prisma.DeviceUpsertWithoutUser_devicesInput
+  connect?: Prisma.DeviceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DeviceUpdateToOneWithWhereWithoutUser_devicesInput, Prisma.DeviceUpdateWithoutUser_devicesInput>, Prisma.DeviceUncheckedUpdateWithoutUser_devicesInput>
+}
+
 export type DeviceCreateNestedOneWithoutOta_recordsInput = {
   create?: Prisma.XOR<Prisma.DeviceCreateWithoutOta_recordsInput, Prisma.DeviceUncheckedCreateWithoutOta_recordsInput>
   connectOrCreate?: Prisma.DeviceCreateOrConnectWithoutOta_recordsInput
@@ -829,6 +894,7 @@ export type DeviceCreateWithoutOrganizationInput = {
   id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -837,6 +903,7 @@ export type DeviceCreateWithoutOrganizationInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -847,6 +914,7 @@ export type DeviceCreateWithoutOrganizationInput = {
   commands?: Prisma.DeviceCommandCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceUncheckedCreateWithoutOrganizationInput = {
@@ -855,6 +923,7 @@ export type DeviceUncheckedCreateWithoutOrganizationInput = {
   product_id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -863,6 +932,7 @@ export type DeviceUncheckedCreateWithoutOrganizationInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -871,6 +941,7 @@ export type DeviceUncheckedCreateWithoutOrganizationInput = {
   commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordUncheckedCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogUncheckedCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceCreateOrConnectWithoutOrganizationInput = {
@@ -909,6 +980,7 @@ export type DeviceScalarWhereInput = {
   product_id?: Prisma.StringFilter<"Device"> | string
   device_key?: Prisma.StringFilter<"Device"> | string
   device_secret_hash?: Prisma.StringFilter<"Device"> | string
+  binding_code?: Prisma.StringNullableFilter<"Device"> | string | null
   name?: Prisma.StringFilter<"Device"> | string
   status?: Prisma.EnumResourceStatusFilter<"Device"> | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFilter<"Device"> | $Enums.OnlineStatus
@@ -917,6 +989,7 @@ export type DeviceScalarWhereInput = {
   last_online_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
   last_offline_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
   last_heartbeat_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
+  binding_code_generated_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
   created_at?: Prisma.DateTimeFilter<"Device"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"Device"> | Date | string
   deleted_at?: Prisma.DateTimeNullableFilter<"Device"> | Date | string | null
@@ -926,6 +999,7 @@ export type DeviceCreateWithoutCreatorInput = {
   id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -934,6 +1008,7 @@ export type DeviceCreateWithoutCreatorInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -944,6 +1019,7 @@ export type DeviceCreateWithoutCreatorInput = {
   commands?: Prisma.DeviceCommandCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceUncheckedCreateWithoutCreatorInput = {
@@ -952,6 +1028,7 @@ export type DeviceUncheckedCreateWithoutCreatorInput = {
   product_id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -960,6 +1037,7 @@ export type DeviceUncheckedCreateWithoutCreatorInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -968,6 +1046,7 @@ export type DeviceUncheckedCreateWithoutCreatorInput = {
   commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordUncheckedCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogUncheckedCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceCreateOrConnectWithoutCreatorInput = {
@@ -1000,6 +1079,7 @@ export type DeviceCreateWithoutProductInput = {
   id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1008,6 +1088,7 @@ export type DeviceCreateWithoutProductInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1018,6 +1099,7 @@ export type DeviceCreateWithoutProductInput = {
   commands?: Prisma.DeviceCommandCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceUncheckedCreateWithoutProductInput = {
@@ -1026,6 +1108,7 @@ export type DeviceUncheckedCreateWithoutProductInput = {
   created_by: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1034,6 +1117,7 @@ export type DeviceUncheckedCreateWithoutProductInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1042,6 +1126,7 @@ export type DeviceUncheckedCreateWithoutProductInput = {
   commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordUncheckedCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogUncheckedCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceCreateOrConnectWithoutProductInput = {
@@ -1074,6 +1159,7 @@ export type DeviceCreateWithoutDevice_group_membersInput = {
   id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1082,6 +1168,7 @@ export type DeviceCreateWithoutDevice_group_membersInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1092,6 +1179,7 @@ export type DeviceCreateWithoutDevice_group_membersInput = {
   commands?: Prisma.DeviceCommandCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceUncheckedCreateWithoutDevice_group_membersInput = {
@@ -1101,6 +1189,7 @@ export type DeviceUncheckedCreateWithoutDevice_group_membersInput = {
   product_id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1109,6 +1198,7 @@ export type DeviceUncheckedCreateWithoutDevice_group_membersInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1116,6 +1206,7 @@ export type DeviceUncheckedCreateWithoutDevice_group_membersInput = {
   commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordUncheckedCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogUncheckedCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceCreateOrConnectWithoutDevice_group_membersInput = {
@@ -1138,6 +1229,7 @@ export type DeviceUpdateWithoutDevice_group_membersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1146,6 +1238,7 @@ export type DeviceUpdateWithoutDevice_group_membersInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1156,6 +1249,7 @@ export type DeviceUpdateWithoutDevice_group_membersInput = {
   commands?: Prisma.DeviceCommandUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceUncheckedUpdateWithoutDevice_group_membersInput = {
@@ -1165,6 +1259,7 @@ export type DeviceUncheckedUpdateWithoutDevice_group_membersInput = {
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1173,6 +1268,7 @@ export type DeviceUncheckedUpdateWithoutDevice_group_membersInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1180,12 +1276,14 @@ export type DeviceUncheckedUpdateWithoutDevice_group_membersInput = {
   commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUncheckedUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUncheckedUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceCreateWithoutShadowInput = {
   id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1194,6 +1292,7 @@ export type DeviceCreateWithoutShadowInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1204,6 +1303,7 @@ export type DeviceCreateWithoutShadowInput = {
   commands?: Prisma.DeviceCommandCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceUncheckedCreateWithoutShadowInput = {
@@ -1213,6 +1313,7 @@ export type DeviceUncheckedCreateWithoutShadowInput = {
   product_id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1221,6 +1322,7 @@ export type DeviceUncheckedCreateWithoutShadowInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1228,6 +1330,7 @@ export type DeviceUncheckedCreateWithoutShadowInput = {
   commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordUncheckedCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogUncheckedCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceCreateOrConnectWithoutShadowInput = {
@@ -1250,6 +1353,7 @@ export type DeviceUpdateWithoutShadowInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1258,6 +1362,7 @@ export type DeviceUpdateWithoutShadowInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1268,6 +1373,7 @@ export type DeviceUpdateWithoutShadowInput = {
   commands?: Prisma.DeviceCommandUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceUncheckedUpdateWithoutShadowInput = {
@@ -1277,6 +1383,7 @@ export type DeviceUncheckedUpdateWithoutShadowInput = {
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1285,6 +1392,7 @@ export type DeviceUncheckedUpdateWithoutShadowInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1292,12 +1400,14 @@ export type DeviceUncheckedUpdateWithoutShadowInput = {
   commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUncheckedUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUncheckedUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceCreateWithoutCommandsInput = {
   id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1306,6 +1416,7 @@ export type DeviceCreateWithoutCommandsInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1316,6 +1427,7 @@ export type DeviceCreateWithoutCommandsInput = {
   device_group_members?: Prisma.DeviceGroupMemberCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceUncheckedCreateWithoutCommandsInput = {
@@ -1325,6 +1437,7 @@ export type DeviceUncheckedCreateWithoutCommandsInput = {
   product_id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1333,6 +1446,7 @@ export type DeviceUncheckedCreateWithoutCommandsInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1340,6 +1454,7 @@ export type DeviceUncheckedCreateWithoutCommandsInput = {
   device_group_members?: Prisma.DeviceGroupMemberUncheckedCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordUncheckedCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogUncheckedCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceCreateOrConnectWithoutCommandsInput = {
@@ -1362,6 +1477,7 @@ export type DeviceUpdateWithoutCommandsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1370,6 +1486,7 @@ export type DeviceUpdateWithoutCommandsInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1380,6 +1497,7 @@ export type DeviceUpdateWithoutCommandsInput = {
   device_group_members?: Prisma.DeviceGroupMemberUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceUncheckedUpdateWithoutCommandsInput = {
@@ -1389,6 +1507,7 @@ export type DeviceUncheckedUpdateWithoutCommandsInput = {
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1397,6 +1516,7 @@ export type DeviceUncheckedUpdateWithoutCommandsInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1404,12 +1524,14 @@ export type DeviceUncheckedUpdateWithoutCommandsInput = {
   device_group_members?: Prisma.DeviceGroupMemberUncheckedUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUncheckedUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUncheckedUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutDeviceNestedInput
 }
 
-export type DeviceCreateWithoutOta_recordsInput = {
+export type DeviceCreateWithoutUser_devicesInput = {
   id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1418,6 +1540,131 @@ export type DeviceCreateWithoutOta_recordsInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  deleted_at?: Date | string | null
+  organization: Prisma.OrganizationCreateNestedOneWithoutDevicesInput
+  creator: Prisma.UserCreateNestedOneWithoutDevicesInput
+  product: Prisma.ProductCreateNestedOneWithoutDevicesInput
+  shadow?: Prisma.DeviceShadowCreateNestedOneWithoutDeviceInput
+  device_group_members?: Prisma.DeviceGroupMemberCreateNestedManyWithoutDeviceInput
+  commands?: Prisma.DeviceCommandCreateNestedManyWithoutDeviceInput
+  ota_records?: Prisma.OtaRecordCreateNestedManyWithoutDeviceInput
+  device_logs?: Prisma.DeviceLogCreateNestedManyWithoutDeviceInput
+}
+
+export type DeviceUncheckedCreateWithoutUser_devicesInput = {
+  id: string
+  org_id: string
+  created_by: string
+  product_id: string
+  device_key: string
+  device_secret_hash: string
+  binding_code?: string | null
+  name: string
+  status?: $Enums.ResourceStatus
+  online_status?: $Enums.OnlineStatus
+  firmware_version?: string | null
+  tags: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  last_online_at?: Date | string | null
+  last_offline_at?: Date | string | null
+  last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  deleted_at?: Date | string | null
+  shadow?: Prisma.DeviceShadowUncheckedCreateNestedOneWithoutDeviceInput
+  device_group_members?: Prisma.DeviceGroupMemberUncheckedCreateNestedManyWithoutDeviceInput
+  commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutDeviceInput
+  ota_records?: Prisma.OtaRecordUncheckedCreateNestedManyWithoutDeviceInput
+  device_logs?: Prisma.DeviceLogUncheckedCreateNestedManyWithoutDeviceInput
+}
+
+export type DeviceCreateOrConnectWithoutUser_devicesInput = {
+  where: Prisma.DeviceWhereUniqueInput
+  create: Prisma.XOR<Prisma.DeviceCreateWithoutUser_devicesInput, Prisma.DeviceUncheckedCreateWithoutUser_devicesInput>
+}
+
+export type DeviceUpsertWithoutUser_devicesInput = {
+  update: Prisma.XOR<Prisma.DeviceUpdateWithoutUser_devicesInput, Prisma.DeviceUncheckedUpdateWithoutUser_devicesInput>
+  create: Prisma.XOR<Prisma.DeviceCreateWithoutUser_devicesInput, Prisma.DeviceUncheckedCreateWithoutUser_devicesInput>
+  where?: Prisma.DeviceWhereInput
+}
+
+export type DeviceUpdateToOneWithWhereWithoutUser_devicesInput = {
+  where?: Prisma.DeviceWhereInput
+  data: Prisma.XOR<Prisma.DeviceUpdateWithoutUser_devicesInput, Prisma.DeviceUncheckedUpdateWithoutUser_devicesInput>
+}
+
+export type DeviceUpdateWithoutUser_devicesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  device_key?: Prisma.StringFieldUpdateOperationsInput | string
+  device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
+  online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
+  firmware_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutDevicesNestedInput
+  creator?: Prisma.UserUpdateOneRequiredWithoutDevicesNestedInput
+  product?: Prisma.ProductUpdateOneRequiredWithoutDevicesNestedInput
+  shadow?: Prisma.DeviceShadowUpdateOneWithoutDeviceNestedInput
+  device_group_members?: Prisma.DeviceGroupMemberUpdateManyWithoutDeviceNestedInput
+  commands?: Prisma.DeviceCommandUpdateManyWithoutDeviceNestedInput
+  ota_records?: Prisma.OtaRecordUpdateManyWithoutDeviceNestedInput
+  device_logs?: Prisma.DeviceLogUpdateManyWithoutDeviceNestedInput
+}
+
+export type DeviceUncheckedUpdateWithoutUser_devicesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.StringFieldUpdateOperationsInput | string
+  product_id?: Prisma.StringFieldUpdateOperationsInput | string
+  device_key?: Prisma.StringFieldUpdateOperationsInput | string
+  device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
+  online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
+  firmware_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  shadow?: Prisma.DeviceShadowUncheckedUpdateOneWithoutDeviceNestedInput
+  device_group_members?: Prisma.DeviceGroupMemberUncheckedUpdateManyWithoutDeviceNestedInput
+  commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutDeviceNestedInput
+  ota_records?: Prisma.OtaRecordUncheckedUpdateManyWithoutDeviceNestedInput
+  device_logs?: Prisma.DeviceLogUncheckedUpdateManyWithoutDeviceNestedInput
+}
+
+export type DeviceCreateWithoutOta_recordsInput = {
+  id: string
+  device_key: string
+  device_secret_hash: string
+  binding_code?: string | null
+  name: string
+  status?: $Enums.ResourceStatus
+  online_status?: $Enums.OnlineStatus
+  firmware_version?: string | null
+  tags: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  last_online_at?: Date | string | null
+  last_offline_at?: Date | string | null
+  last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1428,6 +1675,7 @@ export type DeviceCreateWithoutOta_recordsInput = {
   device_group_members?: Prisma.DeviceGroupMemberCreateNestedManyWithoutDeviceInput
   commands?: Prisma.DeviceCommandCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceUncheckedCreateWithoutOta_recordsInput = {
@@ -1437,6 +1685,7 @@ export type DeviceUncheckedCreateWithoutOta_recordsInput = {
   product_id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1445,6 +1694,7 @@ export type DeviceUncheckedCreateWithoutOta_recordsInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1452,6 +1702,7 @@ export type DeviceUncheckedCreateWithoutOta_recordsInput = {
   device_group_members?: Prisma.DeviceGroupMemberUncheckedCreateNestedManyWithoutDeviceInput
   commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutDeviceInput
   device_logs?: Prisma.DeviceLogUncheckedCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceCreateOrConnectWithoutOta_recordsInput = {
@@ -1474,6 +1725,7 @@ export type DeviceUpdateWithoutOta_recordsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1482,6 +1734,7 @@ export type DeviceUpdateWithoutOta_recordsInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1492,6 +1745,7 @@ export type DeviceUpdateWithoutOta_recordsInput = {
   device_group_members?: Prisma.DeviceGroupMemberUpdateManyWithoutDeviceNestedInput
   commands?: Prisma.DeviceCommandUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceUncheckedUpdateWithoutOta_recordsInput = {
@@ -1501,6 +1755,7 @@ export type DeviceUncheckedUpdateWithoutOta_recordsInput = {
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1509,6 +1764,7 @@ export type DeviceUncheckedUpdateWithoutOta_recordsInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1516,12 +1772,14 @@ export type DeviceUncheckedUpdateWithoutOta_recordsInput = {
   device_group_members?: Prisma.DeviceGroupMemberUncheckedUpdateManyWithoutDeviceNestedInput
   commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUncheckedUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceCreateWithoutDevice_logsInput = {
   id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1530,6 +1788,7 @@ export type DeviceCreateWithoutDevice_logsInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1540,6 +1799,7 @@ export type DeviceCreateWithoutDevice_logsInput = {
   device_group_members?: Prisma.DeviceGroupMemberCreateNestedManyWithoutDeviceInput
   commands?: Prisma.DeviceCommandCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceUncheckedCreateWithoutDevice_logsInput = {
@@ -1549,6 +1809,7 @@ export type DeviceUncheckedCreateWithoutDevice_logsInput = {
   product_id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1557,6 +1818,7 @@ export type DeviceUncheckedCreateWithoutDevice_logsInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1564,6 +1826,7 @@ export type DeviceUncheckedCreateWithoutDevice_logsInput = {
   device_group_members?: Prisma.DeviceGroupMemberUncheckedCreateNestedManyWithoutDeviceInput
   commands?: Prisma.DeviceCommandUncheckedCreateNestedManyWithoutDeviceInput
   ota_records?: Prisma.OtaRecordUncheckedCreateNestedManyWithoutDeviceInput
+  user_devices?: Prisma.UserDeviceUncheckedCreateNestedManyWithoutDeviceInput
 }
 
 export type DeviceCreateOrConnectWithoutDevice_logsInput = {
@@ -1586,6 +1849,7 @@ export type DeviceUpdateWithoutDevice_logsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1594,6 +1858,7 @@ export type DeviceUpdateWithoutDevice_logsInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1604,6 +1869,7 @@ export type DeviceUpdateWithoutDevice_logsInput = {
   device_group_members?: Prisma.DeviceGroupMemberUpdateManyWithoutDeviceNestedInput
   commands?: Prisma.DeviceCommandUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceUncheckedUpdateWithoutDevice_logsInput = {
@@ -1613,6 +1879,7 @@ export type DeviceUncheckedUpdateWithoutDevice_logsInput = {
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1621,6 +1888,7 @@ export type DeviceUncheckedUpdateWithoutDevice_logsInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1628,6 +1896,7 @@ export type DeviceUncheckedUpdateWithoutDevice_logsInput = {
   device_group_members?: Prisma.DeviceGroupMemberUncheckedUpdateManyWithoutDeviceNestedInput
   commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUncheckedUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceCreateManyOrganizationInput = {
@@ -1636,6 +1905,7 @@ export type DeviceCreateManyOrganizationInput = {
   product_id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1644,6 +1914,7 @@ export type DeviceCreateManyOrganizationInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1653,6 +1924,7 @@ export type DeviceUpdateWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1661,6 +1933,7 @@ export type DeviceUpdateWithoutOrganizationInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1671,6 +1944,7 @@ export type DeviceUpdateWithoutOrganizationInput = {
   commands?: Prisma.DeviceCommandUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceUncheckedUpdateWithoutOrganizationInput = {
@@ -1679,6 +1953,7 @@ export type DeviceUncheckedUpdateWithoutOrganizationInput = {
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1687,6 +1962,7 @@ export type DeviceUncheckedUpdateWithoutOrganizationInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1695,6 +1971,7 @@ export type DeviceUncheckedUpdateWithoutOrganizationInput = {
   commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUncheckedUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUncheckedUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceUncheckedUpdateManyWithoutOrganizationInput = {
@@ -1703,6 +1980,7 @@ export type DeviceUncheckedUpdateManyWithoutOrganizationInput = {
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1711,6 +1989,7 @@ export type DeviceUncheckedUpdateManyWithoutOrganizationInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1722,6 +2001,7 @@ export type DeviceCreateManyCreatorInput = {
   product_id: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1730,6 +2010,7 @@ export type DeviceCreateManyCreatorInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1739,6 +2020,7 @@ export type DeviceUpdateWithoutCreatorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1747,6 +2029,7 @@ export type DeviceUpdateWithoutCreatorInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1757,6 +2040,7 @@ export type DeviceUpdateWithoutCreatorInput = {
   commands?: Prisma.DeviceCommandUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceUncheckedUpdateWithoutCreatorInput = {
@@ -1765,6 +2049,7 @@ export type DeviceUncheckedUpdateWithoutCreatorInput = {
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1773,6 +2058,7 @@ export type DeviceUncheckedUpdateWithoutCreatorInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1781,6 +2067,7 @@ export type DeviceUncheckedUpdateWithoutCreatorInput = {
   commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUncheckedUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUncheckedUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceUncheckedUpdateManyWithoutCreatorInput = {
@@ -1789,6 +2076,7 @@ export type DeviceUncheckedUpdateManyWithoutCreatorInput = {
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1797,6 +2085,7 @@ export type DeviceUncheckedUpdateManyWithoutCreatorInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1808,6 +2097,7 @@ export type DeviceCreateManyProductInput = {
   created_by: string
   device_key: string
   device_secret_hash: string
+  binding_code?: string | null
   name: string
   status?: $Enums.ResourceStatus
   online_status?: $Enums.OnlineStatus
@@ -1816,6 +2106,7 @@ export type DeviceCreateManyProductInput = {
   last_online_at?: Date | string | null
   last_offline_at?: Date | string | null
   last_heartbeat_at?: Date | string | null
+  binding_code_generated_at?: Date | string | null
   created_at?: Date | string
   updated_at?: Date | string
   deleted_at?: Date | string | null
@@ -1825,6 +2116,7 @@ export type DeviceUpdateWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1833,6 +2125,7 @@ export type DeviceUpdateWithoutProductInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1843,6 +2136,7 @@ export type DeviceUpdateWithoutProductInput = {
   commands?: Prisma.DeviceCommandUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceUncheckedUpdateWithoutProductInput = {
@@ -1851,6 +2145,7 @@ export type DeviceUncheckedUpdateWithoutProductInput = {
   created_by?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1859,6 +2154,7 @@ export type DeviceUncheckedUpdateWithoutProductInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1867,6 +2163,7 @@ export type DeviceUncheckedUpdateWithoutProductInput = {
   commands?: Prisma.DeviceCommandUncheckedUpdateManyWithoutDeviceNestedInput
   ota_records?: Prisma.OtaRecordUncheckedUpdateManyWithoutDeviceNestedInput
   device_logs?: Prisma.DeviceLogUncheckedUpdateManyWithoutDeviceNestedInput
+  user_devices?: Prisma.UserDeviceUncheckedUpdateManyWithoutDeviceNestedInput
 }
 
 export type DeviceUncheckedUpdateManyWithoutProductInput = {
@@ -1875,6 +2172,7 @@ export type DeviceUncheckedUpdateManyWithoutProductInput = {
   created_by?: Prisma.StringFieldUpdateOperationsInput | string
   device_key?: Prisma.StringFieldUpdateOperationsInput | string
   device_secret_hash?: Prisma.StringFieldUpdateOperationsInput | string
+  binding_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumResourceStatusFieldUpdateOperationsInput | $Enums.ResourceStatus
   online_status?: Prisma.EnumOnlineStatusFieldUpdateOperationsInput | $Enums.OnlineStatus
@@ -1883,6 +2181,7 @@ export type DeviceUncheckedUpdateManyWithoutProductInput = {
   last_online_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_offline_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   last_heartbeat_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  binding_code_generated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deleted_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1898,6 +2197,7 @@ export type DeviceCountOutputType = {
   commands: number
   ota_records: number
   device_logs: number
+  user_devices: number
 }
 
 export type DeviceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1905,6 +2205,7 @@ export type DeviceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   commands?: boolean | DeviceCountOutputTypeCountCommandsArgs
   ota_records?: boolean | DeviceCountOutputTypeCountOta_recordsArgs
   device_logs?: boolean | DeviceCountOutputTypeCountDevice_logsArgs
+  user_devices?: boolean | DeviceCountOutputTypeCountUser_devicesArgs
 }
 
 /**
@@ -1945,6 +2246,13 @@ export type DeviceCountOutputTypeCountDevice_logsArgs<ExtArgs extends runtime.Ty
   where?: Prisma.DeviceLogWhereInput
 }
 
+/**
+ * DeviceCountOutputType without action
+ */
+export type DeviceCountOutputTypeCountUser_devicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserDeviceWhereInput
+}
+
 
 export type DeviceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1953,6 +2261,7 @@ export type DeviceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   product_id?: boolean
   device_key?: boolean
   device_secret_hash?: boolean
+  binding_code?: boolean
   name?: boolean
   status?: boolean
   online_status?: boolean
@@ -1961,6 +2270,7 @@ export type DeviceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   last_online_at?: boolean
   last_offline_at?: boolean
   last_heartbeat_at?: boolean
+  binding_code_generated_at?: boolean
   created_at?: boolean
   updated_at?: boolean
   deleted_at?: boolean
@@ -1972,6 +2282,7 @@ export type DeviceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   commands?: boolean | Prisma.Device$commandsArgs<ExtArgs>
   ota_records?: boolean | Prisma.Device$ota_recordsArgs<ExtArgs>
   device_logs?: boolean | Prisma.Device$device_logsArgs<ExtArgs>
+  user_devices?: boolean | Prisma.Device$user_devicesArgs<ExtArgs>
   _count?: boolean | Prisma.DeviceCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["device"]>
 
@@ -1982,6 +2293,7 @@ export type DeviceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   product_id?: boolean
   device_key?: boolean
   device_secret_hash?: boolean
+  binding_code?: boolean
   name?: boolean
   status?: boolean
   online_status?: boolean
@@ -1990,6 +2302,7 @@ export type DeviceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   last_online_at?: boolean
   last_offline_at?: boolean
   last_heartbeat_at?: boolean
+  binding_code_generated_at?: boolean
   created_at?: boolean
   updated_at?: boolean
   deleted_at?: boolean
@@ -2005,6 +2318,7 @@ export type DeviceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   product_id?: boolean
   device_key?: boolean
   device_secret_hash?: boolean
+  binding_code?: boolean
   name?: boolean
   status?: boolean
   online_status?: boolean
@@ -2013,6 +2327,7 @@ export type DeviceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   last_online_at?: boolean
   last_offline_at?: boolean
   last_heartbeat_at?: boolean
+  binding_code_generated_at?: boolean
   created_at?: boolean
   updated_at?: boolean
   deleted_at?: boolean
@@ -2028,6 +2343,7 @@ export type DeviceSelectScalar = {
   product_id?: boolean
   device_key?: boolean
   device_secret_hash?: boolean
+  binding_code?: boolean
   name?: boolean
   status?: boolean
   online_status?: boolean
@@ -2036,12 +2352,13 @@ export type DeviceSelectScalar = {
   last_online_at?: boolean
   last_offline_at?: boolean
   last_heartbeat_at?: boolean
+  binding_code_generated_at?: boolean
   created_at?: boolean
   updated_at?: boolean
   deleted_at?: boolean
 }
 
-export type DeviceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "org_id" | "created_by" | "product_id" | "device_key" | "device_secret_hash" | "name" | "status" | "online_status" | "firmware_version" | "tags" | "last_online_at" | "last_offline_at" | "last_heartbeat_at" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["device"]>
+export type DeviceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "org_id" | "created_by" | "product_id" | "device_key" | "device_secret_hash" | "binding_code" | "name" | "status" | "online_status" | "firmware_version" | "tags" | "last_online_at" | "last_offline_at" | "last_heartbeat_at" | "binding_code_generated_at" | "created_at" | "updated_at" | "deleted_at", ExtArgs["result"]["device"]>
 export type DeviceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -2051,6 +2368,7 @@ export type DeviceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   commands?: boolean | Prisma.Device$commandsArgs<ExtArgs>
   ota_records?: boolean | Prisma.Device$ota_recordsArgs<ExtArgs>
   device_logs?: boolean | Prisma.Device$device_logsArgs<ExtArgs>
+  user_devices?: boolean | Prisma.Device$user_devicesArgs<ExtArgs>
   _count?: boolean | Prisma.DeviceCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DeviceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2075,6 +2393,7 @@ export type $DevicePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     commands: Prisma.$DeviceCommandPayload<ExtArgs>[]
     ota_records: Prisma.$OtaRecordPayload<ExtArgs>[]
     device_logs: Prisma.$DeviceLogPayload<ExtArgs>[]
+    user_devices: Prisma.$UserDevicePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2083,6 +2402,7 @@ export type $DevicePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     product_id: string
     device_key: string
     device_secret_hash: string
+    binding_code: string | null
     name: string
     status: $Enums.ResourceStatus
     online_status: $Enums.OnlineStatus
@@ -2091,6 +2411,7 @@ export type $DevicePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     last_online_at: Date | null
     last_offline_at: Date | null
     last_heartbeat_at: Date | null
+    binding_code_generated_at: Date | null
     created_at: Date
     updated_at: Date
     deleted_at: Date | null
@@ -2496,6 +2817,7 @@ export interface Prisma__DeviceClient<T, Null = never, ExtArgs extends runtime.T
   commands<T extends Prisma.Device$commandsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Device$commandsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeviceCommandPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   ota_records<T extends Prisma.Device$ota_recordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Device$ota_recordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OtaRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   device_logs<T extends Prisma.Device$device_logsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Device$device_logsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeviceLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  user_devices<T extends Prisma.Device$user_devicesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Device$user_devicesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserDevicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2531,6 +2853,7 @@ export interface DeviceFieldRefs {
   readonly product_id: Prisma.FieldRef<"Device", 'String'>
   readonly device_key: Prisma.FieldRef<"Device", 'String'>
   readonly device_secret_hash: Prisma.FieldRef<"Device", 'String'>
+  readonly binding_code: Prisma.FieldRef<"Device", 'String'>
   readonly name: Prisma.FieldRef<"Device", 'String'>
   readonly status: Prisma.FieldRef<"Device", 'ResourceStatus'>
   readonly online_status: Prisma.FieldRef<"Device", 'OnlineStatus'>
@@ -2539,6 +2862,7 @@ export interface DeviceFieldRefs {
   readonly last_online_at: Prisma.FieldRef<"Device", 'DateTime'>
   readonly last_offline_at: Prisma.FieldRef<"Device", 'DateTime'>
   readonly last_heartbeat_at: Prisma.FieldRef<"Device", 'DateTime'>
+  readonly binding_code_generated_at: Prisma.FieldRef<"Device", 'DateTime'>
   readonly created_at: Prisma.FieldRef<"Device", 'DateTime'>
   readonly updated_at: Prisma.FieldRef<"Device", 'DateTime'>
   readonly deleted_at: Prisma.FieldRef<"Device", 'DateTime'>
@@ -3055,6 +3379,30 @@ export type Device$device_logsArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.DeviceLogScalarFieldEnum | Prisma.DeviceLogScalarFieldEnum[]
+}
+
+/**
+ * Device.user_devices
+ */
+export type Device$user_devicesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserDevice
+   */
+  select?: Prisma.UserDeviceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserDevice
+   */
+  omit?: Prisma.UserDeviceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserDeviceInclude<ExtArgs> | null
+  where?: Prisma.UserDeviceWhereInput
+  orderBy?: Prisma.UserDeviceOrderByWithRelationInput | Prisma.UserDeviceOrderByWithRelationInput[]
+  cursor?: Prisma.UserDeviceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserDeviceScalarFieldEnum | Prisma.UserDeviceScalarFieldEnum[]
 }
 
 /**

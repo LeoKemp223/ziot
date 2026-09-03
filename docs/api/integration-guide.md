@@ -72,6 +72,18 @@ See:
 - `docs/device-integration/mqtt-demo.md`
 - `docs/device-integration/integration-guide.md`
 
+## Mobile App Access
+
+Mobile apps use an independent app-user system (phone + password, bearer-token
+auth) with QR-code device binding, control, and status APIs under
+`/api/v1/app/**`.
+
+See:
+
+- `docs/app-integration/integration-guide.md` (start here: token handling, QR
+  parsing, polling and control practices)
+- `docs/api/app-api.md` (endpoint reference)
+
 ## Local Smoke Test
 
 ```bash

@@ -359,6 +359,23 @@ export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
   _max?: Prisma.NestedJsonNullableFilter<$PrismaModel>
 }
 
+export type EnumBindingStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.BindingStatus | Prisma.EnumBindingStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.BindingStatus[] | Prisma.ListEnumBindingStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BindingStatus[] | Prisma.ListEnumBindingStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBindingStatusFilter<$PrismaModel> | $Enums.BindingStatus
+}
+
+export type EnumBindingStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BindingStatus | Prisma.EnumBindingStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.BindingStatus[] | Prisma.ListEnumBindingStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BindingStatus[] | Prisma.ListEnumBindingStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBindingStatusWithAggregatesFilter<$PrismaModel> | $Enums.BindingStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBindingStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBindingStatusFilter<$PrismaModel>
+}
+
 export type EnumFirmwareStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.FirmwareStatus | Prisma.EnumFirmwareStatusFieldRefInput<$PrismaModel>
   in?: $Enums.FirmwareStatus[] | Prisma.ListEnumFirmwareStatusFieldRefInput<$PrismaModel>
@@ -729,6 +746,23 @@ export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   gte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
+}
+
+export type NestedEnumBindingStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.BindingStatus | Prisma.EnumBindingStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.BindingStatus[] | Prisma.ListEnumBindingStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BindingStatus[] | Prisma.ListEnumBindingStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBindingStatusFilter<$PrismaModel> | $Enums.BindingStatus
+}
+
+export type NestedEnumBindingStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BindingStatus | Prisma.EnumBindingStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.BindingStatus[] | Prisma.ListEnumBindingStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BindingStatus[] | Prisma.ListEnumBindingStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBindingStatusWithAggregatesFilter<$PrismaModel> | $Enums.BindingStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBindingStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBindingStatusFilter<$PrismaModel>
 }
 
 export type NestedEnumFirmwareStatusFilter<$PrismaModel = never> = {

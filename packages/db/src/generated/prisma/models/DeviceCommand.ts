@@ -37,6 +37,7 @@ export type DeviceCommandMinAggregateOutputType = {
   sent_at: Date | null
   replied_at: Date | null
   created_by: string | null
+  app_user_id: string | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -54,6 +55,7 @@ export type DeviceCommandMaxAggregateOutputType = {
   sent_at: Date | null
   replied_at: Date | null
   created_by: string | null
+  app_user_id: string | null
   created_at: Date | null
   updated_at: Date | null
 }
@@ -73,6 +75,7 @@ export type DeviceCommandCountAggregateOutputType = {
   sent_at: number
   replied_at: number
   created_by: number
+  app_user_id: number
   created_at: number
   updated_at: number
   _all: number
@@ -92,6 +95,7 @@ export type DeviceCommandMinAggregateInputType = {
   sent_at?: true
   replied_at?: true
   created_by?: true
+  app_user_id?: true
   created_at?: true
   updated_at?: true
 }
@@ -109,6 +113,7 @@ export type DeviceCommandMaxAggregateInputType = {
   sent_at?: true
   replied_at?: true
   created_by?: true
+  app_user_id?: true
   created_at?: true
   updated_at?: true
 }
@@ -128,6 +133,7 @@ export type DeviceCommandCountAggregateInputType = {
   sent_at?: true
   replied_at?: true
   created_by?: true
+  app_user_id?: true
   created_at?: true
   updated_at?: true
   _all?: true
@@ -219,7 +225,8 @@ export type DeviceCommandGroupByOutputType = {
   timeout_at: Date
   sent_at: Date | null
   replied_at: Date | null
-  created_by: string
+  created_by: string | null
+  app_user_id: string | null
   created_at: Date
   updated_at: Date
   _count: DeviceCommandCountAggregateOutputType | null
@@ -259,12 +266,14 @@ export type DeviceCommandWhereInput = {
   timeout_at?: Prisma.DateTimeFilter<"DeviceCommand"> | Date | string
   sent_at?: Prisma.DateTimeNullableFilter<"DeviceCommand"> | Date | string | null
   replied_at?: Prisma.DateTimeNullableFilter<"DeviceCommand"> | Date | string | null
-  created_by?: Prisma.StringFilter<"DeviceCommand"> | string
+  created_by?: Prisma.StringNullableFilter<"DeviceCommand"> | string | null
+  app_user_id?: Prisma.StringNullableFilter<"DeviceCommand"> | string | null
   created_at?: Prisma.DateTimeFilter<"DeviceCommand"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"DeviceCommand"> | Date | string
   organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
   device?: Prisma.XOR<Prisma.DeviceScalarRelationFilter, Prisma.DeviceWhereInput>
-  creator?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  creator?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  app_user?: Prisma.XOR<Prisma.AppUserNullableScalarRelationFilter, Prisma.AppUserWhereInput> | null
 }
 
 export type DeviceCommandOrderByWithRelationInput = {
@@ -281,12 +290,14 @@ export type DeviceCommandOrderByWithRelationInput = {
   timeout_at?: Prisma.SortOrder
   sent_at?: Prisma.SortOrderInput | Prisma.SortOrder
   replied_at?: Prisma.SortOrderInput | Prisma.SortOrder
-  created_by?: Prisma.SortOrder
+  created_by?: Prisma.SortOrderInput | Prisma.SortOrder
+  app_user_id?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   organization?: Prisma.OrganizationOrderByWithRelationInput
   device?: Prisma.DeviceOrderByWithRelationInput
   creator?: Prisma.UserOrderByWithRelationInput
+  app_user?: Prisma.AppUserOrderByWithRelationInput
 }
 
 export type DeviceCommandWhereUniqueInput = Prisma.AtLeast<{
@@ -306,12 +317,14 @@ export type DeviceCommandWhereUniqueInput = Prisma.AtLeast<{
   timeout_at?: Prisma.DateTimeFilter<"DeviceCommand"> | Date | string
   sent_at?: Prisma.DateTimeNullableFilter<"DeviceCommand"> | Date | string | null
   replied_at?: Prisma.DateTimeNullableFilter<"DeviceCommand"> | Date | string | null
-  created_by?: Prisma.StringFilter<"DeviceCommand"> | string
+  created_by?: Prisma.StringNullableFilter<"DeviceCommand"> | string | null
+  app_user_id?: Prisma.StringNullableFilter<"DeviceCommand"> | string | null
   created_at?: Prisma.DateTimeFilter<"DeviceCommand"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"DeviceCommand"> | Date | string
   organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
   device?: Prisma.XOR<Prisma.DeviceScalarRelationFilter, Prisma.DeviceWhereInput>
-  creator?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  creator?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  app_user?: Prisma.XOR<Prisma.AppUserNullableScalarRelationFilter, Prisma.AppUserWhereInput> | null
 }, "id" | "request_id">
 
 export type DeviceCommandOrderByWithAggregationInput = {
@@ -328,7 +341,8 @@ export type DeviceCommandOrderByWithAggregationInput = {
   timeout_at?: Prisma.SortOrder
   sent_at?: Prisma.SortOrderInput | Prisma.SortOrder
   replied_at?: Prisma.SortOrderInput | Prisma.SortOrder
-  created_by?: Prisma.SortOrder
+  created_by?: Prisma.SortOrderInput | Prisma.SortOrder
+  app_user_id?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   _count?: Prisma.DeviceCommandCountOrderByAggregateInput
@@ -353,7 +367,8 @@ export type DeviceCommandScalarWhereWithAggregatesInput = {
   timeout_at?: Prisma.DateTimeWithAggregatesFilter<"DeviceCommand"> | Date | string
   sent_at?: Prisma.DateTimeNullableWithAggregatesFilter<"DeviceCommand"> | Date | string | null
   replied_at?: Prisma.DateTimeNullableWithAggregatesFilter<"DeviceCommand"> | Date | string | null
-  created_by?: Prisma.StringWithAggregatesFilter<"DeviceCommand"> | string
+  created_by?: Prisma.StringNullableWithAggregatesFilter<"DeviceCommand"> | string | null
+  app_user_id?: Prisma.StringNullableWithAggregatesFilter<"DeviceCommand"> | string | null
   created_at?: Prisma.DateTimeWithAggregatesFilter<"DeviceCommand"> | Date | string
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"DeviceCommand"> | Date | string
 }
@@ -374,7 +389,8 @@ export type DeviceCommandCreateInput = {
   updated_at?: Date | string
   organization: Prisma.OrganizationCreateNestedOneWithoutDevice_commandsInput
   device: Prisma.DeviceCreateNestedOneWithoutCommandsInput
-  creator: Prisma.UserCreateNestedOneWithoutDevice_commandsInput
+  creator?: Prisma.UserCreateNestedOneWithoutDevice_commandsInput
+  app_user?: Prisma.AppUserCreateNestedOneWithoutCommandsInput
 }
 
 export type DeviceCommandUncheckedCreateInput = {
@@ -391,7 +407,8 @@ export type DeviceCommandUncheckedCreateInput = {
   timeout_at: Date | string
   sent_at?: Date | string | null
   replied_at?: Date | string | null
-  created_by: string
+  created_by?: string | null
+  app_user_id?: string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -412,7 +429,8 @@ export type DeviceCommandUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutDevice_commandsNestedInput
   device?: Prisma.DeviceUpdateOneRequiredWithoutCommandsNestedInput
-  creator?: Prisma.UserUpdateOneRequiredWithoutDevice_commandsNestedInput
+  creator?: Prisma.UserUpdateOneWithoutDevice_commandsNestedInput
+  app_user?: Prisma.AppUserUpdateOneWithoutCommandsNestedInput
 }
 
 export type DeviceCommandUncheckedUpdateInput = {
@@ -429,7 +447,8 @@ export type DeviceCommandUncheckedUpdateInput = {
   timeout_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sent_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   replied_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  created_by?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  app_user_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -448,7 +467,8 @@ export type DeviceCommandCreateManyInput = {
   timeout_at: Date | string
   sent_at?: Date | string | null
   replied_at?: Date | string | null
-  created_by: string
+  created_by?: string | null
+  app_user_id?: string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -483,7 +503,8 @@ export type DeviceCommandUncheckedUpdateManyInput = {
   timeout_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sent_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   replied_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  created_by?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  app_user_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -513,6 +534,7 @@ export type DeviceCommandCountOrderByAggregateInput = {
   sent_at?: Prisma.SortOrder
   replied_at?: Prisma.SortOrder
   created_by?: Prisma.SortOrder
+  app_user_id?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -530,6 +552,7 @@ export type DeviceCommandMaxOrderByAggregateInput = {
   sent_at?: Prisma.SortOrder
   replied_at?: Prisma.SortOrder
   created_by?: Prisma.SortOrder
+  app_user_id?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -547,6 +570,7 @@ export type DeviceCommandMinOrderByAggregateInput = {
   sent_at?: Prisma.SortOrder
   replied_at?: Prisma.SortOrder
   created_by?: Prisma.SortOrder
+  app_user_id?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
 }
@@ -635,6 +659,48 @@ export type DeviceCommandUncheckedUpdateManyWithoutCreatorNestedInput = {
   deleteMany?: Prisma.DeviceCommandScalarWhereInput | Prisma.DeviceCommandScalarWhereInput[]
 }
 
+export type DeviceCommandCreateNestedManyWithoutApp_userInput = {
+  create?: Prisma.XOR<Prisma.DeviceCommandCreateWithoutApp_userInput, Prisma.DeviceCommandUncheckedCreateWithoutApp_userInput> | Prisma.DeviceCommandCreateWithoutApp_userInput[] | Prisma.DeviceCommandUncheckedCreateWithoutApp_userInput[]
+  connectOrCreate?: Prisma.DeviceCommandCreateOrConnectWithoutApp_userInput | Prisma.DeviceCommandCreateOrConnectWithoutApp_userInput[]
+  createMany?: Prisma.DeviceCommandCreateManyApp_userInputEnvelope
+  connect?: Prisma.DeviceCommandWhereUniqueInput | Prisma.DeviceCommandWhereUniqueInput[]
+}
+
+export type DeviceCommandUncheckedCreateNestedManyWithoutApp_userInput = {
+  create?: Prisma.XOR<Prisma.DeviceCommandCreateWithoutApp_userInput, Prisma.DeviceCommandUncheckedCreateWithoutApp_userInput> | Prisma.DeviceCommandCreateWithoutApp_userInput[] | Prisma.DeviceCommandUncheckedCreateWithoutApp_userInput[]
+  connectOrCreate?: Prisma.DeviceCommandCreateOrConnectWithoutApp_userInput | Prisma.DeviceCommandCreateOrConnectWithoutApp_userInput[]
+  createMany?: Prisma.DeviceCommandCreateManyApp_userInputEnvelope
+  connect?: Prisma.DeviceCommandWhereUniqueInput | Prisma.DeviceCommandWhereUniqueInput[]
+}
+
+export type DeviceCommandUpdateManyWithoutApp_userNestedInput = {
+  create?: Prisma.XOR<Prisma.DeviceCommandCreateWithoutApp_userInput, Prisma.DeviceCommandUncheckedCreateWithoutApp_userInput> | Prisma.DeviceCommandCreateWithoutApp_userInput[] | Prisma.DeviceCommandUncheckedCreateWithoutApp_userInput[]
+  connectOrCreate?: Prisma.DeviceCommandCreateOrConnectWithoutApp_userInput | Prisma.DeviceCommandCreateOrConnectWithoutApp_userInput[]
+  upsert?: Prisma.DeviceCommandUpsertWithWhereUniqueWithoutApp_userInput | Prisma.DeviceCommandUpsertWithWhereUniqueWithoutApp_userInput[]
+  createMany?: Prisma.DeviceCommandCreateManyApp_userInputEnvelope
+  set?: Prisma.DeviceCommandWhereUniqueInput | Prisma.DeviceCommandWhereUniqueInput[]
+  disconnect?: Prisma.DeviceCommandWhereUniqueInput | Prisma.DeviceCommandWhereUniqueInput[]
+  delete?: Prisma.DeviceCommandWhereUniqueInput | Prisma.DeviceCommandWhereUniqueInput[]
+  connect?: Prisma.DeviceCommandWhereUniqueInput | Prisma.DeviceCommandWhereUniqueInput[]
+  update?: Prisma.DeviceCommandUpdateWithWhereUniqueWithoutApp_userInput | Prisma.DeviceCommandUpdateWithWhereUniqueWithoutApp_userInput[]
+  updateMany?: Prisma.DeviceCommandUpdateManyWithWhereWithoutApp_userInput | Prisma.DeviceCommandUpdateManyWithWhereWithoutApp_userInput[]
+  deleteMany?: Prisma.DeviceCommandScalarWhereInput | Prisma.DeviceCommandScalarWhereInput[]
+}
+
+export type DeviceCommandUncheckedUpdateManyWithoutApp_userNestedInput = {
+  create?: Prisma.XOR<Prisma.DeviceCommandCreateWithoutApp_userInput, Prisma.DeviceCommandUncheckedCreateWithoutApp_userInput> | Prisma.DeviceCommandCreateWithoutApp_userInput[] | Prisma.DeviceCommandUncheckedCreateWithoutApp_userInput[]
+  connectOrCreate?: Prisma.DeviceCommandCreateOrConnectWithoutApp_userInput | Prisma.DeviceCommandCreateOrConnectWithoutApp_userInput[]
+  upsert?: Prisma.DeviceCommandUpsertWithWhereUniqueWithoutApp_userInput | Prisma.DeviceCommandUpsertWithWhereUniqueWithoutApp_userInput[]
+  createMany?: Prisma.DeviceCommandCreateManyApp_userInputEnvelope
+  set?: Prisma.DeviceCommandWhereUniqueInput | Prisma.DeviceCommandWhereUniqueInput[]
+  disconnect?: Prisma.DeviceCommandWhereUniqueInput | Prisma.DeviceCommandWhereUniqueInput[]
+  delete?: Prisma.DeviceCommandWhereUniqueInput | Prisma.DeviceCommandWhereUniqueInput[]
+  connect?: Prisma.DeviceCommandWhereUniqueInput | Prisma.DeviceCommandWhereUniqueInput[]
+  update?: Prisma.DeviceCommandUpdateWithWhereUniqueWithoutApp_userInput | Prisma.DeviceCommandUpdateWithWhereUniqueWithoutApp_userInput[]
+  updateMany?: Prisma.DeviceCommandUpdateManyWithWhereWithoutApp_userInput | Prisma.DeviceCommandUpdateManyWithWhereWithoutApp_userInput[]
+  deleteMany?: Prisma.DeviceCommandScalarWhereInput | Prisma.DeviceCommandScalarWhereInput[]
+}
+
 export type DeviceCommandCreateNestedManyWithoutDeviceInput = {
   create?: Prisma.XOR<Prisma.DeviceCommandCreateWithoutDeviceInput, Prisma.DeviceCommandUncheckedCreateWithoutDeviceInput> | Prisma.DeviceCommandCreateWithoutDeviceInput[] | Prisma.DeviceCommandUncheckedCreateWithoutDeviceInput[]
   connectOrCreate?: Prisma.DeviceCommandCreateOrConnectWithoutDeviceInput | Prisma.DeviceCommandCreateOrConnectWithoutDeviceInput[]
@@ -696,7 +762,8 @@ export type DeviceCommandCreateWithoutOrganizationInput = {
   created_at?: Date | string
   updated_at?: Date | string
   device: Prisma.DeviceCreateNestedOneWithoutCommandsInput
-  creator: Prisma.UserCreateNestedOneWithoutDevice_commandsInput
+  creator?: Prisma.UserCreateNestedOneWithoutDevice_commandsInput
+  app_user?: Prisma.AppUserCreateNestedOneWithoutCommandsInput
 }
 
 export type DeviceCommandUncheckedCreateWithoutOrganizationInput = {
@@ -712,7 +779,8 @@ export type DeviceCommandUncheckedCreateWithoutOrganizationInput = {
   timeout_at: Date | string
   sent_at?: Date | string | null
   replied_at?: Date | string | null
-  created_by: string
+  created_by?: string | null
+  app_user_id?: string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -760,7 +828,8 @@ export type DeviceCommandScalarWhereInput = {
   timeout_at?: Prisma.DateTimeFilter<"DeviceCommand"> | Date | string
   sent_at?: Prisma.DateTimeNullableFilter<"DeviceCommand"> | Date | string | null
   replied_at?: Prisma.DateTimeNullableFilter<"DeviceCommand"> | Date | string | null
-  created_by?: Prisma.StringFilter<"DeviceCommand"> | string
+  created_by?: Prisma.StringNullableFilter<"DeviceCommand"> | string | null
+  app_user_id?: Prisma.StringNullableFilter<"DeviceCommand"> | string | null
   created_at?: Prisma.DateTimeFilter<"DeviceCommand"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"DeviceCommand"> | Date | string
 }
@@ -781,6 +850,7 @@ export type DeviceCommandCreateWithoutCreatorInput = {
   updated_at?: Date | string
   organization: Prisma.OrganizationCreateNestedOneWithoutDevice_commandsInput
   device: Prisma.DeviceCreateNestedOneWithoutCommandsInput
+  app_user?: Prisma.AppUserCreateNestedOneWithoutCommandsInput
 }
 
 export type DeviceCommandUncheckedCreateWithoutCreatorInput = {
@@ -797,6 +867,7 @@ export type DeviceCommandUncheckedCreateWithoutCreatorInput = {
   timeout_at: Date | string
   sent_at?: Date | string | null
   replied_at?: Date | string | null
+  app_user_id?: string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -827,6 +898,70 @@ export type DeviceCommandUpdateManyWithWhereWithoutCreatorInput = {
   data: Prisma.XOR<Prisma.DeviceCommandUpdateManyMutationInput, Prisma.DeviceCommandUncheckedUpdateManyWithoutCreatorInput>
 }
 
+export type DeviceCommandCreateWithoutApp_userInput = {
+  id: string
+  identifier: string
+  params: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.CommandStatus
+  request_id: string
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  error_code?: string | null
+  error_message?: string | null
+  timeout_at: Date | string
+  sent_at?: Date | string | null
+  replied_at?: Date | string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+  organization: Prisma.OrganizationCreateNestedOneWithoutDevice_commandsInput
+  device: Prisma.DeviceCreateNestedOneWithoutCommandsInput
+  creator?: Prisma.UserCreateNestedOneWithoutDevice_commandsInput
+}
+
+export type DeviceCommandUncheckedCreateWithoutApp_userInput = {
+  id: string
+  org_id: string
+  device_id: string
+  identifier: string
+  params: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.CommandStatus
+  request_id: string
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  error_code?: string | null
+  error_message?: string | null
+  timeout_at: Date | string
+  sent_at?: Date | string | null
+  replied_at?: Date | string | null
+  created_by?: string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+}
+
+export type DeviceCommandCreateOrConnectWithoutApp_userInput = {
+  where: Prisma.DeviceCommandWhereUniqueInput
+  create: Prisma.XOR<Prisma.DeviceCommandCreateWithoutApp_userInput, Prisma.DeviceCommandUncheckedCreateWithoutApp_userInput>
+}
+
+export type DeviceCommandCreateManyApp_userInputEnvelope = {
+  data: Prisma.DeviceCommandCreateManyApp_userInput | Prisma.DeviceCommandCreateManyApp_userInput[]
+  skipDuplicates?: boolean
+}
+
+export type DeviceCommandUpsertWithWhereUniqueWithoutApp_userInput = {
+  where: Prisma.DeviceCommandWhereUniqueInput
+  update: Prisma.XOR<Prisma.DeviceCommandUpdateWithoutApp_userInput, Prisma.DeviceCommandUncheckedUpdateWithoutApp_userInput>
+  create: Prisma.XOR<Prisma.DeviceCommandCreateWithoutApp_userInput, Prisma.DeviceCommandUncheckedCreateWithoutApp_userInput>
+}
+
+export type DeviceCommandUpdateWithWhereUniqueWithoutApp_userInput = {
+  where: Prisma.DeviceCommandWhereUniqueInput
+  data: Prisma.XOR<Prisma.DeviceCommandUpdateWithoutApp_userInput, Prisma.DeviceCommandUncheckedUpdateWithoutApp_userInput>
+}
+
+export type DeviceCommandUpdateManyWithWhereWithoutApp_userInput = {
+  where: Prisma.DeviceCommandScalarWhereInput
+  data: Prisma.XOR<Prisma.DeviceCommandUpdateManyMutationInput, Prisma.DeviceCommandUncheckedUpdateManyWithoutApp_userInput>
+}
+
 export type DeviceCommandCreateWithoutDeviceInput = {
   id: string
   identifier: string
@@ -842,7 +977,8 @@ export type DeviceCommandCreateWithoutDeviceInput = {
   created_at?: Date | string
   updated_at?: Date | string
   organization: Prisma.OrganizationCreateNestedOneWithoutDevice_commandsInput
-  creator: Prisma.UserCreateNestedOneWithoutDevice_commandsInput
+  creator?: Prisma.UserCreateNestedOneWithoutDevice_commandsInput
+  app_user?: Prisma.AppUserCreateNestedOneWithoutCommandsInput
 }
 
 export type DeviceCommandUncheckedCreateWithoutDeviceInput = {
@@ -858,7 +994,8 @@ export type DeviceCommandUncheckedCreateWithoutDeviceInput = {
   timeout_at: Date | string
   sent_at?: Date | string | null
   replied_at?: Date | string | null
-  created_by: string
+  created_by?: string | null
+  app_user_id?: string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -902,7 +1039,8 @@ export type DeviceCommandCreateManyOrganizationInput = {
   timeout_at: Date | string
   sent_at?: Date | string | null
   replied_at?: Date | string | null
-  created_by: string
+  created_by?: string | null
+  app_user_id?: string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -922,7 +1060,8 @@ export type DeviceCommandUpdateWithoutOrganizationInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   device?: Prisma.DeviceUpdateOneRequiredWithoutCommandsNestedInput
-  creator?: Prisma.UserUpdateOneRequiredWithoutDevice_commandsNestedInput
+  creator?: Prisma.UserUpdateOneWithoutDevice_commandsNestedInput
+  app_user?: Prisma.AppUserUpdateOneWithoutCommandsNestedInput
 }
 
 export type DeviceCommandUncheckedUpdateWithoutOrganizationInput = {
@@ -938,7 +1077,8 @@ export type DeviceCommandUncheckedUpdateWithoutOrganizationInput = {
   timeout_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sent_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   replied_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  created_by?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  app_user_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -956,7 +1096,8 @@ export type DeviceCommandUncheckedUpdateManyWithoutOrganizationInput = {
   timeout_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sent_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   replied_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  created_by?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  app_user_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -975,6 +1116,7 @@ export type DeviceCommandCreateManyCreatorInput = {
   timeout_at: Date | string
   sent_at?: Date | string | null
   replied_at?: Date | string | null
+  app_user_id?: string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -995,6 +1137,7 @@ export type DeviceCommandUpdateWithoutCreatorInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutDevice_commandsNestedInput
   device?: Prisma.DeviceUpdateOneRequiredWithoutCommandsNestedInput
+  app_user?: Prisma.AppUserUpdateOneWithoutCommandsNestedInput
 }
 
 export type DeviceCommandUncheckedUpdateWithoutCreatorInput = {
@@ -1011,6 +1154,7 @@ export type DeviceCommandUncheckedUpdateWithoutCreatorInput = {
   timeout_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sent_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   replied_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  app_user_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1029,6 +1173,83 @@ export type DeviceCommandUncheckedUpdateManyWithoutCreatorInput = {
   timeout_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sent_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   replied_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  app_user_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type DeviceCommandCreateManyApp_userInput = {
+  id: string
+  org_id: string
+  device_id: string
+  identifier: string
+  params: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.CommandStatus
+  request_id: string
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  error_code?: string | null
+  error_message?: string | null
+  timeout_at: Date | string
+  sent_at?: Date | string | null
+  replied_at?: Date | string | null
+  created_by?: string | null
+  created_at?: Date | string
+  updated_at?: Date | string
+}
+
+export type DeviceCommandUpdateWithoutApp_userInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  identifier?: Prisma.StringFieldUpdateOperationsInput | string
+  params?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumCommandStatusFieldUpdateOperationsInput | $Enums.CommandStatus
+  request_id?: Prisma.StringFieldUpdateOperationsInput | string
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  error_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  error_message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timeout_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sent_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  replied_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  organization?: Prisma.OrganizationUpdateOneRequiredWithoutDevice_commandsNestedInput
+  device?: Prisma.DeviceUpdateOneRequiredWithoutCommandsNestedInput
+  creator?: Prisma.UserUpdateOneWithoutDevice_commandsNestedInput
+}
+
+export type DeviceCommandUncheckedUpdateWithoutApp_userInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  device_id?: Prisma.StringFieldUpdateOperationsInput | string
+  identifier?: Prisma.StringFieldUpdateOperationsInput | string
+  params?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumCommandStatusFieldUpdateOperationsInput | $Enums.CommandStatus
+  request_id?: Prisma.StringFieldUpdateOperationsInput | string
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  error_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  error_message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timeout_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sent_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  replied_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type DeviceCommandUncheckedUpdateManyWithoutApp_userInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  org_id?: Prisma.StringFieldUpdateOperationsInput | string
+  device_id?: Prisma.StringFieldUpdateOperationsInput | string
+  identifier?: Prisma.StringFieldUpdateOperationsInput | string
+  params?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumCommandStatusFieldUpdateOperationsInput | $Enums.CommandStatus
+  request_id?: Prisma.StringFieldUpdateOperationsInput | string
+  result?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  error_code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  error_message?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  timeout_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sent_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  replied_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1046,7 +1267,8 @@ export type DeviceCommandCreateManyDeviceInput = {
   timeout_at: Date | string
   sent_at?: Date | string | null
   replied_at?: Date | string | null
-  created_by: string
+  created_by?: string | null
+  app_user_id?: string | null
   created_at?: Date | string
   updated_at?: Date | string
 }
@@ -1066,7 +1288,8 @@ export type DeviceCommandUpdateWithoutDeviceInput = {
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   organization?: Prisma.OrganizationUpdateOneRequiredWithoutDevice_commandsNestedInput
-  creator?: Prisma.UserUpdateOneRequiredWithoutDevice_commandsNestedInput
+  creator?: Prisma.UserUpdateOneWithoutDevice_commandsNestedInput
+  app_user?: Prisma.AppUserUpdateOneWithoutCommandsNestedInput
 }
 
 export type DeviceCommandUncheckedUpdateWithoutDeviceInput = {
@@ -1082,7 +1305,8 @@ export type DeviceCommandUncheckedUpdateWithoutDeviceInput = {
   timeout_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sent_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   replied_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  created_by?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  app_user_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1100,7 +1324,8 @@ export type DeviceCommandUncheckedUpdateManyWithoutDeviceInput = {
   timeout_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   sent_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   replied_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  created_by?: Prisma.StringFieldUpdateOperationsInput | string
+  created_by?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  app_user_id?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1122,11 +1347,13 @@ export type DeviceCommandSelect<ExtArgs extends runtime.Types.Extensions.Interna
   sent_at?: boolean
   replied_at?: boolean
   created_by?: boolean
+  app_user_id?: boolean
   created_at?: boolean
   updated_at?: boolean
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   device?: boolean | Prisma.DeviceDefaultArgs<ExtArgs>
-  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.DeviceCommand$creatorArgs<ExtArgs>
+  app_user?: boolean | Prisma.DeviceCommand$app_userArgs<ExtArgs>
 }, ExtArgs["result"]["deviceCommand"]>
 
 export type DeviceCommandSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1144,11 +1371,13 @@ export type DeviceCommandSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   sent_at?: boolean
   replied_at?: boolean
   created_by?: boolean
+  app_user_id?: boolean
   created_at?: boolean
   updated_at?: boolean
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   device?: boolean | Prisma.DeviceDefaultArgs<ExtArgs>
-  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.DeviceCommand$creatorArgs<ExtArgs>
+  app_user?: boolean | Prisma.DeviceCommand$app_userArgs<ExtArgs>
 }, ExtArgs["result"]["deviceCommand"]>
 
 export type DeviceCommandSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1166,11 +1395,13 @@ export type DeviceCommandSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   sent_at?: boolean
   replied_at?: boolean
   created_by?: boolean
+  app_user_id?: boolean
   created_at?: boolean
   updated_at?: boolean
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   device?: boolean | Prisma.DeviceDefaultArgs<ExtArgs>
-  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.DeviceCommand$creatorArgs<ExtArgs>
+  app_user?: boolean | Prisma.DeviceCommand$app_userArgs<ExtArgs>
 }, ExtArgs["result"]["deviceCommand"]>
 
 export type DeviceCommandSelectScalar = {
@@ -1188,25 +1419,29 @@ export type DeviceCommandSelectScalar = {
   sent_at?: boolean
   replied_at?: boolean
   created_by?: boolean
+  app_user_id?: boolean
   created_at?: boolean
   updated_at?: boolean
 }
 
-export type DeviceCommandOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "org_id" | "device_id" | "identifier" | "params" | "status" | "request_id" | "result" | "error_code" | "error_message" | "timeout_at" | "sent_at" | "replied_at" | "created_by" | "created_at" | "updated_at", ExtArgs["result"]["deviceCommand"]>
+export type DeviceCommandOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "org_id" | "device_id" | "identifier" | "params" | "status" | "request_id" | "result" | "error_code" | "error_message" | "timeout_at" | "sent_at" | "replied_at" | "created_by" | "app_user_id" | "created_at" | "updated_at", ExtArgs["result"]["deviceCommand"]>
 export type DeviceCommandInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   device?: boolean | Prisma.DeviceDefaultArgs<ExtArgs>
-  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.DeviceCommand$creatorArgs<ExtArgs>
+  app_user?: boolean | Prisma.DeviceCommand$app_userArgs<ExtArgs>
 }
 export type DeviceCommandIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   device?: boolean | Prisma.DeviceDefaultArgs<ExtArgs>
-  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.DeviceCommand$creatorArgs<ExtArgs>
+  app_user?: boolean | Prisma.DeviceCommand$app_userArgs<ExtArgs>
 }
 export type DeviceCommandIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   device?: boolean | Prisma.DeviceDefaultArgs<ExtArgs>
-  creator?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  creator?: boolean | Prisma.DeviceCommand$creatorArgs<ExtArgs>
+  app_user?: boolean | Prisma.DeviceCommand$app_userArgs<ExtArgs>
 }
 
 export type $DeviceCommandPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1214,7 +1449,8 @@ export type $DeviceCommandPayload<ExtArgs extends runtime.Types.Extensions.Inter
   objects: {
     organization: Prisma.$OrganizationPayload<ExtArgs>
     device: Prisma.$DevicePayload<ExtArgs>
-    creator: Prisma.$UserPayload<ExtArgs>
+    creator: Prisma.$UserPayload<ExtArgs> | null
+    app_user: Prisma.$AppUserPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1230,7 +1466,8 @@ export type $DeviceCommandPayload<ExtArgs extends runtime.Types.Extensions.Inter
     timeout_at: Date
     sent_at: Date | null
     replied_at: Date | null
-    created_by: string
+    created_by: string | null
+    app_user_id: string | null
     created_at: Date
     updated_at: Date
   }, ExtArgs["result"]["deviceCommand"]>
@@ -1629,7 +1866,8 @@ export interface Prisma__DeviceCommandClient<T, Null = never, ExtArgs extends ru
   readonly [Symbol.toStringTag]: "PrismaPromise"
   organization<T extends Prisma.OrganizationDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.OrganizationDefaultArgs<ExtArgs>>): Prisma.Prisma__OrganizationClient<runtime.Types.Result.GetResult<Prisma.$OrganizationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   device<T extends Prisma.DeviceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeviceDefaultArgs<ExtArgs>>): Prisma.Prisma__DeviceClient<runtime.Types.Result.GetResult<Prisma.$DevicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  creator<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  creator<T extends Prisma.DeviceCommand$creatorArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeviceCommand$creatorArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  app_user<T extends Prisma.DeviceCommand$app_userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeviceCommand$app_userArgs<ExtArgs>>): Prisma.Prisma__AppUserClient<runtime.Types.Result.GetResult<Prisma.$AppUserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1673,6 +1911,7 @@ export interface DeviceCommandFieldRefs {
   readonly sent_at: Prisma.FieldRef<"DeviceCommand", 'DateTime'>
   readonly replied_at: Prisma.FieldRef<"DeviceCommand", 'DateTime'>
   readonly created_by: Prisma.FieldRef<"DeviceCommand", 'String'>
+  readonly app_user_id: Prisma.FieldRef<"DeviceCommand", 'String'>
   readonly created_at: Prisma.FieldRef<"DeviceCommand", 'DateTime'>
   readonly updated_at: Prisma.FieldRef<"DeviceCommand", 'DateTime'>
 }
@@ -2073,6 +2312,44 @@ export type DeviceCommandDeleteManyArgs<ExtArgs extends runtime.Types.Extensions
    * Limit how many DeviceCommands to delete.
    */
   limit?: number
+}
+
+/**
+ * DeviceCommand.creator
+ */
+export type DeviceCommand$creatorArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
+}
+
+/**
+ * DeviceCommand.app_user
+ */
+export type DeviceCommand$app_userArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AppUser
+   */
+  select?: Prisma.AppUserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AppUser
+   */
+  omit?: Prisma.AppUserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AppUserInclude<ExtArgs> | null
+  where?: Prisma.AppUserWhereInput
 }
 
 /**

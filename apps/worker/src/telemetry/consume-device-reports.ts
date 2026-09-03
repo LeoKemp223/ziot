@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { mergeReportedShadow, parseTopic } from "@ziot/domain";
 
+// 动态 mock 友好的 db 视图,与 apps/web 各 service 的 Db 类型保持同一写法
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { [key: string]: any };
 
 function id(prefix: string) {

@@ -52,6 +52,16 @@ export type Organization = Prisma.OrganizationModel
  */
 export type User = Prisma.UserModel
 /**
+ * Model AppUser
+ * 
+ */
+export type AppUser = Prisma.AppUserModel
+/**
+ * Model AppRefreshToken
+ * 
+ */
+export type AppRefreshToken = Prisma.AppRefreshTokenModel
+/**
  * Model Role
  * 
  */
@@ -116,6 +126,11 @@ export type DeviceShadow = Prisma.DeviceShadowModel
  * 
  */
 export type DeviceCommand = Prisma.DeviceCommandModel
+/**
+ * Model UserDevice
+ * 
+ */
+export type UserDevice = Prisma.UserDeviceModel
 /**
  * Model Firmware
  * 

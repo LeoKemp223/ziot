@@ -1,4 +1,4 @@
-import { BookOpen, KeyRound, RadioTower } from "lucide-react";
+import { BookOpen, KeyRound, RadioTower, Smartphone } from "lucide-react";
 import { ConsoleHeader } from "@/components/console/header";
 import { ConsoleSidebar } from "@/components/console/sidebar";
 import { navItems } from "@/components/console/dashboard-data";
@@ -64,10 +64,10 @@ export default function IntegrationDocsPage() {
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <h1 className="text-2xl font-semibold text-slate-950">
-                  设备接入文档
+                  接入文档
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">
-                  MQTT 设备的认证、上报、控制和 OTA 接入流程。
+                  设备（MQTT）与手机 APP 的接入流程：认证、绑定、控制和状态。
                 </p>
               </div>
             </div>
@@ -75,20 +75,30 @@ export default function IntegrationDocsPage() {
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
               <SummaryCard
                 icon={<KeyRound className="h-5 w-5" />}
-                title="接入凭据"
+                title="设备接入凭据"
                 text="设备使用产品标识（Product Key）、设备标识（Device Key）和设备密钥（Device Secret）认证。设备密钥只在创建设备或重置密钥后显示一次。"
               />
               <SummaryCard
                 icon={<RadioTower className="h-5 w-5" />}
-                title="MQTT 接入"
+                title="MQTT 设备接入"
                 text="设备通过 EMQX Broker 长连接接入平台，支持在线状态、实时下发、持续上报和 OTA。"
+              />
+              <SummaryCard
+                icon={<Smartphone className="h-5 w-5" />}
+                title="APP 用户体系"
+                text="手机 APP 使用独立的 App 用户体系（手机号 + 密码，开放注册），走 Authorization: Bearer 令牌认证，与控制台账号互不通用。"
+              />
+              <SummaryCard
+                icon={<BookOpen className="h-5 w-5" />}
+                title="扫码绑定"
+                text="每台设备一个永久绑定码，二维码可印刷到产品上，用户收到设备扫码即绑；同一张码全家可扫。码泄露时可在控制台重新生成（旧码作废）。设备密钥不出现在二维码上。"
               />
             </div>
 
             <section className="mt-6 rounded-lg border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 px-5 py-4">
                 <h2 className="text-base font-semibold text-slate-950">
-                  接入前准备
+                  设备接入前准备
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
                   先在控制台创建产品和设备，再把设备凭据写入固件或设备配置。
@@ -223,6 +233,94 @@ MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_de
               </div>
             </section>
 
+            <section className="mt-6 rounded-lg border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 px-5 py-4">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-5 w-5 text-blue-600" />
+                  <h2 className="text-base font-semibold text-slate-950">
+                    APP 接入流程
+                  </h2>
+                </div>
+                <p className="mt-1 text-sm text-slate-500">
+                  手机 APP 注册独立账号，扫描设备绑定码后即可控制和读取设备状态。
+                </p>
+              </div>
+              <div className="space-y-6 p-5">
+                <DocBlock title="1. 认证（独立 App 用户体系）">
+                  <KeyValueTable
+                    rows={[
+                      ["注册（开放，无需邀请码）", "POST /api/v1/app/auth/register"],
+                      ["登录", "POST /api/v1/app/auth/login"],
+                      ["刷新令牌（旋转式）", "POST /api/v1/app/auth/refresh"],
+                      ["认证方式", "Authorization: Bearer <access_token>"],
+                      ["令牌有效期", "access_token 15 分钟；refresh_token 30 天"]
+                    ]}
+                  />
+                  <p className="mt-2 text-sm text-slate-600">
+                    令牌在响应体返回（不下发 Cookie），APP 自行安全存储；请求返回 401001 时用 refresh_token 换新令牌重放。
+                  </p>
+                  <CodeBlock
+                    value={`curl -s -X POST http://localhost:3000/api/v1/app/auth/register \\
+  -H 'content-type: application/json' \\
+  -d '{"phone":"13912345678","password":"Pass1234","nickname":"小明"}'
+
+# 响应 data: { access_token, refresh_token, user, ... }`}
+                  />
+                </DocBlock>
+                <DocBlock title="2. 扫码绑定">
+                  <p className="text-sm text-slate-600">
+                    在设备列表行点「二维码」按钮查看设备的永久绑定码（首次查看自动生成），二维码可印刷到产品上。二维码内容是一个 URL，绑定码在 # 之后（URL fragment，不经过任何服务器），APP 本地解析即可：
+                  </p>
+                  <CodeBlock
+                    value={`https://www.ziot.asia/b/#BD7K2M9XQ4ABCDEFGH
+└─────── APP 可达域名 ──────┘└└─── 绑定码(永久) ───┘
+
+# APP 解析出绑定码后调用（支持手动输码，自动转大写）
+curl -s -X POST http://localhost:3000/api/v1/app/devices/bind \\
+  -H 'content-type: application/json' \\
+  -H "Authorization: Bearer $ACCESS_TOKEN" \\
+  -d '{"code":"BD7K2M9XQ4ABCDEFGH"}'`}
+                  />
+                  <p className="mt-2 text-sm text-slate-600">
+                    绑定码永不过期，同一张码可被多个 App 用户扫描绑定（家庭共享）；码泄露时在控制台重新生成，旧码立即失效。
+                  </p>
+                </DocBlock>
+                <DocBlock title="3. 设备列表与状态">
+                  <CodeBlock
+                    value={`# 我的设备（含在线状态 online/offline 和最近上报的属性快照）
+curl -s http://localhost:3000/api/v1/app/devices -H "Authorization: Bearer $ACCESS_TOKEN"
+
+# 设备影子（reported = 设备当前上报的属性全集）
+curl -s http://localhost:3000/api/v1/app/devices/<deviceId>/shadow -H "Authorization: Bearer $ACCESS_TOKEN"`}
+                  />
+                </DocBlock>
+                <DocBlock title="4. 控制设备">
+                  <CodeBlock
+                    value={`# 同步控制（推荐：阻塞到设备应答或超时，timeout_ms 建议 5000-15000）
+curl -s -X POST http://localhost:3000/api/v1/app/devices/<deviceId>/commands:sync \\
+  -H 'content-type: application/json' -H "Authorization: Bearer $ACCESS_TOKEN" \\
+  -d '{"kind":"service","identifier":"reboot","params":{},"timeout_ms":15000}'
+
+# 属性设置（kind=property_set 不需要 identifier）
+curl -s -X POST http://localhost:3000/api/v1/app/devices/<deviceId>/commands:sync \\
+  -H 'content-type: application/json' -H "Authorization: Bearer $ACCESS_TOKEN" \\
+  -d '{"kind":"property_set","params":{"power":true}}'`}
+                  />
+                  <p className="mt-2 text-sm text-slate-600">
+                    命令状态机：pending → sent → success / failed / timeout。identifier 与 params 的取值由产品固件定义，需与设备侧约定对齐。
+                  </p>
+                </DocBlock>
+                <DocBlock title="5. 完整文档">
+                  <KeyValueTable
+                    rows={[
+                      ["APP 接入指南（令牌管理、二维码解析、轮询实践）", "docs/app-integration/integration-guide.md"],
+                      ["App 端 API 字段级参考（含错误码表）", "docs/api/app-api.md"]
+                    ]}
+                  />
+                </DocBlock>
+              </div>
+            </section>
+
             <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-start gap-3">
                 <BookOpen className="mt-0.5 h-5 w-5 text-slate-600" />
@@ -231,7 +329,7 @@ MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_de
                     调试位置
                   </h2>
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    MQTT 连接状态在设备列表和设备详情页显示；属性、事件、日志上报在设备详情页的上报记录和日志中心查看；控制下发结果在设备详情页或控制台的命令记录查看；OTA 进度在 OTA 任务详情页查看。
+                    MQTT 连接状态在设备列表和设备详情页显示；属性、事件、日志上报在设备详情页的上报记录和日志中心查看；控制下发结果在设备详情页或控制台的命令记录查看；OTA 进度在 OTA 任务详情页查看。设备二维码（App 扫码绑定）在设备列表行的「二维码」按钮弹窗查看与重新生成，已绑定的 App 用户（手机号脱敏）也在该弹窗查看。
                   </p>
                 </div>
               </div>

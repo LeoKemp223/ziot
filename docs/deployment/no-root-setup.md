@@ -203,7 +203,8 @@ DATABASE_URL=$DATABASE_URL REDIS_URL=redis://localhost:6379 \
 
 ```bash
 curl -s http://localhost:3000/api/v1/health        # {"status":"ok"...}
-pnpm smoke    # 9 步:健康/登录/邀请注册/产品/设备/MQTT连接/属性上报/控制/OTA(notify+result)
+pnpm smoke    # 13 步:健康/登录/邀请注册/产品/设备/MQTT连接/属性上报/控制/
+              # App注册登录/扫码绑定+列表/同步控制+影子/永久码共享+轮换+解绑/OTA(notify+result)
 ```
 
 ## 8. 服务器重启后的拉起顺序
@@ -226,6 +227,9 @@ PG → Redis → MinIO → EMQX → web → worker(命令见上文各节;EMQX �
 | 登录 401 | 账号或密码错误 | 字段是 `account`,不是 `email` |
 | 局域网访问页面点按钮无反应/URL 带表单参数 | Next 16 dev 拦截非 localhost 来源的 HMR,页面不水合 | `next.config.ts` 加 `allowedDevOrigins: ["<内网IP>"]` 并重启 dev server |
 | web 冷启动首个设备请求 500 | Stream isn't writeable | 已修(lazyConnect 客户端主动建连+内存降级);若部署旧代码需回移该补丁 |
+| `prisma migrate dev` 要 reset 清库 | 本地库无 `_prisma_migrations` 表(历来 db push) | **只用 `db push`**;要补迁移文件用 `migrate diff --from-schema 旧版 --to-schema 新版 --script` |
+| schema 变更后命令下发一律 500 | 运行中的 next dev 持旧 Prisma client,不认识新列 | `prisma:generate` 后**重启 next dev**(不会热加载) |
+| API 间歇性 404(路由明明存在) | **两个 next dev 实例同时在跑**(重复启动),各持新旧路由清单 | `pgrep -af next` 确认只留一个;`kill -9` 全部 + `rm -rf apps/web/.next` 后重启单实例 |
 | 2 个单测失败 | auth-service 时间相关 | 存量问题,与部署无关 |
 
 ## 10. 与正式部署(docker-compose)的关系

@@ -114,6 +114,67 @@ describe("control service", () => {
     expect(db.deviceShadow.update).not.toHaveBeenCalled();
   });
 
+  it("creates an app-user command with app_user_id instead of created_by", async () => {
+    const fetchMock = mockEmqxFetch();
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device())
+      },
+      deviceCommand: {
+        create: vi.fn().mockResolvedValue(command({ status: "pending" })),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findUniqueOrThrow: vi.fn().mockResolvedValue(command())
+      },
+      deviceShadow: {
+        update: vi.fn()
+      }
+    };
+
+    const result = await createDeviceCommand(db, {
+      orgId: "org_default",
+      appUserId: "app_user1",
+      deviceId: "dev_demo",
+      kind: "service",
+      identifier: "reboot",
+      params: {}
+    });
+
+    expect(result.status).toBe("sent");
+    expect(db.deviceCommand.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        created_by: null,
+        app_user_id: "app_user1"
+      }),
+      include: { device: { include: { product: true } } }
+    });
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "http://localhost:18083/api/v5/publish",
+      expect.objectContaining({
+        body: expect.stringContaining(
+          "/sys/pk_demo/dk_demo/thing/service/reboot/invoke"
+        )
+      })
+    );
+  });
+
+  it("rejects commands without any actor", async () => {
+    const db = {
+      device: { findFirst: vi.fn() },
+      deviceCommand: { create: vi.fn() }
+    };
+
+    await expect(
+      createDeviceCommand(db, {
+        orgId: "org_default",
+        deviceId: "dev_demo",
+        kind: "service",
+        identifier: "reboot",
+        params: {}
+      })
+    ).rejects.toMatchObject({ code: 400001 });
+    expect(db.deviceCommand.create).not.toHaveBeenCalled();
+  });
+
   it("updates desired shadow when sending a property set command", async () => {
     mockEmqxFetch();
     const db = {

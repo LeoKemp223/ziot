@@ -53,6 +53,8 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   Organization: 'Organization',
   User: 'User',
+  AppUser: 'AppUser',
+  AppRefreshToken: 'AppRefreshToken',
   Role: 'Role',
   Permission: 'Permission',
   RolePermission: 'RolePermission',
@@ -66,6 +68,7 @@ export const ModelName = {
   DeviceGroupMember: 'DeviceGroupMember',
   DeviceShadow: 'DeviceShadow',
   DeviceCommand: 'DeviceCommand',
+  UserDevice: 'UserDevice',
   Firmware: 'Firmware',
   OtaTask: 'OtaTask',
   OtaRecord: 'OtaRecord',
@@ -112,6 +115,32 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const AppUserScalarFieldEnum = {
+  id: 'id',
+  phone: 'phone',
+  password_hash: 'password_hash',
+  nickname: 'nickname',
+  status: 'status',
+  last_login_at: 'last_login_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type AppUserScalarFieldEnum = (typeof AppUserScalarFieldEnum)[keyof typeof AppUserScalarFieldEnum]
+
+
+export const AppRefreshTokenScalarFieldEnum = {
+  id: 'id',
+  app_user_id: 'app_user_id',
+  token_hash: 'token_hash',
+  expires_at: 'expires_at',
+  revoked_at: 'revoked_at',
+  created_at: 'created_at'
+} as const
+
+export type AppRefreshTokenScalarFieldEnum = (typeof AppRefreshTokenScalarFieldEnum)[keyof typeof AppRefreshTokenScalarFieldEnum]
 
 
 export const RoleScalarFieldEnum = {
@@ -227,6 +256,7 @@ export const DeviceScalarFieldEnum = {
   product_id: 'product_id',
   device_key: 'device_key',
   device_secret_hash: 'device_secret_hash',
+  binding_code: 'binding_code',
   name: 'name',
   status: 'status',
   online_status: 'online_status',
@@ -235,6 +265,7 @@ export const DeviceScalarFieldEnum = {
   last_online_at: 'last_online_at',
   last_offline_at: 'last_offline_at',
   last_heartbeat_at: 'last_heartbeat_at',
+  binding_code_generated_at: 'binding_code_generated_at',
   created_at: 'created_at',
   updated_at: 'updated_at',
   deleted_at: 'deleted_at'
@@ -294,11 +325,27 @@ export const DeviceCommandScalarFieldEnum = {
   sent_at: 'sent_at',
   replied_at: 'replied_at',
   created_by: 'created_by',
+  app_user_id: 'app_user_id',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
 
 export type DeviceCommandScalarFieldEnum = (typeof DeviceCommandScalarFieldEnum)[keyof typeof DeviceCommandScalarFieldEnum]
+
+
+export const UserDeviceScalarFieldEnum = {
+  id: 'id',
+  app_user_id: 'app_user_id',
+  device_id: 'device_id',
+  alias: 'alias',
+  status: 'status',
+  bound_at: 'bound_at',
+  unbound_at: 'unbound_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type UserDeviceScalarFieldEnum = (typeof UserDeviceScalarFieldEnum)[keyof typeof UserDeviceScalarFieldEnum]
 
 
 export const FirmwareScalarFieldEnum = {
@@ -371,6 +418,7 @@ export const AuditLogScalarFieldEnum = {
   id: 'id',
   org_id: 'org_id',
   user_id: 'user_id',
+  actor_type: 'actor_type',
   action: 'action',
   resource_type: 'resource_type',
   resource_id: 'resource_id',

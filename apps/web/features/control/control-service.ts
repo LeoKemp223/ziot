@@ -15,7 +15,9 @@ type CommandKind = "property_set" | "service";
 
 type CreateCommandInput = AccessScope & {
   orgId: string;
-  userId: string;
+  // 控制台用户与 App 用户二选一:命令的发起方
+  userId?: string;
+  appUserId?: string;
   deviceId: string;
   kind: CommandKind;
   identifier?: string;
@@ -262,6 +264,11 @@ async function publishMqtt(topic: string, payload: unknown) {
 
 export async function createDeviceCommand(db: Db, input: CreateCommandInput) {
   assertJsonObject(input.params, "params");
+
+  if (!input.userId && !input.appUserId) {
+    throw controlError(400001, "缺少命令发起方");
+  }
+
   const kind = input.kind;
   const identifier =
     kind === "property_set" ? "property.set" : (input.identifier ?? "").trim();
@@ -290,7 +297,8 @@ export async function createDeviceCommand(db: Db, input: CreateCommandInput) {
       status: "pending",
       request_id: requestId,
       timeout_at: timeoutAt,
-      created_by: input.userId
+      created_by: input.userId ?? null,
+      app_user_id: input.appUserId ?? null
     },
     include: { device: { include: { product: true } } }
   });
@@ -413,9 +421,10 @@ export async function waitForCommandTerminal(
 export async function createSyncDeviceCommand(db: Db, input: CreateCommandInput) {
   const command = await createDeviceCommand(db, input);
 
+  // App 用户发起时没有控制台 userId,ownerFilter 退化为空,按 org + 命令 id 等待
   return waitForCommandTerminal(db, {
     orgId: input.orgId,
-    userId: input.userId,
+    ...(input.userId !== undefined ? { userId: input.userId } : {}),
     commandId: command.id,
     timeoutMs: normalizeTimeout(input.timeoutMs),
     ...(input.canAccessAll !== undefined ? { canAccessAll: input.canAccessAll } : {})

@@ -453,6 +453,11 @@ export type UserScalarRelationFilter = {
   isNot?: Prisma.UserWhereInput
 }
 
+export type UserNullableScalarRelationFilter = {
+  is?: Prisma.UserWhereInput | null
+  isNot?: Prisma.UserWhereInput | null
+}
+
 export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }
@@ -561,10 +566,12 @@ export type UserCreateNestedOneWithoutDevice_commandsInput = {
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutDevice_commandsNestedInput = {
+export type UserUpdateOneWithoutDevice_commandsNestedInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutDevice_commandsInput, Prisma.UserUncheckedCreateWithoutDevice_commandsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutDevice_commandsInput
   upsert?: Prisma.UserUpsertWithoutDevice_commandsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutDevice_commandsInput, Prisma.UserUpdateWithoutDevice_commandsInput>, Prisma.UserUncheckedUpdateWithoutDevice_commandsInput>
 }
@@ -603,10 +610,12 @@ export type UserCreateNestedOneWithoutAudit_logsInput = {
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutAudit_logsNestedInput = {
+export type UserUpdateOneWithoutAudit_logsNestedInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutAudit_logsInput, Prisma.UserUncheckedCreateWithoutAudit_logsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutAudit_logsInput
   upsert?: Prisma.UserUpsertWithoutAudit_logsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAudit_logsInput, Prisma.UserUpdateWithoutAudit_logsInput>, Prisma.UserUncheckedUpdateWithoutAudit_logsInput>
 }

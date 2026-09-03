@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { PaginationBar } from "@/components/ui/pagination-bar";
-import { Copy, Eye, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { Copy, Eye, Pencil, Plus, QrCode, RefreshCw, Trash2, X } from "lucide-react";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import type { ProductDto } from "@/lib/products/product-service";
 import { usePermissions } from "@/components/console/use-permissions";
@@ -43,6 +43,22 @@ type DevicesResponse = ApiResponse<{
   items: DeviceItem[];
   pagination: Pagination;
 }>;
+
+type BindingCodeData = {
+  device_id: string;
+  code: string;
+  qr_content: string;
+  qr_data_url: string;
+  generated_at: string | null;
+};
+
+type BoundUserItem = {
+  id: string;
+  nickname: string;
+  phone: string;
+  alias: string | null;
+  bound_at: string;
+};
 
 export function DeviceCreateForm() {
   const [secretCopied, setSecretCopied] = useState(false);
@@ -316,6 +332,13 @@ export function DeviceListPanel() {
   const [confirmSecretDevice, setConfirmSecretDevice] = useState<DeviceItem | null>(null);
   const [deviceSecret, setDeviceSecret] = useState("");
   const [secretCopied, setSecretCopied] = useState(false);
+  const [qrDevice, setQrDevice] = useState<DeviceItem | null>(null);
+  const [bindingCodeData, setBindingCodeData] = useState<BindingCodeData | null>(null);
+  const [boundUsers, setBoundUsers] = useState<BoundUserItem[]>([]);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [rotating, setRotating] = useState(false);
+  const [confirmRotate, setConfirmRotate] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   async function loadData(
     showLoading = true,
@@ -463,6 +486,82 @@ export function DeviceListPanel() {
     }
   }
 
+  async function openQrModal(device: DeviceItem) {
+    setQrDevice(device);
+    setBindingCodeData(null);
+    setBoundUsers([]);
+    setCodeCopied(false);
+    setConfirmRotate(false);
+    setQrLoading(true);
+    setError("");
+
+    try {
+      const [codeResponse, bindingsResponse] = await Promise.all([
+        fetch(`/api/v1/devices/${device.id}/binding-code`),
+        fetch(`/api/v1/devices/${device.id}/bindings?page_size=50`)
+      ]);
+      const codeBody = (await codeResponse.json()) as ApiResponse<BindingCodeData>;
+      const bindingsBody = (await bindingsResponse.json()) as ApiResponse<{
+        items: BoundUserItem[];
+      }>;
+
+      if (!codeResponse.ok || codeBody.code !== 0 || !codeBody.data) {
+        setError(codeBody.message || "获取设备二维码失败，请稍后重试。");
+        return;
+      }
+
+      setBindingCodeData(codeBody.data);
+      if (bindingsResponse.ok && bindingsBody.code === 0 && bindingsBody.data) {
+        setBoundUsers(bindingsBody.data.items);
+      }
+    } catch {
+      setError("获取设备二维码失败，请稍后重试。");
+    } finally {
+      setQrLoading(false);
+    }
+  }
+
+  async function rotateQr() {
+    if (!qrDevice) {
+      return;
+    }
+
+    setRotating(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `/api/v1/devices/${qrDevice.id}/binding-code`,
+        { method: "POST" }
+      );
+      const body = (await response.json()) as ApiResponse<BindingCodeData>;
+
+      if (!response.ok || body.code !== 0 || !body.data) {
+        setError(body.message || "重新生成失败，请稍后重试。");
+        return;
+      }
+
+      setBindingCodeData(body.data);
+      setConfirmRotate(false);
+    } catch {
+      setError("重新生成失败，请稍后重试。");
+    } finally {
+      setRotating(false);
+    }
+  }
+
+  async function copyBindingCode() {
+    if (!bindingCodeData) {
+      return;
+    }
+
+    const copied = await copyTextToClipboard(bindingCodeData.code);
+    setCodeCopied(copied);
+    if (copied) {
+      window.setTimeout(() => setCodeCopied(false), 2000);
+    }
+  }
+
   useEffect(() => {
     void loadData(true, selectedProductId, 1);
 
@@ -585,6 +684,138 @@ export function DeviceListPanel() {
               <button className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60" disabled={pending} onClick={() => { const device = confirmSecretDevice; setConfirmSecretDevice(null); void viewDeviceSecret(device); }} type="button">
                 {pending ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}确认生成
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {qrDevice ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+          role="dialog"
+        >
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white shadow-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">
+                  设备二维码
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {qrDevice.name} / {qrDevice.device_key}
+                </p>
+              </div>
+              <button
+                aria-label="关闭"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                onClick={() => setQrDevice(null)}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-5 py-5">
+              {qrLoading ? (
+                <div className="flex h-64 items-center justify-center text-sm text-slate-500">
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  正在加载二维码...
+                </div>
+              ) : bindingCodeData ? (
+                <>
+                  <div className="flex justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      alt="设备绑定二维码"
+                      className="h-[240px] w-[240px] rounded-md border border-slate-200"
+                      src={bindingCodeData.qr_data_url}
+                    />
+                  </div>
+                  <p className="text-center text-xs text-slate-400">
+                    永久有效，可印刷到产品上；用户扫码即可绑定设备
+                  </p>
+                  <div className="flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
+                    <span className="break-all font-mono text-sm font-medium text-emerald-900">
+                      {bindingCodeData.code}
+                    </span>
+                    <button
+                      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-emerald-300 bg-white px-2.5 text-xs font-medium text-emerald-800 hover:bg-emerald-100"
+                      onClick={() => void copyBindingCode()}
+                      type="button"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {codeCopied ? "已复制" : "复制"}
+                    </button>
+                  </div>
+                  {confirmRotate ? (
+                    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                      <p>
+                        重新生成后旧码立即失效，已印刷的旧二维码将无法绑定。确定继续吗？
+                      </p>
+                      <div className="mt-3 flex justify-end gap-2">
+                        <button
+                          className="inline-flex h-8 items-center rounded-md border border-amber-300 bg-white px-3 text-xs font-medium text-amber-800 hover:bg-amber-100"
+                          onClick={() => setConfirmRotate(false)}
+                          type="button"
+                        >
+                          取消
+                        </button>
+                        <button
+                          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-amber-600 px-3 text-xs font-medium text-white hover:bg-amber-500 disabled:opacity-60"
+                          disabled={rotating}
+                          onClick={() => void rotateQr()}
+                          type="button"
+                        >
+                          {rotating ? (
+                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          ) : null}
+                          确认重新生成
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                      disabled={rotating}
+                      onClick={() => setConfirmRotate(true)}
+                      type="button"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      重新生成（旧码失效）
+                    </button>
+                  )}
+                  <div className="border-t border-slate-200 pt-4">
+                    <h3 className="text-sm font-semibold text-slate-950">
+                      已绑定的 App 用户（{boundUsers.length}）
+                    </h3>
+                    {boundUsers.length === 0 ? (
+                      <p className="mt-2 text-sm text-slate-500">
+                        暂无 App 用户绑定该设备。
+                      </p>
+                    ) : (
+                      <ul className="mt-2 space-y-2">
+                        {boundUsers.map((bound) => (
+                          <li
+                            className="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm"
+                            key={bound.id}
+                          >
+                            <span className="min-w-0 truncate font-medium text-slate-950">
+                              {bound.alias || bound.nickname || bound.phone}
+                            </span>
+                            <span className="shrink-0 text-xs text-slate-500">
+                              {bound.phone} · {formatDateTime(bound.bound_at)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="flex h-64 items-center justify-center text-sm text-rose-600">
+                  二维码加载失败，请关闭后重试。
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -766,6 +997,15 @@ export function DeviceListPanel() {
                     <div className="flex justify-end gap-2">
                       {canWriteDevices ? (
                         <>
+                          <button
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                            disabled={pending}
+                            onClick={() => void openQrModal(device)}
+                            title="设备二维码（App 扫码绑定）"
+                            type="button"
+                          >
+                            <QrCode className="h-4 w-4" />
+                          </button>
                           <button
                             className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                             disabled={pending}

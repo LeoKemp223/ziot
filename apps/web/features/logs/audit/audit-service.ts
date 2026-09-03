@@ -8,8 +8,16 @@ type AuditActor = {
   current_org_id: string;
 };
 
+type AppAuditActor = {
+  id: string;
+  org_id: string;
+  phone?: string;
+};
+
 type AuditLogInput = {
-  user: AuditActor;
+  // 控制台用户;App 用户事件改传 appUser,二者必传其一
+  user?: AuditActor;
+  appUser?: AppAuditActor;
   action: string;
   resourceType: string;
   resourceId: string;
@@ -63,6 +71,7 @@ function mapAuditLog(log: any) {
     id: log.id,
     org_id: log.org_id,
     user_id: log.user_id,
+    actor_type: log.actor_type ?? "user",
     user_account: log.user?.account ?? "",
     user_display_name: log.user?.display_name ?? "",
     action: log.action,
@@ -76,11 +85,14 @@ function mapAuditLog(log: any) {
 }
 
 export async function writeAuditLog(db: Db, input: AuditLogInput) {
+  const isAppActor = Boolean(input.appUser);
+
   return db.auditLog.create({
     data: {
       id: id("aud"),
-      org_id: input.user.current_org_id,
-      user_id: input.user.id,
+      org_id: input.appUser?.org_id ?? input.user?.current_org_id ?? "",
+      user_id: isAppActor ? null : (input.user?.id ?? null),
+      actor_type: isAppActor ? "app_user" : "user",
       action: input.action,
       resource_type: input.resourceType,
       resource_id: input.resourceId,

@@ -90,3 +90,11 @@ export const LogLevel = {
 } as const
 
 export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel]
+
+
+export const BindingStatus = {
+  active: 'active',
+  unbound: 'unbound'
+} as const
+
+export type BindingStatus = (typeof BindingStatus)[keyof typeof BindingStatus]

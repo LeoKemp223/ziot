@@ -831,6 +831,49 @@ HTTP 状态码：`200`
 
 `desired` 必须是 JSON 对象。每次成功更新会将 `version` 递增 1。
 
+### `GET /api/v1/devices/{device_id}/binding-code`
+
+查看设备的**永久** App 绑定码与二维码（供印刷到产品上，用户扫码即绑）。需要 `device:write` 权限。设备列表行的"二维码"按钮弹窗即此能力的界面。首次查看时自动生成绑定码。
+
+成功响应 `data`：
+
+```json
+{
+  "device_id": "dev_demo",
+  "code": "BD7K2M9XQ4ABCDEFGH",
+  "qr_content": "http://localhost:3000/b/#BD7K2M9XQ4ABCDEFGH",
+  "qr_data_url": "data:image/png;base64,...",
+  "generated_at": "2026-09-03T08:00:00.000Z"
+}
+```
+
+绑定码格式 `BD` + 16 位去混淆大写字母数字，永不过期，同一张码可被多个 App 用户扫描绑定（家庭共享）。二维码内容为 `${APP_BIND_QR_BASE_URL}/b/#{code}`，绑定码位于 URL fragment。App 端用法见 `docs/api/app-api.md`。
+
+### `POST /api/v1/devices/{device_id}/binding-code`
+
+轮换永久绑定码：生成新码，**旧码立即失效**（已印刷的旧标签作废），响应同上。用于码泄露场景。需要 `device:write` 权限，写审计 `device.binding_code.rotate`。
+
+### `GET /api/v1/devices/{device_id}/bindings`
+
+分页查询已绑定该设备的 App 用户。需要 `device:read` 权限。手机号脱敏展示：
+
+```json
+{
+  "items": [
+    {
+      "id": "bnd_demo",
+      "device_id": "dev_demo",
+      "alias": "客厅的空调",
+      "app_user_id": "app_demo",
+      "nickname": "小明",
+      "phone": "139****5678",
+      "bound_at": "2026-09-03T08:00:00.000Z"
+    }
+  ],
+  "pagination": { "page": 1, "page_size": 20, "total": 1, "total_pages": 1 }
+}
+```
+
 ### `GET /api/v1/devices/{device_id}/topics`
 
 查询设备内置 MQTT Topic 列表。需要 `device:read` 权限。

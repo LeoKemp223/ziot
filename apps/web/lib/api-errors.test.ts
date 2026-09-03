@@ -17,4 +17,15 @@ describe("apiErrorResponse", () => {
       data: null
     });
   });
+
+  it("maps rate limit code 429001 to http 429", async () => {
+    const response = apiErrorResponse(
+      Object.assign(new Error("请求过于频繁，请稍后再试"), { code: 429001 }),
+      "req_test"
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(body.code).toBe(429001);
+  });
 });

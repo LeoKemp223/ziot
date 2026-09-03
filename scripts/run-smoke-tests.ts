@@ -326,6 +326,148 @@ async function main() {
   });
   logStep("command control");
 
+  // App 全链路:控制台查看设备永久二维码 -> App 注册/登录 -> 扫码绑定 -> 控制 -> 读状态 -> 解绑
+  const appBindingCode = await api<{
+    device_id: string;
+    code: string;
+    qr_data_url: string;
+    qr_content: string;
+  }>(`/api/v1/devices/${mqttDevice.id}/binding-code`, {
+    jar: adminJar
+  });
+  if (!/^BD[2-9A-HJ-NP-Z]{16}$/.test(appBindingCode.code)) {
+    throw new Error(`unexpected binding code format: ${appBindingCode.code}`);
+  }
+  if (!appBindingCode.qr_data_url.startsWith("data:image/png;base64,")) {
+    throw new Error("binding qr data url missing");
+  }
+
+  const appPhone = `138${String((stamp + 1) % 100_000_000).padStart(8, "0")}`;
+  const appSession = await api<{
+    user: { id: string; phone: string };
+    access_token: string;
+    refresh_token: string;
+  }>("/api/v1/app/auth/register", {
+    method: "POST",
+    json: {
+      phone: appPhone,
+      password: "Smoke123456",
+      nickname: "Smoke App User"
+    }
+  });
+  const appAuth = { authorization: `Bearer ${appSession.access_token}` };
+  await api<{ user: { phone: string } }>("/api/v1/app/auth/login", {
+    method: "POST",
+    json: { phone: appPhone, password: "Smoke123456" }
+  });
+  logStep("app register + login");
+
+  const boundDevice = await api<{ device_id: string; online_status: string }>(
+    "/api/v1/app/devices/bind",
+    {
+      method: "POST",
+      headers: appAuth,
+      json: { code: appBindingCode.code }
+    }
+  );
+  if (boundDevice.device_id !== mqttDevice.id) {
+    throw new Error(`app bind device mismatch: ${boundDevice.device_id}`);
+  }
+
+  const appDevices = await api<{ items: Array<{ device_id: string; alias: string | null }> }>(
+    "/api/v1/app/devices",
+    { headers: appAuth }
+  );
+  if (!appDevices.items.some((item) => item.device_id === mqttDevice.id)) {
+    throw new Error("app device list missing bound device");
+  }
+  logStep("app bind + device list");
+
+  const appSyncCommand = await api<{ id: string; status: string }>(
+    `/api/v1/app/devices/${mqttDevice.id}/commands:sync`,
+    {
+      method: "POST",
+      headers: appAuth,
+      json: {
+        kind: "service",
+        identifier: "reboot",
+        params: {},
+        timeout_ms: 15000
+      }
+    }
+  );
+  if (appSyncCommand.status !== "success") {
+    throw new Error(`app sync command status: ${appSyncCommand.status}`);
+  }
+
+  const appShadow = await api<{ reported: Record<string, unknown> }>(
+    `/api/v1/app/devices/${mqttDevice.id}/shadow`,
+    { headers: appAuth }
+  );
+  if (appShadow.reported?.temperature !== 24.5) {
+    throw new Error(`app shadow reported: ${JSON.stringify(appShadow.reported)}`);
+  }
+  logStep("app sync control + shadow");
+
+  // 永久码可多用户复用:第二个 App 用户扫同一张码也能绑定(家庭共享)
+  const secondAppSession = await api<{
+    access_token: string;
+  }>("/api/v1/app/auth/register", {
+    method: "POST",
+    json: {
+      phone: `137${String((stamp + 2) % 100_000_000).padStart(8, "0")}`,
+      password: "Smoke123456"
+    }
+  });
+  const sharedBind = await api<{ device_id: string }>(
+    "/api/v1/app/devices/bind",
+    {
+      method: "POST",
+      headers: { authorization: `Bearer ${secondAppSession.access_token}` },
+      json: { code: appBindingCode.code }
+    }
+  );
+  if (sharedBind.device_id !== mqttDevice.id) {
+    throw new Error(`shared bind device mismatch: ${sharedBind.device_id}`);
+  }
+
+  // 轮换后旧码立即失效(400001),新码可重新绑定
+  const rotated = await api<{ code: string }>(
+    `/api/v1/devices/${mqttDevice.id}/binding-code`,
+    { method: "POST", jar: adminJar }
+  );
+  const oldCodeResponse = await fetch(`${BASE_URL}/api/v1/app/devices/bind`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${secondAppSession.access_token}`
+    },
+    body: JSON.stringify({ code: appBindingCode.code })
+  });
+  const oldCodeBody = (await oldCodeResponse.json()) as Envelope<unknown>;
+  if (oldCodeResponse.status !== 400 || oldCodeBody.code !== 400001) {
+    throw new Error(
+      `rotated-away code expected 400/400001, got ${oldCodeResponse.status}/${oldCodeBody.code}`
+    );
+  }
+  await api("/api/v1/app/devices/bind", {
+    method: "POST",
+    headers: appAuth,
+    json: { code: rotated.code }
+  });
+
+  await api(`/api/v1/app/devices/${mqttDevice.id}`, {
+    method: "DELETE",
+    headers: appAuth
+  });
+  const appDevicesAfterUnbind = await api<{
+    items: Array<{ device_id: string }>;
+  }>("/api/v1/app/devices", { headers: appAuth });
+  if (appDevicesAfterUnbind.items.some((item) => item.device_id === mqttDevice.id)) {
+    throw new Error("app device list still contains unbound device");
+  }
+  logStep("app permanent code sharing + rotate + unbind");
+
   const firmware = await api<{ id: string }>("/api/v1/firmwares", {
     method: "POST",
     jar: adminJar,
