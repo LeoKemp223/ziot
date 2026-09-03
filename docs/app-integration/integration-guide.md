@@ -98,15 +98,15 @@ POST /api/v1/app/devices/bind   {"code":"BD7K2M9XQ4ABCDEFGH"}   (Bearer)
 
 | 方式 | 路径 | 适用 |
 | --- | --- | --- |
-| 同步(推荐先做) | `POST .../commands:sync` | "点开关"类交互:阻塞到设备应答或超时,直接拿终态;`timeout_ms` 建议 5-15s,UI 上配合 loading + 取消 |
-| 异步 | `POST .../commands` | 批量/不关心即时结果的场景:返回 201 + 命令 id,用 `GET /api/v1/app/commands/{id}` 轮询 |
+| 同步(推荐先做) | `POST .../commands:sync` | "点开关"类交互:投递完成即返回终态(通常几十毫秒),UI 上配合 loading 即可 |
+| 异步 | `POST .../commands` | 批量/不关心即时结果的场景:返回 201 + 命令 id,用 `GET /api/v1/app/commands/{id}` 查询 |
 
-命令状态机:`pending → sent → success | failed | timeout`。`success` 时 `result` 携带设备回执数据;`failed` 看 `error_message`。
+命令状态机(投递语义):`pending → success | failed`。`success` = 平台已成功投递到 MQTT Broker,**不代表设备已执行**;`failed` = 发布失败,看 `error_message`。要确认设备实际状态,轮询 `GET .../devices/{id}/shadow` 看 `reported`(设备属性上报)是否收敛到设置值。存量历史命令可能出现 `sent`/`timeout`(旧版等待设备应答的语义)。
 
 参数规则:
 - `kind: "service"` 需 `identifier`(设备物模型服务标识,如 `reboot`,字母/下划线开头)。
 - `kind: "property_set"` 不需要 `identifier`,`params` 为属性对象(如 `{"power":true}`),同时会写入影子 desired。
-- `params` 必须是 JSON 对象;`timeout_ms` 1000-120000,默认 15000。
+- `params` 必须是 JSON 对象;`timeout_ms` 1000-120000,默认 15000(传输语义下仅兼容保留,不再影响结果)。
 
 **identifier 与 params 的取值由产品/固件定义**——APP 端每个产品的控制面板需按产品约定传参,拿不到约定时找设备侧开发人员对齐(设备侧话题定义见 `docs/device-integration/integration-guide.md`)。
 

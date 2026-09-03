@@ -82,7 +82,7 @@ describe("control service", () => {
       deviceCommand: {
         create: vi.fn().mockResolvedValue(command({ status: "pending" })),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-        findUniqueOrThrow: vi.fn().mockResolvedValue(command())
+        findUniqueOrThrow: vi.fn().mockResolvedValue(command({ status: "success" }))
       },
       deviceShadow: {
         update: vi.fn()
@@ -101,7 +101,11 @@ describe("control service", () => {
 
     expect(result).toMatchObject({
       identifier: "setSwitch",
-      status: "sent"
+      status: "success"
+    });
+    expect(db.deviceCommand.updateMany).toHaveBeenCalledWith({
+      where: { id: "cmd_demo", status: "pending" },
+      data: expect.objectContaining({ status: "success" })
     });
     expect(fetchMock).toHaveBeenLastCalledWith(
       "http://localhost:18083/api/v5/publish",
@@ -123,7 +127,7 @@ describe("control service", () => {
       deviceCommand: {
         create: vi.fn().mockResolvedValue(command({ status: "pending" })),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-        findUniqueOrThrow: vi.fn().mockResolvedValue(command())
+        findUniqueOrThrow: vi.fn().mockResolvedValue(command({ status: "success" }))
       },
       deviceShadow: {
         update: vi.fn()
@@ -139,7 +143,7 @@ describe("control service", () => {
       params: {}
     });
 
-    expect(result.status).toBe("sent");
+    expect(result.status).toBe("success");
     expect(db.deviceCommand.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         created_by: null,
@@ -188,7 +192,7 @@ describe("control service", () => {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         findUniqueOrThrow: vi
           .fn()
-          .mockResolvedValue(command({ identifier: "property.set" }))
+          .mockResolvedValue(command({ identifier: "property.set", status: "success" }))
       },
       deviceShadow: {
         update: vi.fn().mockResolvedValue({})
@@ -241,6 +245,43 @@ describe("control service", () => {
       data: expect.objectContaining({
         status: "success",
         result: { ok: true }
+      }),
+      include: { device: { include: { product: true } } }
+    });
+    expect(result.status).toBe("success");
+  });
+
+  it("records a successful property set reply", async () => {
+    const db = {
+      deviceCommand: {
+        findUnique: vi.fn().mockResolvedValue(
+          command({ identifier: "property.set", params: { temperature: 26 } })
+        ),
+        update: vi.fn().mockResolvedValue(
+          command({
+            identifier: "property.set",
+            params: { temperature: 26 },
+            status: "success",
+            replied_at: now
+          })
+        )
+      }
+    };
+
+    const result = await recordCommandReply(db, {
+      topic: "/sys/pk_demo/dk_demo/thing/property/set_reply",
+      payload: {
+        id: "cmd_demo",
+        request_id: "cmd_demo",
+        code: 0,
+        data: {}
+      }
+    });
+
+    expect(db.deviceCommand.update).toHaveBeenCalledWith({
+      where: { request_id: "cmd_demo" },
+      data: expect.objectContaining({
+        status: "success"
       }),
       include: { device: { include: { product: true } } }
     });
@@ -356,7 +397,7 @@ describe("control service", () => {
     expect(db.deviceCommand.update).not.toHaveBeenCalled();
   });
 
-  it("waits for sync command success", async () => {
+  it("resolves sync commands immediately when delivery succeeds", async () => {
     vi.stubEnv("REDIS_URL", "");
     mockEmqxFetch();
     const db = {
@@ -366,7 +407,7 @@ describe("control service", () => {
       deviceCommand: {
         create: vi.fn().mockResolvedValue(command({ status: "pending" })),
         updateMany: vi.fn().mockResolvedValue({ count: 0 }),
-        findUniqueOrThrow: vi.fn().mockResolvedValue(command({ status: "sent" })),
+        findUniqueOrThrow: vi.fn().mockResolvedValue(command({ status: "success" })),
         findFirst: vi.fn().mockResolvedValue(command({ status: "success" }))
       },
       deviceShadow: {
@@ -374,6 +415,7 @@ describe("control service", () => {
       }
     };
 
+    const startedAt = Date.now();
     const result = await createSyncDeviceCommand(db, {
       orgId: "org_default",
       userId: "usr_admin",
@@ -382,42 +424,11 @@ describe("control service", () => {
       kind: "service",
       identifier: "setSwitch",
       params: {},
-      timeoutMs: 1000
+      timeoutMs: 15_000
     });
 
     expect(result.status).toBe("success");
-  });
-
-  it("returns timeout status for sync command timeout", async () => {
-    vi.stubEnv("REDIS_URL", "");
-    mockEmqxFetch();
-    const db = {
-      device: {
-        findFirst: vi.fn().mockResolvedValue(device())
-      },
-      deviceCommand: {
-        create: vi.fn().mockResolvedValue(command({ status: "pending" })),
-        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-        findUniqueOrThrow: vi.fn().mockResolvedValue(command({ status: "sent" })),
-        findFirst: vi.fn().mockResolvedValue(command({ status: "timeout" }))
-      },
-      deviceShadow: {
-        update: vi.fn()
-      }
-    };
-
-    const result = await createSyncDeviceCommand(db, {
-      orgId: "org_default",
-      userId: "usr_admin",
-      canAccessAll: true,
-      deviceId: "dev_demo",
-      kind: "service",
-      identifier: "setSwitch",
-      params: {},
-      timeoutMs: 1000
-    });
-
-    expect(result.status).toBe("timeout");
+    expect(Date.now() - startedAt).toBeLessThan(2000);
   });
 
   it("creates batch commands for a same-product group", async () => {

@@ -152,7 +152,7 @@ command_reply_rule_payload=$(
       id: "ziot_command_reply_events",
       name: "ZiOT command reply events",
       enable: true,
-      sql: "SELECT topic, payload FROM \"/sys/+/+/thing/service/+/reply\"",
+      sql: "SELECT topic, payload FROM \"/sys/+/+/thing/service/+/reply\", \"/sys/+/+/thing/property/set_reply\"",
       actions: ["http:ziot_command_reply_webhook"]
     }'
 )

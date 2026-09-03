@@ -16,33 +16,38 @@ export const runtime = "nodejs";
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as Record<string, unknown>;
-    if (typeof body.topic === "string" && body.topic.includes("/thing/service/")) {
+    const topic = typeof body.topic === "string" ? body.topic : "";
+    // 服务调用应答与属性设置应答走同一套命令闭环
+    if (
+      topic.includes("/thing/service/") ||
+      topic.includes("/thing/property/set_reply")
+    ) {
       await recordCommandReply(prisma, {
-        topic: body.topic,
+        topic,
         payload: body.payload
       });
 
       return NextResponse.json({ result: "allow" });
     }
 
-    if (typeof body.topic === "string" && body.topic.includes("/thing/")) {
+    if (topic.includes("/thing/")) {
       const queued = await enqueueTelemetryReport({
-        topic: body.topic,
+        topic,
         payload: body.payload
       }).catch(() => false);
       const decision = queued
         ? { result: "allow" }
         : await recordMqttReport(prisma, {
-            topic: body.topic,
+            topic,
             payload: body.payload
           });
 
       return NextResponse.json(decision);
     }
 
-    if (typeof body.topic === "string" && body.topic.startsWith("/ota/")) {
+    if (topic.startsWith("/ota/")) {
       const parsed = await parseMqttOtaProgressInput({
-        topic: body.topic,
+        topic,
         payload: body.payload
       });
 

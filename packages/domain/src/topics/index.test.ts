@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildServiceInvokeTopic, parseTopic } from "./index";
+import {
+  buildPropertySetReplyTopic,
+  buildServiceInvokeTopic,
+  parseTopic
+} from "./index";
 
 describe("topics", () => {
   it("parses property report topics", () => {
@@ -17,6 +21,15 @@ describe("topics", () => {
       productKey: "pk_001",
       deviceKey: "dk_001",
       messageType: "property.set"
+    });
+  });
+
+  it("parses property set reply topics", () => {
+    expect(parseTopic("/sys/pk_001/dk_001/thing/property/set_reply")).toEqual({
+      namespace: "sys",
+      productKey: "pk_001",
+      deviceKey: "dk_001",
+      messageType: "property.set_reply"
     });
   });
 
@@ -59,6 +72,12 @@ describe("topics", () => {
   it("builds service invoke topics", () => {
     expect(buildServiceInvokeTopic("pk_001", "dk_001", "setSwitch")).toBe(
       "/sys/pk_001/dk_001/thing/service/setSwitch/invoke"
+    );
+  });
+
+  it("builds property set reply topics", () => {
+    expect(buildPropertySetReplyTopic("pk_001", "dk_001")).toBe(
+      "/sys/pk_001/dk_001/thing/property/set_reply"
     );
   });
 });

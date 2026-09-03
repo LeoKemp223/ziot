@@ -80,6 +80,12 @@ DATABASE_URL=postgresql://ziot:ziot@localhost:5432/ziot pnpm --filter @ziot/db s
 /sys/{product_key}/{device_key}/thing/property/set
 ```
 
+属性设置回复（可选：设备应用后发布，平台只透传不强制；命令状态以投递结果为准）：
+
+```text
+/sys/{product_key}/{device_key}/thing/property/set_reply
+```
+
 控制下发 / 服务调用订阅：
 
 ```text
@@ -177,7 +183,7 @@ MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_de
 REPORT_INTERVAL_SECONDS=5 MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_demo DEVICE_SECRET=DeviceSecret123 /tmp/ziot-mqtt-c-demo
 ```
 
-两个 demo 都会在连接成功后订阅属性设置、服务调用和 OTA 通知 Topic，立即上报一条属性数据，并按 `REPORT_INTERVAL_SECONDS` 定时上报属性。收到属性设置后，会再次上报属性；收到服务调用后，会自动向对应的 reply Topic 回复 `code=0`。TypeScript MQTT simulator 收到 OTA 通知后会自动上报下载、安装和成功结果。
+两个 demo 都会在连接成功后订阅属性设置、服务调用和 OTA 通知 Topic，立即上报一条属性数据，并按 `REPORT_INTERVAL_SECONDS` 定时上报属性。收到属性设置后，会先向 `/thing/property/set_reply` 回复 `code=0`（可选的设备侧应答，平台不强制、命令状态不依赖它），再上报应用后的属性；收到服务调用后，会自动向对应的 reply Topic 回复 `code=0`。TypeScript MQTT simulator 收到 OTA 通知后会自动上报下载、安装和成功结果。
 
 ## 控制下发测试
 
@@ -189,4 +195,4 @@ REPORT_INTERVAL_SECONDS=5 MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_
 }
 ```
 
-服务标识可以使用 `setSwitch`。demo 收到 `/thing/service/setSwitch/invoke` 后会发布 `/thing/service/setSwitch/reply`，命令记录会更新为成功。
+服务标识可以使用 `setSwitch`。命令在平台投递成功后即显示"成功"（投递语义，不等设备应答）；demo 收到 `/thing/service/setSwitch/invoke` 后仍会发布 `/thing/service/setSwitch/reply` 作为可选的设备侧应答，供需要执行确认的业务自行消费。

@@ -1,5 +1,5 @@
 import mqtt from "mqtt";
-import { buildServiceInvokeTopic } from "@ziot/domain";
+import { buildPropertySetReplyTopic, buildServiceInvokeTopic } from "@ziot/domain";
 
 const brokerUrl = process.env.MQTT_BROKER_URL ?? "mqtt://localhost:1883";
 const productKey = process.env.PRODUCT_KEY ?? "pk_demo";
@@ -17,6 +17,8 @@ const client = mqtt.connect(brokerUrl, {
 });
 
 const commandTopic = buildServiceInvokeTopic(productKey, deviceKey, "+");
+const propertySetTopic = `/sys/${productKey}/${deviceKey}/thing/property/set`;
+const propertySetReplyTopic = buildPropertySetReplyTopic(productKey, deviceKey);
 const propertyTopic = `/sys/${productKey}/${deviceKey}/thing/property/post`;
 const otaNotifyTopic = `/ota/${productKey}/${deviceKey}/upgrade/notify`;
 const otaProgressTopic = `/ota/${productKey}/${deviceKey}/upgrade/progress`;
@@ -24,7 +26,7 @@ const otaResultTopic = `/ota/${productKey}/${deviceKey}/upgrade/result`;
 
 client.on("connect", () => {
   console.log(`connected ${username}`);
-  client.subscribe([commandTopic, otaNotifyTopic], { qos: 1 }, (error) => {
+  client.subscribe([commandTopic, propertySetTopic, otaNotifyTopic], { qos: 1 }, (error) => {
     if (error) {
       console.error(error);
       client.end(true);
@@ -47,6 +49,40 @@ client.on("connect", () => {
 
 client.on("message", (topic, payload) => {
   console.log(`downlink ${topic} ${payload.toString()}`);
+
+  if (topic === propertySetTopic) {
+    let requestId = `${Date.now()}`;
+    let params: Record<string, unknown> | null = null;
+
+    try {
+      const body = JSON.parse(payload.toString()) as {
+        request_id?: string;
+        id?: string;
+        params?: Record<string, unknown>;
+      };
+      requestId = body.request_id ?? body.id ?? requestId;
+      params = body.params ?? null;
+    } catch {
+      // 保持默认应答
+    }
+
+    client.publish(
+      propertySetReplyTopic,
+      JSON.stringify({
+        id: requestId,
+        request_id: requestId,
+        code: 0,
+        data: {}
+      }),
+      { qos: 1 }
+    );
+    client.publish(
+      propertyTopic,
+      JSON.stringify({ id: `${Date.now()}`, params: params ?? { temperature: 23.6, humidity: 58 } }),
+      { qos: 1 }
+    );
+    return;
+  }
 
   if (topic === otaNotifyTopic) {
     let taskId = "";

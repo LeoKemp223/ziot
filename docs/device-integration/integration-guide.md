@@ -29,6 +29,7 @@ Main topics:
 | Device publish event | `/sys/{product_key}/{device_key}/thing/event/post` |
 | Device publish log | `/sys/{product_key}/{device_key}/thing/log/post` |
 | Device subscribe property set | `/sys/{product_key}/{device_key}/thing/property/set` |
+| Device publish property set reply | `/sys/{product_key}/{device_key}/thing/property/set_reply` |
 | Device subscribe service invoke | `/sys/{product_key}/{device_key}/thing/service/+/invoke` |
 | Device publish service reply | `/sys/{product_key}/{device_key}/thing/service/{identifier}/reply` |
 | Device subscribe OTA notify | `/ota/{product_key}/{device_key}/upgrade/notify` |

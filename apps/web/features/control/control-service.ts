@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import Redis from "ioredis";
 
 type Db = { [key: string]: any };
 type AccessScope = {
@@ -48,32 +47,7 @@ function id(prefix: string): string {
   return `${prefix}_${randomUUID().replaceAll("-", "").slice(0, 16)}`;
 }
 
-let redisClient: Redis | null = null;
 let cachedEmqxToken: { apiUrl: string; token: string; expiresAt: number } | null = null;
-
-function getRedisClient() {
-  const redisUrl = process.env.REDIS_URL;
-
-  if (!redisUrl) {
-    return null;
-  }
-
-  if (!redisClient) {
-    redisClient = new Redis(redisUrl, {
-      lazyConnect: true,
-      maxRetriesPerRequest: 1,
-      enableOfflineQueue: false
-    });
-    // lazyConnect 不会自动建连,首次命令会在连接建立前直接失败,这里主动触发
-    void redisClient.connect().catch(() => undefined);
-  }
-
-  return redisClient;
-}
-
-function commandStatusChannel(commandId: string) {
-  return `command:status:${commandId}`;
-}
 
 function ownerFilter(input: AccessScope) {
   return input.canAccessAll || !input.userId ? {} : { created_by: input.userId };
@@ -321,10 +295,12 @@ export async function createDeviceCommand(db: Db, input: CreateCommandInput) {
     throw error;
   }
 
+  // 传输语义:平台只负责投递,EMQX 发布成功即终态 success,不等待设备业务应答。
+  // 设备是否执行成功由业务方通过影子 reported(或可选的 reply 上行)自行判断。
   await db.deviceCommand.updateMany({
     where: { id: command.id, status: "pending" },
     data: {
-      status: "sent",
+      status: "success",
       sent_at: new Date()
     }
   });
@@ -346,89 +322,9 @@ export async function createDeviceCommand(db: Db, input: CreateCommandInput) {
   return mapCommand(sentCommand);
 }
 
-async function publishCommandStatus(commandId: string, status: string) {
-  const redis = getRedisClient();
-
-  if (!redis) {
-    return;
-  }
-
-  await redis
-    .publish(commandStatusChannel(commandId), JSON.stringify({ command_id: commandId, status }))
-    .catch(() => undefined);
-}
-
-export async function waitForCommandTerminal(
-  db: Db,
-  input: AccessScope & {
-    orgId: string;
-    commandId: string;
-    timeoutMs: number;
-  }
-) {
-  const startedAt = Date.now();
-  const terminal = new Set(["success", "failed", "timeout", "cancelled"]);
-  const redis = getRedisClient();
-
-  if (redis) {
-    const subscriber = redis.duplicate({
-      lazyConnect: true,
-      maxRetriesPerRequest: 1,
-      enableOfflineQueue: false
-    });
-    const channel = commandStatusChannel(input.commandId);
-
-    try {
-      await subscriber.subscribe(channel);
-      const result = await Promise.race([
-        new Promise<void>((resolveWait) => {
-          subscriber.on("message", (_channel, message) => {
-            try {
-              const body = JSON.parse(message) as { status?: string };
-              if (body.status && terminal.has(body.status)) {
-                resolveWait();
-              }
-            } catch {
-              resolveWait();
-            }
-          });
-        }),
-        new Promise<void>((resolveTimeout) =>
-          setTimeout(resolveTimeout, Math.min(input.timeoutMs, 120_000))
-        )
-      ]);
-      void result;
-    } catch {
-      await new Promise((resolveWait) =>
-        setTimeout(resolveWait, Math.min(input.timeoutMs, 120_000))
-      );
-    } finally {
-      await subscriber.disconnect();
-    }
-  } else {
-    while (Date.now() - startedAt < input.timeoutMs) {
-      const command = await getCommand(db, input);
-      if (terminal.has(command.status)) {
-        return command;
-      }
-      await new Promise((resolveWait) => setTimeout(resolveWait, 500));
-    }
-  }
-
-  return getCommand(db, input);
-}
-
 export async function createSyncDeviceCommand(db: Db, input: CreateCommandInput) {
-  const command = await createDeviceCommand(db, input);
-
-  // App 用户发起时没有控制台 userId,ownerFilter 退化为空,按 org + 命令 id 等待
-  return waitForCommandTerminal(db, {
-    orgId: input.orgId,
-    ...(input.userId !== undefined ? { userId: input.userId } : {}),
-    commandId: command.id,
-    timeoutMs: normalizeTimeout(input.timeoutMs),
-    ...(input.canAccessAll !== undefined ? { canAccessAll: input.canAccessAll } : {})
-  });
+  // 传输语义:命令投递完成即终态,sync 与 async 等价,接口保留仅为兼容既有调用方
+  return createDeviceCommand(db, input);
 }
 
 export async function createGroupCommands(db: Db, input: BatchCommandInput) {
@@ -622,8 +518,6 @@ export async function recordCommandReply(db: Db, input: CommandReplyInput) {
     },
     include: { device: { include: { product: true } } }
   });
-
-  await publishCommandStatus(updated.id, updated.status);
 
   return mapCommand(updated);
 }

@@ -242,6 +242,7 @@ export async function authorizeMqttAction(
       username,
       new Set([
         "property.post",
+        "property.set_reply",
         "event.post",
         "log.post",
         "service.reply",

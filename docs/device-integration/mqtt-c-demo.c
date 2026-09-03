@@ -436,6 +436,52 @@ static int reply_service_command(
     return 0;
 }
 
+static int reply_property_set(
+    int sock,
+    const struct demo_config *config,
+    const unsigned char *request_payload,
+    int request_payload_len)
+{
+    char reply_topic[256];
+    char request_id[128];
+    char payload[512];
+    long long now_ms = (long long)time(NULL) * 1000;
+
+    if (!extract_json_string(
+            request_payload,
+            request_payload_len,
+            "request_id",
+            request_id,
+            sizeof(request_id)) &&
+        !extract_json_string(
+            request_payload,
+            request_payload_len,
+            "id",
+            request_id,
+            sizeof(request_id))) {
+        snprintf(request_id, sizeof(request_id), "%lld", now_ms);
+    }
+    snprintf(
+        reply_topic,
+        sizeof(reply_topic),
+        "/sys/%s/%s/thing/property/set_reply",
+        config->product_key,
+        config->device_key);
+    snprintf(
+        payload,
+        sizeof(payload),
+        "{\"id\":\"%s\",\"request_id\":\"%s\",\"code\":0,\"data\":{}}",
+        request_id,
+        request_id);
+
+    if (publish_text(sock, reply_topic, payload) != 0) {
+        return -1;
+    }
+
+    printf("replied topic=%s\n", reply_topic);
+    return 0;
+}
+
 static int is_property_set_topic(const struct demo_config *config, const char *topic_text)
 {
     char property_set_topic[256];
@@ -486,6 +532,9 @@ static int handle_publish(int sock, const struct demo_config *config, unsigned c
     }
 
     if (is_property_set_topic(config, topic_text)) {
+        if (reply_property_set(sock, config, payload, payload_len) != 0) {
+            return -1;
+        }
         return publish_property(sock, config);
     }
 

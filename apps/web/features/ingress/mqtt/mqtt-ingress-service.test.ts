@@ -117,6 +117,30 @@ describe("mqtt ingress service", () => {
     ).resolves.toMatchObject({ result: "deny" });
   });
 
+  it("allows publishing property set replies only for the device itself", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device())
+      }
+    };
+
+    await expect(
+      authorizeMqttAction(db, {
+        username: "pk_demo:dk_demo",
+        action: "publish",
+        topic: "/sys/pk_demo/dk_demo/thing/property/set_reply"
+      })
+    ).resolves.toEqual({ result: "allow" });
+
+    await expect(
+      authorizeMqttAction(db, {
+        username: "pk_demo:dk_demo",
+        action: "publish",
+        topic: "/sys/pk_demo/dk_other/thing/property/set_reply"
+      })
+    ).resolves.toMatchObject({ result: "deny" });
+  });
+
   it("allows subscribing only to own command topics", async () => {
     const db = {
       device: {

@@ -186,19 +186,19 @@ body:
 
 - `kind`: `service`(服务调用,需 `identifier`,字母/下划线开头 1-128 位)或 `property_set`(属性设置,不需要 `identifier`)。
 - `params`:JSON 对象。
-- `timeout_ms`:1000-120000,默认 15000。
+- `timeout_ms`:1000-120000,默认 15000。**传输语义下仅兼容保留,新命令创建即终态,该参数不再影响结果。**
 
-返回 201 + 命令对象(`status: sent`),设备应答后变为终态。用 `GET /api/v1/app/commands/{commandId}` 轮询。
+返回 201 + 命令对象。命令状态只反映**投递结果**:EMQX 发布成功即 `success`,发布失败(重试耗尽)即 `failed`,不等设备业务应答。设备是否真正执行,请通过属性上报/影子(`reported`)或设备日志判断。
 
 ### `POST /api/v1/app/devices/{deviceId}/commands:sync`(同步)
 
-body 同上。阻塞直到设备应答或超时,直接返回终态命令对象。适合"点一下开关"类交互,`timeout_ms` 不要设太长。
+body 同上。投递完成即返回终态命令对象(通常几十毫秒内),接口兼容保留给既有调用方。
 
 ### `GET /api/v1/app/commands/{commandId}`
 
 命令详情,仅命令发起者或对该设备仍有有效绑定的用户可查。
 
-命令状态机:`pending → sent → success / failed / timeout`。
+命令状态机:`pending → success / failed`(投递语义)。存量历史命令可能出现 `sent`/`timeout`(旧版等待设备应答的语义)。
 
 ## 7. 错误码汇总(App 侧新增)
 

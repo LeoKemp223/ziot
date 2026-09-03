@@ -18,6 +18,7 @@ PASSWORD = DEVICE_SECRET
 
 SERVICE_INVOKE_TOPIC = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/service/+/invoke"
 PROPERTY_SET_TOPIC = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/property/set"
+PROPERTY_SET_REPLY_TOPIC = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/property/set_reply"
 PROPERTY_POST_TOPIC = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/property/post"
 
 
@@ -79,22 +80,27 @@ def on_message(client, userdata, message):
     payload_text = message.payload.decode("utf-8", errors="replace")
     print(f"downlink topic={message.topic} payload={payload_text}")
     request_id = str(int(time.time() * 1000))
-
-    if message.topic == PROPERTY_SET_TOPIC:
-        try:
-            body = json.loads(payload_text)
-            params = body.get("params") if isinstance(body, dict) else None
-            publish_property(client, params if isinstance(params, dict) else None)
-        except json.JSONDecodeError:
-            publish_property(client)
-        return
+    params = None
 
     try:
         body = json.loads(payload_text)
         if isinstance(body, dict):
             request_id = str(body.get("request_id") or body.get("id") or request_id)
+            params = body.get("params") if isinstance(body.get("params"), dict) else None
     except json.JSONDecodeError:
-        pass
+        body = None
+
+    if message.topic == PROPERTY_SET_TOPIC:
+        reply = {
+            "id": request_id,
+            "request_id": request_id,
+            "code": 0,
+            "data": {},
+        }
+        client.publish(PROPERTY_SET_REPLY_TOPIC, json.dumps(reply), qos=1)
+        print(f"replied topic={PROPERTY_SET_REPLY_TOPIC}")
+        publish_property(client, params)
+        return
 
     identifier = service_identifier(message.topic)
     reply_topic = f"/sys/{PRODUCT_KEY}/{DEVICE_KEY}/thing/service/{identifier}/reply"

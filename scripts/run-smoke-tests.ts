@@ -260,7 +260,11 @@ async function main() {
     deviceSecret: mqttDevice.device_secret
   });
   const serviceTopic = `/sys/${product.product_key}/${mqttDevice.device_key}/thing/service/+/invoke`;
+  const propertySetTopic = `/sys/${product.product_key}/${mqttDevice.device_key}/thing/property/set`;
+  const propertySetReplyTopic = `/sys/${product.product_key}/${mqttDevice.device_key}/thing/property/set_reply`;
+  const propertyPostTopic = `/sys/${product.product_key}/${mqttDevice.device_key}/thing/property/post`;
   await subscribeMqtt(mqttClient, serviceTopic);
+  await subscribeMqtt(mqttClient, propertySetTopic);
   mqttClient.on("message", (topic: string, payload: Buffer) => {
     const parts = topic.split("/").filter(Boolean);
     const identifier = parts[5] ?? "unknown";
@@ -270,6 +274,22 @@ async function main() {
     } catch {
       body = {};
     }
+
+    if (topic === propertySetTopic) {
+      const requestId = body.request_id ?? body.id;
+      void publishMqtt(mqttClient, propertySetReplyTopic, {
+        id: requestId,
+        request_id: requestId,
+        code: 0,
+        data: {}
+      });
+      void publishMqtt(mqttClient, propertyPostTopic, {
+        id: `smoke_set_${Date.now()}`,
+        params: body.params
+      });
+      return;
+    }
+
     void publishMqtt(
       mqttClient,
       `/sys/${product.product_key}/${mqttDevice.device_key}/thing/service/${identifier}/reply`,
@@ -325,6 +345,38 @@ async function main() {
     return current.status === "success" ? current : null;
   });
   logStep("command control");
+
+  // 属性设置闭环:设备应答 set_reply 后命令应为 success,且影子 reported 收敛到设置值
+  // (用 humidity,避免影响后面 App 流程对 temperature=24.5 的断言)
+  const propertySetCommand = await api<{ id: string; status: string }>(
+    `/api/v1/devices/${mqttDevice.id}/commands`,
+    {
+      method: "POST",
+      jar: adminJar,
+      json: {
+        kind: "property_set",
+        params: {
+          humidity: 45
+        },
+        timeout_ms: 15000
+      }
+    }
+  );
+  await waitFor("property set command success", async () => {
+    const current = await api<{ status: string }>(
+      `/api/v1/commands/${propertySetCommand.id}`,
+      { jar: adminJar }
+    );
+    return current.status === "success" ? current : null;
+  });
+  await waitFor("property set shadow convergence", async () => {
+    const shadow = await api<{ reported: Record<string, unknown> }>(
+      `/api/v1/devices/${mqttDevice.id}/shadow`,
+      { jar: adminJar }
+    );
+    return shadow.reported?.humidity === 45 ? shadow : null;
+  });
+  logStep("property set control");
 
   // App 全链路:控制台查看设备永久二维码 -> App 注册/登录 -> 扫码绑定 -> 控制 -> 读状态 -> 解绑
   const appBindingCode = await api<{

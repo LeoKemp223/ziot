@@ -27,12 +27,16 @@ export function parseTopic(topic: string): ParsedTopic | null {
       };
     }
 
-    if (parts.length === 6 && parts[4] === "property" && parts[5] === "set") {
+    if (
+      parts.length === 6 &&
+      parts[4] === "property" &&
+      (parts[5] === "set" || parts[5] === "set_reply")
+    ) {
       return {
         namespace: "sys",
         productKey: parts[1] ?? "",
         deviceKey: parts[2] ?? "",
-        messageType: "property.set"
+        messageType: `property.${parts[5] ?? ""}`
       };
     }
 
@@ -75,6 +79,10 @@ export function parseTopic(topic: string): ParsedTopic | null {
   }
 
   return null;
+}
+
+export function buildPropertySetReplyTopic(productKey: string, deviceKey: string) {
+  return `/sys/${productKey}/${deviceKey}/thing/property/set_reply`;
 }
 
 export function buildServiceInvokeTopic(
