@@ -2,10 +2,11 @@ import { expect, test } from "@playwright/test";
 
 async function login(page: import("@playwright/test").Page) {
   await page.goto("/login");
-  await page.getByPlaceholder("13800000001").fill("13800000001");
-  await page.getByLabel("密码").fill("Admin123456");
-  await page.getByRole("button", { name: "登录" }).click();
-  await expect(page.getByRole("heading", { name: "控制台概览" })).toBeVisible();
+  // 登录页主题统一(ce57184)后无 placeholder,按 input name 定位(与其他 spec 一致)
+  await page.fill('input[name="account"]', "13800000001");
+  await page.fill('input[name="password"]', "Admin123456");
+  await page.click('button[type="submit"]');
+  await page.waitForURL("**/");
 }
 
 test("console navigation reaches dashboard, control, logs and settings", async ({
