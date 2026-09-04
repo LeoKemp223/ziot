@@ -25,8 +25,8 @@ export function AuthShell({ title, description, children }: AuthShellProps) {
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-300/30 bg-blue-400/10 px-3 py-1.5 text-xs font-medium tracking-wide text-blue-100">
             <Cloud className="h-3.5 w-3.5" /> 设备云管理平台
           </div>
-          <h1 className="max-w-lg text-3xl font-semibold leading-tight tracking-tight xl:text-[42px]">
-            让设备运营有据可循
+          <h1 className="whitespace-nowrap text-[26px] font-semibold leading-tight tracking-tight xl:text-[34px]">
+            万物云上可控，状态实时可知
           </h1>
           <p className="mt-4 max-w-md text-sm leading-6 text-blue-50/75 xl:text-base xl:leading-7">
             在一个工作台中完成产品接入、设备状态追踪、远程控制与 OTA 发布。
