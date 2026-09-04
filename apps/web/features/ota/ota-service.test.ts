@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  createDeltaFirmware,
   createFirmware,
   createOtaTask,
   deleteFirmware,
   deleteOtaTask,
-  recordOtaProgress
+  recordOtaProgress,
+  startOtaTask
 } from "./ota-service";
 
 const now = new Date("2026-04-29T08:00:00.000Z");
@@ -28,6 +30,9 @@ function firmware(overrides: Record<string, unknown> = {}) {
     product_id: "prd_demo",
     product: product(),
     version: "v1.0.1",
+    base_version: null,
+    target_sha256: null,
+    patch_format: null,
     file_url: "https://example.com/fw.bin",
     file_size: BigInt(1024),
     sha256: "0".repeat(64),
@@ -380,5 +385,243 @@ describe("ota service", () => {
         finished_at: expect.any(Date)
       }
     });
+  });
+
+  it("scopes the full firmware duplicate check to base_version null", async () => {
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product())
+      },
+      firmware: {
+        count: vi.fn().mockResolvedValue(0),
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(firmware())
+      }
+    };
+
+    await createFirmware(db, {
+      orgId: "org_default",
+      createdBy: "usr_admin",
+      productId: "prd_demo",
+      version: "v1.0.1",
+      fileUrl: "https://example.com/fw.bin",
+      fileSize: 1024,
+      sha256: "0".repeat(64)
+    });
+
+    expect(db.firmware.findFirst).toHaveBeenCalledWith({
+      where: {
+        product_id: "prd_demo",
+        version: "v1.0.1",
+        base_version: null
+      }
+    });
+  });
+});
+
+describe("ota service delta firmware", () => {
+  // 拦截 EMQX REST 调用:login 放行,publish 解出 MQTT payload(publishMqtt 二次 stringify 过)
+  function collectPublishBodies() {
+    const bodies: { task_id: string; firmware: Record<string, unknown> }[] = [];
+    const fetchMock = vi.fn(async (url: unknown, init: { body: string }) => {
+      if (String(url).endsWith("/api/v5/login")) {
+        return { ok: true, json: async () => ({ token: "token" }) };
+      }
+
+      const published = JSON.parse(init.body) as { payload: string };
+
+      bodies.push(JSON.parse(published.payload));
+
+      return { ok: true };
+    });
+
+    return { bodies, fetchMock };
+  }
+
+  function deltaDb(
+    options: {
+      count?: number;
+      existing?: unknown;
+    } = {}
+  ) {
+    return {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product())
+      },
+      firmware: {
+        count: vi.fn().mockResolvedValue(options.count ?? 0),
+        findFirst: vi.fn().mockResolvedValue(options.existing ?? null),
+        create: vi.fn().mockResolvedValue(
+          firmware({
+            version: "v1.0.2",
+            base_version: "v1.0.1",
+            target_sha256: "1".repeat(64),
+            patch_format: "bsdiff-heatshrink"
+          })
+        )
+      }
+    };
+  }
+
+  const deltaInput = {
+    orgId: "org_default",
+    createdBy: "usr_admin",
+    productId: "prd_demo",
+    version: "v1.0.2",
+    baseVersion: "v1.0.1",
+    fileUrl: "https://example.com/v1.0.1-to-v1.0.2.patch",
+    fileSize: 2048,
+    sha256: "0".repeat(64),
+    targetSha256: "1".repeat(64)
+  };
+
+  it("creates a delta firmware with base version and target sha256", async () => {
+    const db = deltaDb();
+
+    const result = await createDeltaFirmware(db, deltaInput);
+
+    expect(db.firmware.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          version: "v1.0.2",
+          base_version: "v1.0.1",
+          target_sha256: "1".repeat(64),
+          patch_format: "bsdiff-heatshrink",
+          file_size: BigInt(2048),
+          sha256: "0".repeat(64),
+          status: "released"
+        })
+      })
+    );
+    expect(result).toMatchObject({
+      version: "v1.0.2",
+      base_version: "v1.0.1",
+      target_sha256: "1".repeat(64),
+      patch_format: "bsdiff-heatshrink"
+    });
+  });
+
+  it("rejects a delta whose target version equals its base version", async () => {
+    const db = deltaDb();
+
+    await expect(
+      createDeltaFirmware(db, { ...deltaInput, version: "v1.0.1" })
+    ).rejects.toMatchObject({
+      code: 400001,
+      message: "差分固件的目标版本不能与基线版本相同"
+    });
+    expect(db.firmware.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects a duplicate delta for the same base and target version", async () => {
+    const db = deltaDb({
+      existing: firmware({ base_version: "v1.0.1" })
+    });
+
+    await expect(createDeltaFirmware(db, deltaInput)).rejects.toMatchObject({
+      code: 409001,
+      message: "该基线版本下已存在相同目标版本的差分固件"
+    });
+    expect(db.firmware.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects delta creation beyond the per-user quota", async () => {
+    const db = deltaDb({ count: 10 });
+
+    await expect(createDeltaFirmware(db, deltaInput)).rejects.toMatchObject({
+      code: 409001,
+      message: "固件数量已达上限（每个用户最多 10 个，可删除旧固件释放名额）"
+    });
+    expect(db.firmware.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid target sha256", async () => {
+    const db = deltaDb();
+
+    await expect(
+      createDeltaFirmware(db, { ...deltaInput, targetSha256: "bad" })
+    ).rejects.toMatchObject({ code: 400001 });
+    expect(db.firmware.create).not.toHaveBeenCalled();
+  });
+
+  it("publishes delta fields in the OTA notify payload", async () => {
+    const runningTask = task({
+      status: "running",
+      firmware: firmware({
+        version: "v1.0.2",
+        base_version: "v1.0.1",
+        target_sha256: "1".repeat(64),
+        patch_format: "bsdiff-heatshrink",
+        file_url: "https://example.com/v1.0.1-to-v1.0.2.patch"
+      }),
+      records: [record()]
+    });
+    const db = {
+      otaTask: {
+        findFirst: vi.fn().mockResolvedValue(task({ status: "created" })),
+        update: vi.fn().mockResolvedValue(runningTask)
+      },
+      otaRecord: {
+        updateMany: vi.fn().mockResolvedValue({})
+      }
+    };
+    const publishBodies = collectPublishBodies();
+
+    vi.stubGlobal("fetch", publishBodies.fetchMock);
+
+    await startOtaTask(db, {
+      orgId: "org_default",
+      userId: "usr_admin",
+      taskId: "ota_demo"
+    });
+
+    expect(publishBodies.bodies).toHaveLength(1);
+    const published = publishBodies.bodies[0] as {
+      task_id: string;
+      firmware: Record<string, unknown>;
+    };
+    expect(published.firmware).toMatchObject({
+      version: "v1.0.2",
+      package_type: "delta",
+      base_version: "v1.0.1",
+      target_sha256: "1".repeat(64),
+      patch_format: "bsdiff-heatshrink"
+    });
+
+    vi.unstubAllGlobals();
+  });
+
+  it("omits delta fields for full packages in the notify payload", async () => {
+    const runningTask = task({
+      status: "running",
+      records: [record()]
+    });
+    const db = {
+      otaTask: {
+        findFirst: vi.fn().mockResolvedValue(task({ status: "created" })),
+        update: vi.fn().mockResolvedValue(runningTask)
+      },
+      otaRecord: {
+        updateMany: vi.fn().mockResolvedValue({})
+      }
+    };
+    const publishBodies = collectPublishBodies();
+
+    vi.stubGlobal("fetch", publishBodies.fetchMock);
+
+    await startOtaTask(db, {
+      orgId: "org_default",
+      userId: "usr_admin",
+      taskId: "ota_demo"
+    });
+
+    const published = publishBodies.bodies[0] as {
+      task_id: string;
+      firmware: Record<string, unknown>;
+    };
+    expect(published.firmware).not.toHaveProperty("package_type");
+    expect(published.firmware).not.toHaveProperty("base_version");
+
+    vi.unstubAllGlobals();
   });
 });

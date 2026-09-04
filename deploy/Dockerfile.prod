@@ -27,11 +27,20 @@ COPY . .
 RUN pnpm --filter @ziot/db prisma:generate \
   && pnpm --filter @ziot/web build
 
+# 差分固件工具：detools（bsdiff+heatshrink 补丁生成，sdist 需编译 C 扩展）。
+# venv 路径两阶段一致，拷到 runtime 后 shebang 依然有效。
+RUN apk add --no-cache python3 py3-pip python3-dev build-base \
+  && python3 -m venv /opt/detools \
+  && /opt/detools/bin/pip install --no-cache-dir detools
+
 # ③ 运行时：沿用完整工作区（web 需要 .next + node_modules，worker/seed 需要 tsx + prisma CLI）
 FROM base AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1
+RUN apk add --no-cache python3
 COPY --from=build /app .
+COPY --from=build /opt/detools /opt/detools
+ENV DETOOLS_BIN=/opt/detools/bin/detools
 EXPOSE 3000
 CMD ["pnpm", "--filter", "@ziot/web", "start"]

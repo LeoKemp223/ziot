@@ -1180,10 +1180,12 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 
 查询固件列表。需要 `ota:read` 权限。支持 `page` / `page_size` 分页参数（默认每页 20），返回 `{ items, pagination }`；`product_id` 可选过滤。
 
+固件记录字段中，`base_version` / `target_sha256` / `patch_format` 为差分包专有（整包恒为 `null`）：`base_version` 非空即差分包，`sha256` 为补丁文件的校验值，`target_sha256` 为补丁重组出的目标固件（V2）校验值，`patch_format` 固定为 `bsdiff-heatshrink`。
+
 ### `POST /api/v1/firmwares`
 
-创建固件记录。需要 `ota:write` 权限。固件创建后即为 `released` 状态，可直接用于升级任务（`deprecated` 状态才会被任务创建拦截）。
-配额：每个用户在每个组织最多 10 个固件，超量返回 `409001`（删除固件可释放名额）。
+创建固件记录（整包，外部 URL 方式）。需要 `ota:write` 权限。固件创建后即为 `released` 状态，可直接用于升级任务（`deprecated` 状态才会被任务创建拦截）。
+配额：每个用户在每个组织最多 10 个固件（与差分包共用），超量返回 `409001`（删除固件可释放名额）。
 
 ```json
 {
@@ -1199,14 +1201,33 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 ### `POST /api/v1/firmwares/upload`
 
 直接上传固件文件并创建固件记录。需要 `ota:write` 权限。请求格式为 `multipart/form-data`，服务端会保存文件并自动计算 `file_size` 和 `sha256`，固件创建后即为 `released` 状态。
-限制：单文件不超过 5MB（超限返回 `400001`）；每个用户在每个组织最多 10 个固件，超量返回 `409001`（删除固件可释放名额）。
+限制：单文件不超过 5MB（超限返回 `400001`）；每个用户在每个组织最多 10 个固件（与差分包共用），超量返回 `409001`（删除固件可释放名额）。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
 | `product_id` | string | 是 | 产品 ID |
 | `version` | string | 是 | 固件版本，同一产品内唯一 |
-| `file` | file | 是 | 固件文件，当前本地上传限制 50MB |
+| `file` | file | 是 | 固件文件，当前本地上传限制 5MB |
 | `release_note` | string | 否 | 发布说明 |
+
+### `POST /api/v1/firmwares/delta`
+
+上传基线（V1）与目标（V2）固件文件，服务端调用 `detools` 生成 bsdiff+heatshrink 差分补丁并创建差分固件记录。需要 `ota:write` 权限。请求格式为 `multipart/form-data`。
+
+生成过程同步完成（补丁生成通常秒级，超时上限 120s）；V1/V2 原始文件仅写入系统临时目录，生成后即删除，只有补丁文件保留在 `public/uploads/firmwares/` 下。差分包与整包共用升级任务链路和 10 个/用户的固件配额。写入 `firmware.delta.create` 审计日志。
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `product_id` | string | 是 | 产品 ID |
+| `base_version` | string | 是 | 基线版本（V1），须不同于 `version` |
+| `version` | string | 是 | 目标版本（V2），同一产品同一基线版本下唯一 |
+| `file_base` | file | 是 | 基线固件文件，仅支持 `.bin` 裸二进制，不超过 5MB |
+| `file_target` | file | 是 | 目标固件文件，仅支持 `.bin` 裸二进制，不超过 5MB |
+| `release_note` | string | 否 | 发布说明 |
+
+错误码：`400001` 目标版本与基线版本相同 / 单文件超 5MB / 两文件内容相同 / 文件不是 `.bin`（hex 等带封装格式与设备 flash 内容不对应，不支持差分，请先转成裸 bin）；`409001` 同基线同目标版本已存在或配额已满；`500001` 服务器未安装 detools（可通过 `DETOOLS_BIN` 指定路径）或补丁生成失败/超时。
+
+差分固件用于升级任务时，MQTT notify payload 会附加差分字段（见 `POST /api/v1/ota/tasks/{task_id}/start`），设备需支持 bsdiff+heatshrink 解补丁（可参考 detools 的 C patch 库或 esp_delta_ota 同格式实现）。
 
 ### `GET /api/v1/firmwares/{firmware_id}`
 
@@ -1258,6 +1279,22 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 ```text
 /ota/{product_key}/{device_key}/upgrade/notify
 ```
+
+notify payload 示例（整包）：
+
+```json
+{
+  "task_id": "ota_xxx",
+  "firmware": {
+    "version": "v1.0.1",
+    "file_url": "https://www.ziot.asia/uploads/firmwares/pk_demo/xxx.bin",
+    "file_size": 1024,
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  }
+}
+```
+
+差分固件的 payload 附加以下字段（整包不下发，老设备可安全忽略）：`package_type: "delta"`、`base_version`（基线版本 V1）、`target_sha256`（重组出的目标固件校验值）、`patch_format: "bsdiff-heatshrink"`。此时 `file_url` 指向补丁文件、`sha256` 为补丁校验值；设备应自校验当前版本与 `base_version` 一致后下载补丁、校验 `sha256`、本地应用补丁并用 `target_sha256` 校验重组结果，不支持差分的设备请使用整包固件任务。
 
 ### `POST /api/v1/ota/tasks/{task_id}/cancel`
 

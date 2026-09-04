@@ -94,6 +94,13 @@ docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml ps  
 
 MinIO 桶由 `minio-init` 一次性服务自动创建。
 
+差分固件：镜像构建时已在 `/opt/detools` venv 装好 `detools`（bsdiff+heatshrink 补丁生成工具），并内置 `DETOOLS_BIN=/opt/detools/bin/detools`，无需额外配置。可验证：
+
+```bash
+docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml \
+  run --rm --no-deps web /opt/detools/bin/detools --help
+```
+
 ### 4. 数据库初始化
 
 ```bash

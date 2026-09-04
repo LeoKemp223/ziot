@@ -43,4 +43,6 @@ MQTT_HOST=www.ziot.asia MQTT_PORT=1883 PRODUCT_KEY=pk_demo DEVICE_KEY=dk_mqtt_de
 pnpm --filter @ziot/device-simulator mqtt
 ```
 
+差分 OTA(可选):设备端补丁应用参考实现见 `docs/device-integration/delta-ota-demo/`(C,PC 上即可闭环验证平台生成的补丁,含 STM32 移植指引)。
+
 See `docs/device-integration/mqtt-demo.md` for Python and C build details.

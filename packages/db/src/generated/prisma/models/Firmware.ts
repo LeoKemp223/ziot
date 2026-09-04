@@ -39,6 +39,9 @@ export type FirmwareMinAggregateOutputType = {
   org_id: string | null
   product_id: string | null
   version: string | null
+  base_version: string | null
+  target_sha256: string | null
+  patch_format: string | null
   file_url: string | null
   file_size: bigint | null
   sha256: string | null
@@ -53,6 +56,9 @@ export type FirmwareMaxAggregateOutputType = {
   org_id: string | null
   product_id: string | null
   version: string | null
+  base_version: string | null
+  target_sha256: string | null
+  patch_format: string | null
   file_url: string | null
   file_size: bigint | null
   sha256: string | null
@@ -67,6 +73,9 @@ export type FirmwareCountAggregateOutputType = {
   org_id: number
   product_id: number
   version: number
+  base_version: number
+  target_sha256: number
+  patch_format: number
   file_url: number
   file_size: number
   sha256: number
@@ -91,6 +100,9 @@ export type FirmwareMinAggregateInputType = {
   org_id?: true
   product_id?: true
   version?: true
+  base_version?: true
+  target_sha256?: true
+  patch_format?: true
   file_url?: true
   file_size?: true
   sha256?: true
@@ -105,6 +117,9 @@ export type FirmwareMaxAggregateInputType = {
   org_id?: true
   product_id?: true
   version?: true
+  base_version?: true
+  target_sha256?: true
+  patch_format?: true
   file_url?: true
   file_size?: true
   sha256?: true
@@ -119,6 +134,9 @@ export type FirmwareCountAggregateInputType = {
   org_id?: true
   product_id?: true
   version?: true
+  base_version?: true
+  target_sha256?: true
+  patch_format?: true
   file_url?: true
   file_size?: true
   sha256?: true
@@ -220,6 +238,9 @@ export type FirmwareGroupByOutputType = {
   org_id: string
   product_id: string
   version: string
+  base_version: string | null
+  target_sha256: string | null
+  patch_format: string | null
   file_url: string
   file_size: bigint
   sha256: string
@@ -257,6 +278,9 @@ export type FirmwareWhereInput = {
   org_id?: Prisma.StringFilter<"Firmware"> | string
   product_id?: Prisma.StringFilter<"Firmware"> | string
   version?: Prisma.StringFilter<"Firmware"> | string
+  base_version?: Prisma.StringNullableFilter<"Firmware"> | string | null
+  target_sha256?: Prisma.StringNullableFilter<"Firmware"> | string | null
+  patch_format?: Prisma.StringNullableFilter<"Firmware"> | string | null
   file_url?: Prisma.StringFilter<"Firmware"> | string
   file_size?: Prisma.BigIntFilter<"Firmware"> | bigint | number
   sha256?: Prisma.StringFilter<"Firmware"> | string
@@ -275,6 +299,9 @@ export type FirmwareOrderByWithRelationInput = {
   org_id?: Prisma.SortOrder
   product_id?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  base_version?: Prisma.SortOrderInput | Prisma.SortOrder
+  target_sha256?: Prisma.SortOrderInput | Prisma.SortOrder
+  patch_format?: Prisma.SortOrderInput | Prisma.SortOrder
   file_url?: Prisma.SortOrder
   file_size?: Prisma.SortOrder
   sha256?: Prisma.SortOrder
@@ -290,13 +317,16 @@ export type FirmwareOrderByWithRelationInput = {
 
 export type FirmwareWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  product_id_version?: Prisma.FirmwareProduct_idVersionCompoundUniqueInput
+  product_id_version_base_version?: Prisma.FirmwareProduct_idVersionBase_versionCompoundUniqueInput
   AND?: Prisma.FirmwareWhereInput | Prisma.FirmwareWhereInput[]
   OR?: Prisma.FirmwareWhereInput[]
   NOT?: Prisma.FirmwareWhereInput | Prisma.FirmwareWhereInput[]
   org_id?: Prisma.StringFilter<"Firmware"> | string
   product_id?: Prisma.StringFilter<"Firmware"> | string
   version?: Prisma.StringFilter<"Firmware"> | string
+  base_version?: Prisma.StringNullableFilter<"Firmware"> | string | null
+  target_sha256?: Prisma.StringNullableFilter<"Firmware"> | string | null
+  patch_format?: Prisma.StringNullableFilter<"Firmware"> | string | null
   file_url?: Prisma.StringFilter<"Firmware"> | string
   file_size?: Prisma.BigIntFilter<"Firmware"> | bigint | number
   sha256?: Prisma.StringFilter<"Firmware"> | string
@@ -308,13 +338,16 @@ export type FirmwareWhereUniqueInput = Prisma.AtLeast<{
   product?: Prisma.XOR<Prisma.ProductScalarRelationFilter, Prisma.ProductWhereInput>
   creator?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   ota_tasks?: Prisma.OtaTaskListRelationFilter
-}, "id" | "product_id_version">
+}, "id" | "product_id_version_base_version">
 
 export type FirmwareOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   org_id?: Prisma.SortOrder
   product_id?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  base_version?: Prisma.SortOrderInput | Prisma.SortOrder
+  target_sha256?: Prisma.SortOrderInput | Prisma.SortOrder
+  patch_format?: Prisma.SortOrderInput | Prisma.SortOrder
   file_url?: Prisma.SortOrder
   file_size?: Prisma.SortOrder
   sha256?: Prisma.SortOrder
@@ -337,6 +370,9 @@ export type FirmwareScalarWhereWithAggregatesInput = {
   org_id?: Prisma.StringWithAggregatesFilter<"Firmware"> | string
   product_id?: Prisma.StringWithAggregatesFilter<"Firmware"> | string
   version?: Prisma.StringWithAggregatesFilter<"Firmware"> | string
+  base_version?: Prisma.StringNullableWithAggregatesFilter<"Firmware"> | string | null
+  target_sha256?: Prisma.StringNullableWithAggregatesFilter<"Firmware"> | string | null
+  patch_format?: Prisma.StringNullableWithAggregatesFilter<"Firmware"> | string | null
   file_url?: Prisma.StringWithAggregatesFilter<"Firmware"> | string
   file_size?: Prisma.BigIntWithAggregatesFilter<"Firmware"> | bigint | number
   sha256?: Prisma.StringWithAggregatesFilter<"Firmware"> | string
@@ -349,6 +385,9 @@ export type FirmwareScalarWhereWithAggregatesInput = {
 export type FirmwareCreateInput = {
   id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -366,6 +405,9 @@ export type FirmwareUncheckedCreateInput = {
   org_id: string
   product_id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -379,6 +421,9 @@ export type FirmwareUncheckedCreateInput = {
 export type FirmwareUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -396,6 +441,9 @@ export type FirmwareUncheckedUpdateInput = {
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -411,6 +459,9 @@ export type FirmwareCreateManyInput = {
   org_id: string
   product_id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -423,6 +474,9 @@ export type FirmwareCreateManyInput = {
 export type FirmwareUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -436,6 +490,9 @@ export type FirmwareUncheckedUpdateManyInput = {
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -455,9 +512,10 @@ export type FirmwareOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type FirmwareProduct_idVersionCompoundUniqueInput = {
+export type FirmwareProduct_idVersionBase_versionCompoundUniqueInput = {
   product_id: string
   version: string
+  base_version: string
 }
 
 export type FirmwareCountOrderByAggregateInput = {
@@ -465,6 +523,9 @@ export type FirmwareCountOrderByAggregateInput = {
   org_id?: Prisma.SortOrder
   product_id?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  base_version?: Prisma.SortOrder
+  target_sha256?: Prisma.SortOrder
+  patch_format?: Prisma.SortOrder
   file_url?: Prisma.SortOrder
   file_size?: Prisma.SortOrder
   sha256?: Prisma.SortOrder
@@ -483,6 +544,9 @@ export type FirmwareMaxOrderByAggregateInput = {
   org_id?: Prisma.SortOrder
   product_id?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  base_version?: Prisma.SortOrder
+  target_sha256?: Prisma.SortOrder
+  patch_format?: Prisma.SortOrder
   file_url?: Prisma.SortOrder
   file_size?: Prisma.SortOrder
   sha256?: Prisma.SortOrder
@@ -497,6 +561,9 @@ export type FirmwareMinOrderByAggregateInput = {
   org_id?: Prisma.SortOrder
   product_id?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  base_version?: Prisma.SortOrder
+  target_sha256?: Prisma.SortOrder
+  patch_format?: Prisma.SortOrder
   file_url?: Prisma.SortOrder
   file_size?: Prisma.SortOrder
   sha256?: Prisma.SortOrder
@@ -662,6 +729,9 @@ export type FirmwareUpdateOneRequiredWithoutOta_tasksNestedInput = {
 export type FirmwareCreateWithoutOrganizationInput = {
   id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -677,6 +747,9 @@ export type FirmwareUncheckedCreateWithoutOrganizationInput = {
   id: string
   product_id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -721,6 +794,9 @@ export type FirmwareScalarWhereInput = {
   org_id?: Prisma.StringFilter<"Firmware"> | string
   product_id?: Prisma.StringFilter<"Firmware"> | string
   version?: Prisma.StringFilter<"Firmware"> | string
+  base_version?: Prisma.StringNullableFilter<"Firmware"> | string | null
+  target_sha256?: Prisma.StringNullableFilter<"Firmware"> | string | null
+  patch_format?: Prisma.StringNullableFilter<"Firmware"> | string | null
   file_url?: Prisma.StringFilter<"Firmware"> | string
   file_size?: Prisma.BigIntFilter<"Firmware"> | bigint | number
   sha256?: Prisma.StringFilter<"Firmware"> | string
@@ -733,6 +809,9 @@ export type FirmwareScalarWhereInput = {
 export type FirmwareCreateWithoutCreatorInput = {
   id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -749,6 +828,9 @@ export type FirmwareUncheckedCreateWithoutCreatorInput = {
   org_id: string
   product_id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -787,6 +869,9 @@ export type FirmwareUpdateManyWithWhereWithoutCreatorInput = {
 export type FirmwareCreateWithoutProductInput = {
   id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -802,6 +887,9 @@ export type FirmwareUncheckedCreateWithoutProductInput = {
   id: string
   org_id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -841,6 +929,9 @@ export type FirmwareUpdateManyWithWhereWithoutProductInput = {
 export type FirmwareCreateWithoutOta_tasksInput = {
   id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -857,6 +948,9 @@ export type FirmwareUncheckedCreateWithoutOta_tasksInput = {
   org_id: string
   product_id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -885,6 +979,9 @@ export type FirmwareUpdateToOneWithWhereWithoutOta_tasksInput = {
 export type FirmwareUpdateWithoutOta_tasksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -901,6 +998,9 @@ export type FirmwareUncheckedUpdateWithoutOta_tasksInput = {
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -914,6 +1014,9 @@ export type FirmwareCreateManyOrganizationInput = {
   id: string
   product_id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -926,6 +1029,9 @@ export type FirmwareCreateManyOrganizationInput = {
 export type FirmwareUpdateWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -941,6 +1047,9 @@ export type FirmwareUncheckedUpdateWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -955,6 +1064,9 @@ export type FirmwareUncheckedUpdateManyWithoutOrganizationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -969,6 +1081,9 @@ export type FirmwareCreateManyCreatorInput = {
   org_id: string
   product_id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -980,6 +1095,9 @@ export type FirmwareCreateManyCreatorInput = {
 export type FirmwareUpdateWithoutCreatorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -996,6 +1114,9 @@ export type FirmwareUncheckedUpdateWithoutCreatorInput = {
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1010,6 +1131,9 @@ export type FirmwareUncheckedUpdateManyWithoutCreatorInput = {
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   product_id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1022,6 +1146,9 @@ export type FirmwareCreateManyProductInput = {
   id: string
   org_id: string
   version: string
+  base_version?: string | null
+  target_sha256?: string | null
+  patch_format?: string | null
   file_url: string
   file_size: bigint | number
   sha256: string
@@ -1034,6 +1161,9 @@ export type FirmwareCreateManyProductInput = {
 export type FirmwareUpdateWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1049,6 +1179,9 @@ export type FirmwareUncheckedUpdateWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1063,6 +1196,9 @@ export type FirmwareUncheckedUpdateManyWithoutProductInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   org_id?: Prisma.StringFieldUpdateOperationsInput | string
   version?: Prisma.StringFieldUpdateOperationsInput | string
+  base_version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  target_sha256?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  patch_format?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   file_url?: Prisma.StringFieldUpdateOperationsInput | string
   file_size?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   sha256?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1108,6 +1244,9 @@ export type FirmwareSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   org_id?: boolean
   product_id?: boolean
   version?: boolean
+  base_version?: boolean
+  target_sha256?: boolean
+  patch_format?: boolean
   file_url?: boolean
   file_size?: boolean
   sha256?: boolean
@@ -1127,6 +1266,9 @@ export type FirmwareSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   org_id?: boolean
   product_id?: boolean
   version?: boolean
+  base_version?: boolean
+  target_sha256?: boolean
+  patch_format?: boolean
   file_url?: boolean
   file_size?: boolean
   sha256?: boolean
@@ -1144,6 +1286,9 @@ export type FirmwareSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   org_id?: boolean
   product_id?: boolean
   version?: boolean
+  base_version?: boolean
+  target_sha256?: boolean
+  patch_format?: boolean
   file_url?: boolean
   file_size?: boolean
   sha256?: boolean
@@ -1161,6 +1306,9 @@ export type FirmwareSelectScalar = {
   org_id?: boolean
   product_id?: boolean
   version?: boolean
+  base_version?: boolean
+  target_sha256?: boolean
+  patch_format?: boolean
   file_url?: boolean
   file_size?: boolean
   sha256?: boolean
@@ -1170,7 +1318,7 @@ export type FirmwareSelectScalar = {
   created_at?: boolean
 }
 
-export type FirmwareOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "org_id" | "product_id" | "version" | "file_url" | "file_size" | "sha256" | "release_note" | "status" | "created_by" | "created_at", ExtArgs["result"]["firmware"]>
+export type FirmwareOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "org_id" | "product_id" | "version" | "base_version" | "target_sha256" | "patch_format" | "file_url" | "file_size" | "sha256" | "release_note" | "status" | "created_by" | "created_at", ExtArgs["result"]["firmware"]>
 export type FirmwareInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
   product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
@@ -1202,6 +1350,9 @@ export type $FirmwarePayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     org_id: string
     product_id: string
     version: string
+    base_version: string | null
+    target_sha256: string | null
+    patch_format: string | null
     file_url: string
     file_size: bigint
     sha256: string
@@ -1640,6 +1791,9 @@ export interface FirmwareFieldRefs {
   readonly org_id: Prisma.FieldRef<"Firmware", 'String'>
   readonly product_id: Prisma.FieldRef<"Firmware", 'String'>
   readonly version: Prisma.FieldRef<"Firmware", 'String'>
+  readonly base_version: Prisma.FieldRef<"Firmware", 'String'>
+  readonly target_sha256: Prisma.FieldRef<"Firmware", 'String'>
+  readonly patch_format: Prisma.FieldRef<"Firmware", 'String'>
   readonly file_url: Prisma.FieldRef<"Firmware", 'String'>
   readonly file_size: Prisma.FieldRef<"Firmware", 'BigInt'>
   readonly sha256: Prisma.FieldRef<"Firmware", 'String'>

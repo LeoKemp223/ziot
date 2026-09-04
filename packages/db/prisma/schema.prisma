@@ -435,24 +435,30 @@ model UserDevice {
 }
 
 model Firmware {
-  id           String         @id @db.VarChar(64)
-  org_id       String         @db.VarChar(64)
-  product_id   String         @db.VarChar(64)
-  version      String         @db.VarChar(64)
-  file_url     String
-  file_size    BigInt
-  sha256       String         @db.VarChar(128)
-  release_note String?
-  status       FirmwareStatus @default(draft)
-  created_by   String         @db.VarChar(64)
-  created_at   DateTime       @default(now()) @db.Timestamptz
+  id            String         @id @db.VarChar(64)
+  org_id        String         @db.VarChar(64)
+  product_id    String         @db.VarChar(64)
+  version       String         @db.VarChar(64)
+  // 差分包基线版本(V1);null 表示整包
+  base_version  String?        @db.VarChar(64)
+  // 差分包目标固件(V2)的 sha256;仅差分包有值
+  target_sha256 String?        @db.VarChar(128)
+  // 差分算法标识,如 "bsdiff-heatshrink";仅差分包有值
+  patch_format  String?        @db.VarChar(64)
+  file_url      String
+  file_size     BigInt
+  sha256        String         @db.VarChar(128)
+  release_note  String?
+  status        FirmwareStatus @default(draft)
+  created_by    String         @db.VarChar(64)
+  created_at    DateTime       @default(now()) @db.Timestamptz
 
   organization Organization @relation(fields: [org_id], references: [id])
   product      Product      @relation(fields: [product_id], references: [id])
   creator      User         @relation(fields: [created_by], references: [id])
   ota_tasks    OtaTask[]
 
-  @@unique([product_id, version])
+  @@unique([product_id, version, base_version])
   @@index([org_id, product_id, status])
   @@map("firmwares")
 }

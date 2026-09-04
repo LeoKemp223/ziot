@@ -3,6 +3,7 @@ import { rm } from "node:fs/promises";
 import path from "node:path";
 import { Client as MinioClient } from "minio";
 import { buildPagination, clampPage, clampPageSize } from "@/lib/pagination";
+import { PATCH_FORMAT } from "./firmware-patch";
 
 type Db = { [key: string]: any };
 type AccessScope = {
@@ -81,6 +82,9 @@ function mapFirmware(firmware: any) {
     product_name: firmware.product?.name ?? "",
     product_key: firmware.product?.product_key ?? "",
     version: firmware.version,
+    base_version: firmware.base_version ?? null,
+    target_sha256: firmware.target_sha256 ?? null,
+    patch_format: firmware.patch_format ?? null,
     file_url: firmware.file_url,
     file_size: Number(firmware.file_size),
     sha256: firmware.sha256,
@@ -287,7 +291,9 @@ export async function createFirmware(
   const existing = await db.firmware.findFirst({
     where: {
       product_id: input.productId,
-      version
+      version,
+      // 整包只在整包范围内查重,与差分包(同 version 不同 base)互不冲突
+      base_version: null
     }
   });
 
@@ -306,6 +312,86 @@ export async function createFirmware(
       sha256: assertSha256(input.sha256),
       release_note: input.releaseNote,
       // 上传即可用于升级任务,不再有 draft 中间态
+      status: "released",
+      created_by: input.createdBy
+    },
+    include: { product: true }
+  });
+
+  return mapFirmware(firmware);
+}
+
+// 差分固件:上传 V1/V2 由路由层生成补丁后登记,补丁文件走与整包相同的 OTA 链路
+export async function createDeltaFirmware(
+  db: Db,
+  input: AccessScope & {
+    orgId: string;
+    createdBy: string;
+    productId: string;
+    version: string;
+    baseVersion: string;
+    fileUrl: string;
+    fileSize: number;
+    sha256: string;
+    targetSha256: string;
+    releaseNote?: string | null;
+  }
+) {
+  await findProductForScope(db, input);
+  const version = assertName(input.version, "version");
+  const baseVersion = assertName(input.baseVersion, "base_version");
+
+  if (version === baseVersion) {
+    throw otaError(400001, "差分固件的目标版本不能与基线版本相同");
+  }
+
+  const fileUrl = input.fileUrl.trim();
+
+  if (!fileUrl || fileUrl.length > 2048) {
+    throw otaError(400001, "固件地址长度必须为 1-2048 位");
+  }
+
+  // 差分固件与整包共用每用户配额
+  const count = await db.firmware.count({
+    where: {
+      org_id: input.orgId,
+      created_by: input.createdBy
+    }
+  });
+
+  if (count >= MAX_FIRMWARES_PER_USER) {
+    throw otaError(
+      409001,
+      `固件数量已达上限（每个用户最多 ${MAX_FIRMWARES_PER_USER} 个，可删除旧固件释放名额）`
+    );
+  }
+
+  const existing = await db.firmware.findFirst({
+    where: {
+      product_id: input.productId,
+      version,
+      base_version: baseVersion
+    }
+  });
+
+  if (existing) {
+    throw otaError(409001, "该基线版本下已存在相同目标版本的差分固件");
+  }
+
+  const firmware = await db.firmware.create({
+    data: {
+      id: id("fw"),
+      org_id: input.orgId,
+      product_id: input.productId,
+      version,
+      base_version: baseVersion,
+      target_sha256: assertSha256(input.targetSha256),
+      patch_format: PATCH_FORMAT,
+      file_url: fileUrl,
+      file_size: normalizeFileSize(input.fileSize),
+      sha256: assertSha256(input.sha256),
+      release_note: input.releaseNote,
+      // 与整包一致,登记即可用于升级任务
       status: "released",
       created_by: input.createdBy
     },
@@ -583,7 +669,17 @@ function otaNotifyPayload(task: any) {
       version: task.firmware.version,
       file_url: task.firmware.file_url,
       file_size: Number(task.firmware.file_size),
-      sha256: task.firmware.sha256
+      // 差分包时为补丁文件的校验值,重组后的目标固件用 target_sha256 校验
+      sha256: task.firmware.sha256,
+      // 差分包附加字段;整包不下发,老设备可安全忽略
+      ...(task.firmware.base_version != null
+        ? {
+            package_type: "delta",
+            base_version: task.firmware.base_version,
+            target_sha256: task.firmware.target_sha256,
+            patch_format: task.firmware.patch_format
+          }
+        : {})
     }
   };
 }

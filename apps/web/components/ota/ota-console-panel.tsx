@@ -27,6 +27,9 @@ type Firmware = {
   product_id: string;
   product_name: string;
   version: string;
+  base_version?: string | null;
+  target_sha256?: string | null;
+  patch_format?: string | null;
   file_url: string;
   file_size: number;
   sha256: string;
@@ -80,6 +83,10 @@ export function OtaConsolePanel() {
   const [selectedFirmwareId, setSelectedFirmwareId] = useState("");
   const [firmwareModalOpen, setFirmwareModalOpen] = useState(false);
   const [firmwareFileName, setFirmwareFileName] = useState("");
+  const [deltaModalOpen, setDeltaModalOpen] = useState(false);
+  const [deltaBaseFileName, setDeltaBaseFileName] = useState("");
+  const [deltaTargetFileName, setDeltaTargetFileName] = useState("");
+  const [deltaPending, setDeltaPending] = useState(false);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [firmwarePending, setFirmwarePending] = useState(false);
   const [deletingFirmware, setDeletingFirmware] = useState<Firmware | null>(null);
@@ -214,6 +221,61 @@ export function OtaConsolePanel() {
       setError("上传固件失败。");
     } finally {
       setFirmwarePending(false);
+    }
+  }
+
+  async function createDeltaFirmware(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage("");
+    setError("");
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const baseFile = form.get("file_base");
+    const targetFile = form.get("file_target");
+
+    if (
+      !(baseFile instanceof File) ||
+      baseFile.size === 0 ||
+      !(targetFile instanceof File) ||
+      targetFile.size === 0
+    ) {
+      setError("请选择基线与目标固件文件。");
+      return;
+    }
+
+    setDeltaPending(true);
+
+    try {
+      const response = await fetch("/api/v1/firmwares/delta", {
+        method: "POST",
+        body: form
+      });
+      const body = (await response.json()) as ApiResponse<Firmware>;
+
+      if (!response.ok || body.code !== 0 || !body.data) {
+        setError(body.message);
+        return;
+      }
+
+      const uploaded = body.data;
+      formElement.reset();
+      setDeltaBaseFileName("");
+      setDeltaTargetFileName("");
+      setLastUploadedFirmware(uploaded);
+      setAllFirmwares((current) => [
+        uploaded,
+        ...current.filter((item) => item.id !== uploaded.id)
+      ]);
+      setSelectedFirmwareId(body.data.id);
+      setTaskName(`${body.data.product_name} ${body.data.version} 升级`);
+      setDeltaModalOpen(false);
+      setTaskModalOpen(true);
+      setMessage("差分固件已生成，已为你预填升级任务，确认后点击“创建任务”。");
+      await load(1);
+    } catch {
+      setError("生成差分固件失败。");
+    } finally {
+      setDeltaPending(false);
     }
   }
 
@@ -426,6 +488,20 @@ export function OtaConsolePanel() {
               创建固件
             </button>
             <button
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              onClick={() => {
+                setMessage("");
+                setError("");
+                setDeltaBaseFileName("");
+                setDeltaTargetFileName("");
+                setDeltaModalOpen(true);
+              }}
+              type="button"
+            >
+              <Plus className="h-4 w-4" />
+              差分固件
+            </button>
+            <button
               className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800"
               onClick={() => {
                 setMessage("");
@@ -476,7 +552,18 @@ export function OtaConsolePanel() {
           empty="暂无固件。"
           headers={["版本", "产品", "状态", "文件大小", "SHA256", "下载地址", "操作"]}
           rows={firmwares.map((firmware) => [
-            firmware.version,
+            firmware.base_version ? (
+              <span className="inline-flex items-center gap-1.5" key={firmware.id}>
+                <span className="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+                  差分
+                </span>
+                <span className="font-medium">
+                  {firmware.base_version} → {firmware.version}
+                </span>
+              </span>
+            ) : (
+              firmware.version
+            ),
             firmware.product_name,
             <FirmwareStatusBadge key={firmware.id} value={firmware.status} />,
             `${firmware.file_size} B`,
@@ -686,6 +773,135 @@ export function OtaConsolePanel() {
                   <Plus className="h-4 w-4" />
                 )}
                 上传并创建
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      {deltaModalOpen ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+          role="dialog"
+        >
+          <form
+            className="w-full max-w-xl rounded-lg bg-white shadow-xl"
+            onSubmit={createDeltaFirmware}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">创建差分固件</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  上传两个 .bin 裸二进制固件，平台自动生成 bsdiff+heatshrink
+                  差分补丁，原文件不保留，单文件不超过 5MB，目标版本需不同于基线版本。差分包需设备端支持对应解补丁能力。
+                </p>
+              </div>
+              <button
+                aria-label="关闭"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                onClick={() => setDeltaModalOpen(false)}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-5 py-5">
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">所属产品</span>
+                <Select name="product_id" value={defaultProductId}>
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-slate-700">
+                    基线版本（V1）
+                  </span>
+                  <Input name="base_version" placeholder="v1.0.0" required />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-slate-700">
+                    目标版本（V2）
+                  </span>
+                  <Input name="version" placeholder="v1.0.1" required />
+                </label>
+              </div>
+              {[
+                {
+                  label: "基线固件文件（V1.bin）",
+                  name: "file_base",
+                  fileName: deltaBaseFileName,
+                  setFileName: setDeltaBaseFileName
+                },
+                {
+                  label: "目标固件文件（V2.bin）",
+                  name: "file_target",
+                  fileName: deltaTargetFileName,
+                  setFileName: setDeltaTargetFileName
+                }
+              ].map((field) => (
+                <label className="block" key={field.name}>
+                  <span className="mb-1 block text-sm font-medium text-slate-700">
+                    {field.label}
+                  </span>
+                  <span className="flex h-10 w-full cursor-pointer items-center gap-3 rounded-md border border-slate-200 bg-white px-3 text-sm hover:border-blue-300">
+                    <span className="inline-flex h-7 shrink-0 items-center rounded-md bg-slate-950 px-3 text-xs font-medium text-white">
+                      选择文件
+                    </span>
+                    <span className="truncate text-slate-500">
+                      {field.fileName || "未选择文件"}
+                    </span>
+                    <input
+                      accept=".bin"
+                      className="hidden"
+                      name={field.name}
+                      onChange={(event) =>
+                        field.setFileName(event.currentTarget.files?.[0]?.name ?? "")
+                      }
+                      type="file"
+                    />
+                  </span>
+                </label>
+              ))}
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">
+                  发布说明(可选)
+                </span>
+                <textarea
+                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  name="release_note"
+                  placeholder="修复问题或新增能力"
+                  rows={3}
+                />
+              </label>
+              {error ? <div className="text-sm text-rose-600">{error}</div> : null}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button
+                className="inline-flex h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setDeltaModalOpen(false)}
+                type="button"
+              >
+                取消
+              </button>
+              <button
+                className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={deltaPending}
+                type="submit"
+              >
+                {deltaPending ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                生成并创建
               </button>
             </div>
           </form>

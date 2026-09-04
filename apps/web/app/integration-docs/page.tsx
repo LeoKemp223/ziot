@@ -313,8 +313,25 @@ export default function IntegrationDocsPage() {
   }
 }
 
+# 差分固件的通知会附加以下字段（整包不下发，老设备可安全忽略）：
+{
+  "task_id": "ota_xxx",
+  "firmware": {
+    "version": "v1.0.2",
+    "file_url": "https://www.ziot.asia/uploads/firmwares/.../v1.0.1-v1.0.2.patch",
+    "file_size": 10240,
+    "sha256": "补丁文件的 sha256",
+    "package_type": "delta",
+    "base_version": "v1.0.1",
+    "target_sha256": "重组出的目标固件 sha256",
+    "patch_format": "bsdiff-heatshrink"
+  }
+}
+
 # ② 用 HTTP GET 下载 file_url（大文件可 Range 断点续传），
 #    校验 sha256 与 file_size 一致后写入固件分区
+#    差分包：先自校验当前版本 == base_version，下载补丁并校验 sha256，
+#    本地应用补丁（bsdiff+heatshrink），用 target_sha256 校验重组结果
 
 # ③ 上报进度（status: downloading / installing，progress 0-100）
 /ota/{pk}/{dk}/upgrade/progress
@@ -326,7 +343,7 @@ export default function IntegrationDocsPage() {
 { "task_id": "ota_xxx", "code": 0, "progress": 100, "firmware_version": "v1.0.1" }`}
                   />
                   <p className="mt-2 text-sm text-slate-600">
-                    file_url 的来源由固件管理方式决定：控制台上传的固件由平台 Web 服务器直接提供（无鉴权 GET，单文件 ≤ 5MB）；也可在创建固件时登记任意外部 URL（自建文件服务器 / CDN）。设备只需认 HTTP GET + sha256 校验，下载不经 MQTT。
+                    file_url 的来源由固件管理方式决定：控制台上传的固件由平台 Web 服务器直接提供（无鉴权 GET，单文件 ≤ 5MB）；也可在创建固件时登记任意外部 URL（自建文件服务器 / CDN）。设备只需认 HTTP GET + sha256 校验，下载不经 MQTT。差分固件由平台在控制台一键生成（上传 V1/V2 两个固件），设备端需内置 bsdiff+heatshrink 解补丁能力（可参考 detools 的 C patch 库，与 esp_delta_ota 补丁格式相同），不支持差分的设备请使用整包固件任务。
                   </p>
                 </DocBlock>
                 <DocBlock title="8. Demo 验证">
