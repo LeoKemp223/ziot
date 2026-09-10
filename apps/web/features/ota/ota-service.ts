@@ -4,10 +4,8 @@ import path from "node:path";
 import { buildPagination, clampPage, clampPageSize } from "@/lib/pagination";
 import { PATCH_FORMAT } from "./firmware-patch";
 import {
-  DEVICE_DOWNLOAD_URL_EXPIRY_S,
-  FIRMWARE_DOWNLOAD_URL_EXPIRY_S,
+  firmwarePublicUrl,
   parseMinioStorageUrl,
-  presignedFirmwareGetUrl,
   presignedPutObjectUrl,
   removeFirmwareObject
 } from "./firmware-storage";
@@ -102,14 +100,11 @@ function mapFirmware(firmware: any) {
   };
 }
 
-// mapFirmware 之上补充短时效下载直链;遗留/外部 URL 无直链(download_url: null)
-async function decorateFirmware(firmware: Parameters<typeof mapFirmware>[0]) {
+// mapFirmware 之上补充公共下载直链(匿名只读桶,永久有效);遗留/外部 URL 无直链(download_url: null)
+function decorateFirmware(firmware: Parameters<typeof mapFirmware>[0]) {
   return {
     ...mapFirmware(firmware),
-    download_url: await presignedFirmwareGetUrl(
-      firmware.file_url,
-      FIRMWARE_DOWNLOAD_URL_EXPIRY_S
-    )
+    download_url: firmwarePublicUrl(firmware.file_url)
   };
 }
 
@@ -265,7 +260,7 @@ export async function listFirmwares(
   ]);
 
   return {
-    items: await Promise.all(firmwares.map((firmware: any) => decorateFirmware(firmware))),
+    items: firmwares.map((firmware: any) => decorateFirmware(firmware)),
     pagination: buildPagination(page, pageSize, total)
   };
 }
@@ -670,17 +665,13 @@ export async function getOtaTask(
   return mapTask(await findTaskForScope(db, input));
 }
 
-// 设备收到的 file_url 为可直接 GET 的预签名直链(minio:// 固件);遗留/外部 URL 原样下发
-async function otaNotifyPayload(task: any) {
+// 设备收到的 file_url 为可直接 GET 的公共直链(minio:// 固件,匿名只读桶);遗留/外部 URL 原样下发
+function otaNotifyPayload(task: any) {
   return {
     task_id: task.id,
     firmware: {
       version: task.firmware.version,
-      file_url:
-        (await presignedFirmwareGetUrl(
-          task.firmware.file_url,
-          DEVICE_DOWNLOAD_URL_EXPIRY_S
-        )) ?? task.firmware.file_url,
+      file_url: firmwarePublicUrl(task.firmware.file_url) ?? task.firmware.file_url,
       file_size: Number(task.firmware.file_size),
       // 差分包时为补丁文件的校验值,重组后的目标固件用 target_sha256 校验
       sha256: task.firmware.sha256,
@@ -786,8 +777,8 @@ export async function startOtaTask(
     }
   });
 
-  // 同一任务的所有设备收到相同 payload,预签名一次在循环外复用
-  const notifyPayload = await otaNotifyPayload(started);
+  // 同一任务的所有设备收到相同 payload,循环外构造一次复用
+  const notifyPayload = otaNotifyPayload(started);
   // 恰好向被重置的设备下发;started.records 为重置前状态,按与 updateMany 相同的范围过滤
   const notifyRecords = started.records.filter((record: { status: string }) =>
     restart ? record.status !== "success" : ["created", "scheduled"].includes(record.status)

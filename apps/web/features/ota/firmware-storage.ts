@@ -1,11 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Client as MinioClient } from "minio";
 
-// 控制台列表/详情里的下载直链有效期
-export const FIRMWARE_DOWNLOAD_URL_EXPIRY_S = 3600;
-// OTA notify 下发给设备的下载直链有效期:设备收到通知后应及时下载
-export const DEVICE_DOWNLOAD_URL_EXPIRY_S = 24 * 3600;
-
 const MINIO_STORAGE_SCHEME = "minio://";
 
 type StorageError = Error & { code: 500001 };
@@ -56,8 +51,7 @@ function createClient(config: MinioEndpointConfig): MinioClient {
   });
 }
 
-// 服务端读写走内网端点(compose 网络内 minio:9000),预签名必须用设备/浏览器可达的公共端点
-// —— SigV4 签名包含 Host,两个端点不能混用
+// 服务端读写走内网端点(compose 网络内 minio:9000);公共直链/直传预签名用设备浏览器可达的公共端点
 let opsClient: MinioClient | null = null;
 let signClient: MinioClient | null = null;
 
@@ -81,7 +75,23 @@ function firmwareBucket(): string {
   return bucket;
 }
 
-// 惰性建桶(成功后缓存;失败重置以便重试),顺带兜底 dev 环境没有 minio-init 的情况
+// 桶匿名只读策略:固件直链不需要签名/有效期,谁拿到链接谁可下载。
+// 对象 key 带 UUID 前缀不可枚举;写入仍需 access key。按用户决策接受此权衡。
+function anonymousDownloadPolicy(bucket: string) {
+  return JSON.stringify({
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Effect: "Allow",
+        Principal: { AWS: ["*"] },
+        Action: ["s3:GetObject"],
+        Resource: [`arn:aws:s3:::${bucket}/*`]
+      }
+    ]
+  });
+}
+
+// 惰性建桶并应用匿名只读策略(幂等,成功后缓存;失败重置以便重试),顺带兜底 dev 环境没有 minio-init 的情况
 let ensureBucketPromise: Promise<void> | null = null;
 
 export async function ensureFirmwareBucket(): Promise<void> {
@@ -92,6 +102,8 @@ export async function ensureFirmwareBucket(): Promise<void> {
     if (!(await client.bucketExists(bucket))) {
       await client.makeBucket(bucket, "");
     }
+    // setBucketPolicy 幂等,每次启动确保策略在位(包括已存在的存量桶)
+    await client.setBucketPolicy(bucket, anonymousDownloadPolicy(bucket));
   })().catch((error) => {
     ensureBucketPromise = null;
     throw storageError(`固件存储桶不可用: ${error instanceof Error ? error.message : error}`);
@@ -174,20 +186,24 @@ export function parseMinioStorageUrl(
   return { bucket: rest.slice(0, separator), objectKey: rest.slice(separator + 1) };
 }
 
-// 预签名 GET 是离线 HMAC 计算,不访问网络;非 minio:// 的遗留/外部 URL 原样透传(null)
-export async function presignedFirmwareGetUrl(
-  fileUrl: string,
-  expirySeconds: number
-): Promise<string | null> {
+// 永久公共直链(匿名只读桶,path-style):桶在 URL 首段,经 nginx /ziot-firmwares/ 反代或本地直连均可。
+// 非常量 minio:// 的遗留/外部 URL 原样透传(null)
+export function firmwarePublicUrl(fileUrl: string): string | null {
   const stored = parseMinioStorageUrl(fileUrl);
 
   if (!stored) {
     return null;
   }
 
-  return getSignClient().presignedGetObject(stored.bucket, stored.objectKey, expirySeconds);
+  const { endPoint, port, useSSL } = endpointConfig("MINIO");
+  const scheme = useSSL ? "https" : "http";
+  const defaultPort = useSSL ? 443 : 80;
+  const host = port === defaultPort ? endPoint : `${endPoint}:${port}`;
+
+  return `${scheme}://${host}/${stored.bucket}/${stored.objectKey}`;
 }
 
+// 浏览器直传(POST .../upload-url)仍需签名 PUT,写入不可匿名
 export async function presignedPutObjectUrl(
   objectKey: string,
   expirySeconds: number

@@ -9,11 +9,11 @@ import {
   startOtaTask
 } from "./ota-service";
 
-// 固件对象存储:仅 mock 接口边界,签名走假 URL,删除对象用 spy
+// 固件对象存储:仅 mock 接口边界,公共直链走假 URL,删除对象用 spy
 const storageMocks = vi.hoisted(() => ({
-  presignedFirmwareGetUrl: vi.fn(async (fileUrl: string) =>
+  firmwarePublicUrl: vi.fn((fileUrl: string) =>
     fileUrl.startsWith("minio://")
-      ? `https://presigned.example.com/${fileUrl.slice("minio://".length)}`
+      ? `https://public.example.com/${fileUrl.slice("minio://".length)}`
       : null
   ),
   removeFirmwareObject: vi.fn(async () => undefined)
@@ -23,7 +23,7 @@ vi.mock("./firmware-storage", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./firmware-storage")>();
   return {
     ...actual,
-    presignedFirmwareGetUrl: storageMocks.presignedFirmwareGetUrl,
+    firmwarePublicUrl: storageMocks.firmwarePublicUrl,
     removeFirmwareObject: storageMocks.removeFirmwareObject
   };
 });
@@ -246,7 +246,7 @@ describe("ota service", () => {
     });
 
     expect(result.download_url).toBe(
-      "https://presigned.example.com/ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
+      "https://public.example.com/ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
     );
 
     // 外部 URL 不签名,download_url 为 null
@@ -763,7 +763,7 @@ describe("ota service delta firmware", () => {
       firmware: Record<string, unknown>;
     };
     expect(published.firmware.file_url).toBe(
-      "https://presigned.example.com/ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
+      "https://public.example.com/ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
     );
 
     vi.unstubAllGlobals();

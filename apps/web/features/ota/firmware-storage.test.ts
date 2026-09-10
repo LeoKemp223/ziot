@@ -2,9 +2,9 @@ import { afterAll, describe, expect, it } from "vitest";
 import {
   deltaPatchObjectKey,
   firmwareObjectKey,
+  firmwarePublicUrl,
   isMinioStorageUrl,
-  parseMinioStorageUrl,
-  presignedFirmwareGetUrl
+  parseMinioStorageUrl
 } from "./firmware-storage";
 
 const originalEnv = { ...process.env };
@@ -67,13 +67,13 @@ describe("minio storage url", () => {
   });
 });
 
-describe("presigned download url", () => {
-  it("passes through non-minio urls as null", async () => {
-    expect(await presignedFirmwareGetUrl("https://example.com/fw.bin", 3600)).toBeNull();
-    expect(await presignedFirmwareGetUrl("/uploads/firmwares/a/b.bin", 3600)).toBeNull();
+describe("public download url", () => {
+  it("passes through non-minio urls as null", () => {
+    expect(firmwarePublicUrl("https://example.com/fw.bin")).toBeNull();
+    expect(firmwarePublicUrl("/uploads/firmwares/a/b.bin")).toBeNull();
   });
 
-  it("signs minio urls offline against the public endpoint", async () => {
+  it("builds a permanent unsigned link from the public endpoint", () => {
     setEnv({
       MINIO_ENDPOINT: "localhost",
       MINIO_PORT: "9000",
@@ -82,13 +82,23 @@ describe("presigned download url", () => {
       MINIO_SECRET_KEY: "ziot-secret"
     });
 
-    const url = await presignedFirmwareGetUrl(
-      "minio://ziot-firmwares/firmwares/pk_demo/abc-fw.bin",
-      3600
+    expect(firmwarePublicUrl("minio://ziot-firmwares/firmwares/pk_demo/abc-fw.bin")).toBe(
+      "http://localhost:9000/ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
     );
+  });
 
-    expect(url).toMatch(
-      /^http:\/\/localhost:9000\/ziot-firmwares\/firmwares\/pk_demo\/abc-fw\.bin\?X-Amz-Algorithm=/
+  it("omits the default port and uses https when ssl is on", () => {
+    setEnv({
+      MINIO_ENDPOINT: "www.ziot.asia",
+      MINIO_PORT: "443",
+      MINIO_USE_SSL: "true",
+      MINIO_BUCKET: "ziot-firmwares",
+      MINIO_ACCESS_KEY: "ziot",
+      MINIO_SECRET_KEY: "ziot-secret"
+    });
+
+    expect(firmwarePublicUrl("minio://ziot-firmwares/firmwares/pk_demo/abc-fw.bin")).toBe(
+      "https://www.ziot.asia/ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
     );
   });
 });

@@ -45,3 +45,13 @@
 - 生产需重建镜像并 `up -d`（新增 `MINIO_INTERNAL_*` env）；桶由 minio-init 或惰性建桶自动就绪。
 - 遗留 `https://.../uploads/...` 固件记录的 notify 仍发死链，需在控制台删除重建。
 - 本地原生开发：`.runtime/bin/minio server .runtime/minio-data --address :9000`（`.env.local` 已指向 localhost:9000），e2e 依赖它。
+
+## 更新（同日）：预签名直链改为永久公共直链
+
+用户拍板：下载链接**不需要签名、不需要过期时间**。调整：
+
+1. **桶设为匿名只读**（`s3:GetObject`）：`ensureFirmwareBucket` 里 `setBucketPolicy` 幂等下发（存量桶也生效，覆盖 dev 无 minio-init 的场景），minio-init 增加 `mc anonymous set download` 双保险。写入仍需 access key；对象 key 带 UUID 前缀不可枚举——接受"知道链接即可下载"的权衡。
+2. `presignedFirmwareGetUrl` + 两个过期常量删除，替换为**同步**的 `firmwarePublicUrl`：按公共端点拼 path-style 永久直链（非默认端口显式带端口，443/80 省略），`otaNotifyPayload` 随之改回同步。
+3. `download_url` 字段保留但语义变为永久直链（UI 无需改动）；DB 仍存 `minio://` 规范 URI——换域名时链接随环境变量自动更新，不迁移数据。
+4. `presignedPutObjectUrl`（upload-url 浏览器直传）保留——写入不能匿名。
+5. e2e 断言同步调整（直链不再带 `X-Amz-` 参数）。
