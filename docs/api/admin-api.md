@@ -1312,6 +1312,8 @@ notify payload 示例（整包）：
 
 取消后：任务状态变为 `cancelled` 并写入 `finished_at`；所有未到终态（`created`/`scheduled`/`notified`/`downloading`/`installing`）的设备记录置为 `cancelled`（错误信息为“任务已取消”），已成功/失败的记录保持不变；已取消的设备记录后续收到设备上报会被拒绝（`409001 升级记录已取消`，重新启动任务后记录重置为 `notified` 即可继续上报）。
 
+升级超时兜底：设备超过 24 小时（worker 环境变量 `OTA_RECORD_TIMEOUT_HOURS` 可调，扫描周期 `OTA_RECORD_EXPIRY_INTERVAL_MS` 默认 10 分钟）未上报进度的非终态记录，由 worker 定时扫描自动置为 `failed`（错误信息为“升级超时：设备长时间未上报进度”），受影响的 `running` 任务随之收敛为 `finished`——失联设备不会让任务永远停留在进行中。
+
 ### `DELETE /api/v1/ota/tasks/{task_id}`
 
 删除 OTA 任务。需要 `ota:write` 权限。仅 `finished` / `cancelled` 状态可删除，未结束的任务需先取消（`409001 升级任务未结束，请先取消后再删除`）。

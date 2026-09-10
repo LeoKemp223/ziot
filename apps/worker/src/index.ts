@@ -1,17 +1,20 @@
 import { startTelemetryWorker } from "./queues/telemetry";
 import { startRetentionCleanup } from "./retention/cleanup";
 import { startCommandExpiry } from "./control/expire-commands";
+import { startOtaRecordExpiry } from "./ota/expire-ota-records";
 
 const service = "ziot-worker";
 const telemetry = startTelemetryWorker();
 const retentionTimer = startRetentionCleanup();
 const commandExpiryTimer = startCommandExpiry();
+const otaRecordExpiryTimer = startOtaRecordExpiry();
 
 console.log(`${service} ready`);
 
 async function shutdown() {
   clearInterval(retentionTimer);
   clearInterval(commandExpiryTimer);
+  clearInterval(otaRecordExpiryTimer);
   await telemetry.worker.close();
   await telemetry.events.close();
   process.exit(0);
