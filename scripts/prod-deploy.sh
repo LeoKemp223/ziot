@@ -40,9 +40,14 @@ compose() {
   docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
 }
 
-# 在 web 容器（当前镜像）里跑 prisma 命令
+# 在 web 容器（当前镜像）里跑 prisma 命令。
+# 直接调工作区根的 prisma 二进制（pnpm hoist），绕开 `pnpm exec`——后者会把子命令
+# 非零退出码统一改写成 1（ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL），丢掉 migrate diff
+# --exit-code 的 2（有差异），害得 sync_db 误判为"命令失败"。cd packages/db 是因为
+# prisma.config.ts / schema 的相对路径都以该目录为基准。
 prisma() {
-  compose run --rm --no-deps -T web pnpm --filter @ziot/db exec prisma "$@"
+  compose run --rm --no-deps -T web \
+    sh -c 'cd packages/db && exec /app/node_modules/.bin/prisma "$@"' -- "$@"
 }
 
 wait_service_healthy() {
@@ -101,10 +106,12 @@ sync_db() {
   if ! prisma db push --schema prisma/schema.prisma; then
     cat >&2 <<'HINT'
 db push 被拒：通常是 prisma 对潜在数据损失的例行警告（如给全新列加唯一索引）。
+现有唯一约束已保证无重复、且新列可空时，加宽唯一索引不会真的冲突。
 人工确认变更安全后执行：
   docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml \
-    run --rm --no-deps web pnpm --filter @ziot/db exec prisma db push \
-    --schema prisma/schema.prisma --accept-data-loss
+    run --rm --no-deps -T web \
+    sh -c 'cd packages/db && exec /app/node_modules/.bin/prisma db push \
+    --schema prisma/schema.prisma --accept-data-loss'
 HINT
     return 1
   fi

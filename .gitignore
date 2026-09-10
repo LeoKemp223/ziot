@@ -15,3 +15,6 @@ apps/web/public/uploads/
 # 生产部署凭证与证书
 deploy/prod.env
 deploy/certs/
+
+# 数据库备份（pg_dump，含生产数据，绝不入库）
+backups/
