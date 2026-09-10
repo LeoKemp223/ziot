@@ -1,9 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { rm } from "node:fs/promises";
 import path from "node:path";
-import { Client as MinioClient } from "minio";
 import { buildPagination, clampPage, clampPageSize } from "@/lib/pagination";
 import { PATCH_FORMAT } from "./firmware-patch";
+import {
+  DEVICE_DOWNLOAD_URL_EXPIRY_S,
+  FIRMWARE_DOWNLOAD_URL_EXPIRY_S,
+  parseMinioStorageUrl,
+  presignedFirmwareGetUrl,
+  presignedPutObjectUrl,
+  removeFirmwareObject
+} from "./firmware-storage";
 
 type Db = { [key: string]: any };
 type AccessScope = {
@@ -95,6 +102,17 @@ function mapFirmware(firmware: any) {
   };
 }
 
+// mapFirmware 之上补充短时效下载直链;遗留/外部 URL 无直链(download_url: null)
+async function decorateFirmware(firmware: Parameters<typeof mapFirmware>[0]) {
+  return {
+    ...mapFirmware(firmware),
+    download_url: await presignedFirmwareGetUrl(
+      firmware.file_url,
+      FIRMWARE_DOWNLOAD_URL_EXPIRY_S
+    )
+  };
+}
+
 function mapTask(task: any, counts?: Record<string, number>) {
   const recordCounts =
     counts ??
@@ -155,7 +173,7 @@ function mapRecord(record: any) {
   };
 }
 
-async function findProductForScope(
+export async function findProductForScope(
   db: Db,
   input: AccessScope & { orgId: string; productId: string }
 ) {
@@ -247,7 +265,7 @@ export async function listFirmwares(
   ]);
 
   return {
-    items: firmwares.map((firmware: any) => mapFirmware(firmware)),
+    items: await Promise.all(firmwares.map((firmware: any) => decorateFirmware(firmware))),
     pagination: buildPagination(page, pageSize, total)
   };
 }
@@ -318,7 +336,7 @@ export async function createFirmware(
     include: { product: true }
   });
 
-  return mapFirmware(firmware);
+  return decorateFirmware(firmware);
 }
 
 // 差分固件:上传 V1/V2 由路由层生成补丁后登记,补丁文件走与整包相同的 OTA 链路
@@ -398,14 +416,14 @@ export async function createDeltaFirmware(
     include: { product: true }
   });
 
-  return mapFirmware(firmware);
+  return decorateFirmware(firmware);
 }
 
 export async function getFirmware(
   db: Db,
   input: AccessScope & { orgId: string; firmwareId: string }
 ) {
-  return mapFirmware(await findFirmwareForScope(db, input));
+  return decorateFirmware(await findFirmwareForScope(db, input));
 }
 
 // 仅清理本地上传目录(public/uploads/firmwares)里的文件,外部 URL 不动
@@ -436,7 +454,19 @@ export async function deleteFirmware(
     throw otaError(409001, "固件已被升级任务引用，请先删除相关任务");
   }
 
-  await removeLocalFirmwareFile(firmware.file_url);
+  // 按存储类型分派清理:minio:// 删对象;遗留 /uploads/ 删本地文件;外部 URL 不动
+  const stored = parseMinioStorageUrl(firmware.file_url);
+
+  if (stored) {
+    try {
+      await removeFirmwareObject(stored.objectKey);
+    } catch {
+      // 对象清理失败不阻塞记录删除(与遗留本地文件清理策略一致)
+    }
+  } else {
+    await removeLocalFirmwareFile(firmware.file_url);
+  }
+
   await db.firmware.delete({ where: { id: firmware.id } });
 
   return { id: firmware.id, deleted: true };
@@ -463,33 +493,11 @@ export async function createFirmwareUploadUrl(
   input: AccessScope & { orgId: string; firmwareId: string }
 ) {
   const firmware = await findFirmwareForScope(db, input);
-  const bucket = process.env.MINIO_BUCKET ?? process.env.MINIO_FIRMWARE_BUCKET;
-  const endpoint = process.env.MINIO_ENDPOINT;
-  const accessKey = process.env.MINIO_ACCESS_KEY;
-  const secretKey = process.env.MINIO_SECRET_KEY;
   const objectName = `firmwares/${firmware.product.product_key}/${firmware.version}.bin`;
-
-  if (!bucket || !endpoint || !accessKey || !secretKey) {
-    return {
-      method: "PUT",
-      upload_url: firmware.file_url,
-      object_name: objectName,
-      expires_in: 0
-    };
-  }
-
-  const client = new MinioClient({
-    endPoint: endpoint,
-    port: Number(process.env.MINIO_PORT ?? "9000"),
-    useSSL: process.env.MINIO_USE_SSL === "true",
-    accessKey,
-    secretKey
-  });
-  const uploadUrl = await client.presignedPutObject(bucket, objectName, 3600);
 
   return {
     method: "PUT",
-    upload_url: uploadUrl,
+    upload_url: await presignedPutObjectUrl(objectName, 3600),
     object_name: objectName,
     expires_in: 3600
   };
@@ -662,12 +670,17 @@ export async function getOtaTask(
   return mapTask(await findTaskForScope(db, input));
 }
 
-function otaNotifyPayload(task: any) {
+// 设备收到的 file_url 为可直接 GET 的预签名直链(minio:// 固件);遗留/外部 URL 原样下发
+async function otaNotifyPayload(task: any) {
   return {
     task_id: task.id,
     firmware: {
       version: task.firmware.version,
-      file_url: task.firmware.file_url,
+      file_url:
+        (await presignedFirmwareGetUrl(
+          task.firmware.file_url,
+          DEVICE_DOWNLOAD_URL_EXPIRY_S
+        )) ?? task.firmware.file_url,
       file_size: Number(task.firmware.file_size),
       // 差分包时为补丁文件的校验值,重组后的目标固件用 target_sha256 校验
       sha256: task.firmware.sha256,
@@ -760,9 +773,12 @@ export async function startOtaTask(
     }
   });
 
+  // 同一任务的所有设备收到相同 payload,预签名一次在循环外复用
+  const notifyPayload = await otaNotifyPayload(started);
+
   for (const record of started.records) {
     const topic = `/ota/${started.product.product_key}/${record.device.device_key}/upgrade/notify`;
-    await publishMqtt(topic, otaNotifyPayload(started));
+    await publishMqtt(topic, notifyPayload);
   }
 
   return getOtaTask(db, input);

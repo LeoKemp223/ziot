@@ -9,6 +9,25 @@ import {
   startOtaTask
 } from "./ota-service";
 
+// 固件对象存储:仅 mock 接口边界,签名走假 URL,删除对象用 spy
+const storageMocks = vi.hoisted(() => ({
+  presignedFirmwareGetUrl: vi.fn(async (fileUrl: string) =>
+    fileUrl.startsWith("minio://")
+      ? `https://presigned.example.com/${fileUrl.slice("minio://".length)}`
+      : null
+  ),
+  removeFirmwareObject: vi.fn(async () => undefined)
+}));
+
+vi.mock("./firmware-storage", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./firmware-storage")>();
+  return {
+    ...actual,
+    presignedFirmwareGetUrl: storageMocks.presignedFirmwareGetUrl,
+    removeFirmwareObject: storageMocks.removeFirmwareObject
+  };
+});
+
 const now = new Date("2026-04-29T08:00:00.000Z");
 
 function product(overrides: Record<string, unknown> = {}) {
@@ -203,6 +222,47 @@ describe("ota service", () => {
     expect(result.version).toBe("v1.1.0");
   });
 
+  it("decorates minio-stored firmware with a presigned download url", async () => {
+    const minioUrl = "minio://ziot-firmwares/firmwares/pk_demo/abc-fw.bin";
+    const db = {
+      product: {
+        findFirst: vi.fn().mockResolvedValue(product())
+      },
+      firmware: {
+        count: vi.fn().mockResolvedValue(0),
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(firmware({ file_url: minioUrl }))
+      }
+    };
+
+    const result = await createFirmware(db, {
+      orgId: "org_default",
+      createdBy: "usr_admin",
+      productId: "prd_demo",
+      version: "v1.0.1",
+      fileUrl: minioUrl,
+      fileSize: 1024,
+      sha256: "0".repeat(64)
+    });
+
+    expect(result.download_url).toBe(
+      "https://presigned.example.com/ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
+    );
+
+    // 外部 URL 不签名,download_url 为 null
+    db.firmware.create.mockResolvedValue(firmware({ file_url: "https://example.com/fw.bin" }));
+    const external = await createFirmware(db, {
+      orgId: "org_default",
+      createdBy: "usr_admin",
+      productId: "prd_demo",
+      version: "v1.0.1",
+      fileUrl: "https://example.com/fw.bin",
+      fileSize: 1024,
+      sha256: "0".repeat(64)
+    });
+    expect(external.download_url).toBeNull();
+  });
+
   it("deletes an unreferenced firmware and skips external file urls", async () => {
     const db = {
       firmware: {
@@ -227,6 +287,32 @@ describe("ota service", () => {
       where: { id: "fw_demo" }
     });
     expect(result).toEqual({ id: "fw_demo", deleted: true });
+  });
+
+  it("removes the minio object when deleting a minio-stored firmware", async () => {
+    storageMocks.removeFirmwareObject.mockClear();
+    const db = {
+      firmware: {
+        findFirst: vi.fn().mockResolvedValue(
+          firmware({ file_url: "minio://ziot-firmwares/firmwares/pk_demo/abc-fw.bin" })
+        ),
+        delete: vi.fn().mockResolvedValue(firmware())
+      },
+      otaTask: {
+        count: vi.fn().mockResolvedValue(0)
+      }
+    };
+
+    await deleteFirmware(db, {
+      orgId: "org_default",
+      userId: "usr_admin",
+      firmwareId: "fw_demo"
+    });
+
+    expect(storageMocks.removeFirmwareObject).toHaveBeenCalledWith(
+      "firmwares/pk_demo/abc-fw.bin"
+    );
+    expect(db.firmware.delete).toHaveBeenCalledWith({ where: { id: "fw_demo" } });
   });
 
   it("rejects deleting a firmware referenced by OTA tasks", async () => {
@@ -582,6 +668,8 @@ describe("ota service delta firmware", () => {
     };
     expect(published.firmware).toMatchObject({
       version: "v1.0.2",
+      // 遗留/外部 URL 原样下发
+      file_url: "https://example.com/v1.0.1-to-v1.0.2.patch",
       package_type: "delta",
       base_version: "v1.0.1",
       target_sha256: "1".repeat(64),
@@ -621,6 +709,44 @@ describe("ota service delta firmware", () => {
     };
     expect(published.firmware).not.toHaveProperty("package_type");
     expect(published.firmware).not.toHaveProperty("base_version");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("sends a presigned download url for minio-stored firmware in the notify payload", async () => {
+    const runningTask = task({
+      status: "running",
+      firmware: firmware({
+        file_url: "minio://ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
+      }),
+      records: [record()]
+    });
+    const db = {
+      otaTask: {
+        findFirst: vi.fn().mockResolvedValue(task({ status: "created" })),
+        update: vi.fn().mockResolvedValue(runningTask)
+      },
+      otaRecord: {
+        updateMany: vi.fn().mockResolvedValue({})
+      }
+    };
+    const publishBodies = collectPublishBodies();
+
+    vi.stubGlobal("fetch", publishBodies.fetchMock);
+
+    await startOtaTask(db, {
+      orgId: "org_default",
+      userId: "usr_admin",
+      taskId: "ota_demo"
+    });
+
+    const published = publishBodies.bodies[0] as {
+      task_id: string;
+      firmware: Record<string, unknown>;
+    };
+    expect(published.firmware.file_url).toBe(
+      "https://presigned.example.com/ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
+    );
 
     vi.unstubAllGlobals();
   });
