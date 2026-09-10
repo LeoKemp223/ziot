@@ -1299,11 +1299,18 @@ notify payload 示例（整包）：
 
 差分固件的 payload 附加以下字段（整包不下发，老设备可安全忽略）：`package_type: "delta"`、`base_version`（基线版本 V1）、`target_sha256`（重组出的目标固件校验值）、`patch_format: "bsdiff-heatshrink"`。此时 `file_url` 指向补丁文件、`sha256` 为补丁校验值；设备应自校验当前版本与 `base_version` 一致后下载补丁、校验 `sha256`、本地应用补丁并用 `target_sha256` 校验重组结果，不支持差分的设备请使用整包固件任务。
 
+启动前状态限制与重新启动语义：
+
+- 首次启动仅限 `created` / `scheduled` 状态的任务。
+- `finished` / `cancelled` 状态的任务可再次调用本接口**重新启动**：任务回到 `running`、写入新的 `started_at` 并清空 `finished_at`；所有未成功（`success` 以外，即失败/已取消）的设备记录重置为 `notified`（进度归零、清除 `error_message` 与 `finished_at`），平台仅向这些设备重新发布升级通知；已 `success` 的记录保持不变（重试未完成语义，如需全量重新下发请新建任务）。
+- 若所有设备记录均已 `success`，重新启动返回 `409001`（“所有设备均已升级成功，无需重新启动；如需重新下发请新建任务”）。
+- `running` 状态的任务无法再次启动（`409001 升级任务当前无法启动`）。
+
 ### `POST /api/v1/ota/tasks/{task_id}/cancel`
 
-停止/取消 OTA 任务。需要 `ota:execute` 权限。`finished` / `cancelled` 状态的任务无法再取消（`409001`）。
+停止/取消 OTA 任务。需要 `ota:execute` 权限。`finished` / `cancelled` 状态的任务无法再取消（`409001`；如需继续下发请走重新启动）。
 
-取消后：任务状态变为 `cancelled` 并写入 `finished_at`；所有未到终态（`created`/`scheduled`/`notified`/`downloading`/`installing`）的设备记录置为 `cancelled`（错误信息为“任务已取消”），已成功/失败的记录保持不变；已取消的设备记录后续收到设备上报会被拒绝（`409001 升级记录已取消`）。
+取消后：任务状态变为 `cancelled` 并写入 `finished_at`；所有未到终态（`created`/`scheduled`/`notified`/`downloading`/`installing`）的设备记录置为 `cancelled`（错误信息为“任务已取消”），已成功/失败的记录保持不变；已取消的设备记录后续收到设备上报会被拒绝（`409001 升级记录已取消`，重新启动任务后记录重置为 `notified` 即可继续上报）。
 
 ### `DELETE /api/v1/ota/tasks/{task_id}`
 

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw, Square, Trash2 } from "lucide-react";
+import { Play, RefreshCw, Square, Trash2 } from "lucide-react";
 import { PaginationBar, type ListPagination } from "@/components/ui/pagination-bar";
 import { RecordStatusBadge, TaskStatusBadge } from "@/components/ota/ota-status";
+import { usePermissions } from "@/components/console/use-permissions";
 
 type OtaTask = {
   id: string;
@@ -31,6 +32,8 @@ type ApiResponse<T> = {
 };
 
 export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
+  const { isLoaded, hasPermission } = usePermissions();
+  const canExecuteOta = isLoaded && hasPermission("ota:execute");
   const [task, setTask] = useState<OtaTask | null>(null);
   const [records, setRecords] = useState<OtaRecord[]>([]);
   const [pagination, setPagination] = useState<ListPagination>({
@@ -42,6 +45,7 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [stopping, setStopping] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -109,6 +113,31 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
     }
   }
 
+  async function startTask() {
+    setStarting(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const response = await fetch(`/api/v1/ota/tasks/${taskId}/start`, {
+        method: "POST"
+      });
+      const body = (await response.json()) as ApiResponse<OtaTask>;
+
+      if (!response.ok || body.code !== 0) {
+        setError(body.message);
+        return;
+      }
+
+      setMessage("任务已启动，未成功的设备已重新下发升级通知。");
+      await load();
+    } catch {
+      setError("启动任务失败，请稍后重试。");
+    } finally {
+      setStarting(false);
+    }
+  }
+
   async function deleteTask() {
     setDeleting(true);
     setError("");
@@ -157,25 +186,51 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
           </div>
           <div className="flex items-center gap-2">
             {!["finished", "cancelled"].includes(task.status) ? (
-              <button
-                className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 px-3 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={stopping}
-                onClick={() => void cancelTask()}
-                type="button"
-              >
-                <Square className="h-4 w-4" />
-                {stopping ? "取消中..." : "取消任务"}
-              </button>
+              <>
+                {canExecuteOta && ["created", "scheduled"].includes(task.status) ? (
+                  <button
+                    className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={starting}
+                    onClick={() => void startTask()}
+                    type="button"
+                  >
+                    <Play className="h-4 w-4" />
+                    {starting ? "启动中..." : "启动任务"}
+                  </button>
+                ) : null}
+                <button
+                  className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 px-3 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={stopping}
+                  onClick={() => void cancelTask()}
+                  type="button"
+                >
+                  <Square className="h-4 w-4" />
+                  {stopping ? "取消中..." : "取消任务"}
+                </button>
+              </>
             ) : (
-              <button
-                className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 px-3 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={deleting}
-                onClick={() => void deleteTask()}
-                type="button"
-              >
-                <Trash2 className="h-4 w-4" />
-                {deleting ? "删除中..." : "删除任务"}
-              </button>
+              <>
+                {canExecuteOta && (task.record_counts.success ?? 0) < (task.record_counts.total ?? 0) ? (
+                  <button
+                    className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={starting}
+                    onClick={() => void startTask()}
+                    type="button"
+                  >
+                    <Play className="h-4 w-4" />
+                    {starting ? "启动中..." : "重新启动"}
+                  </button>
+                ) : null}
+                <button
+                  className="inline-flex h-9 items-center gap-2 rounded-md border border-rose-200 px-3 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={deleting}
+                  onClick={() => void deleteTask()}
+                  type="button"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {deleting ? "删除中..." : "删除任务"}
+                </button>
+              </>
             )}
             <button
               className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"

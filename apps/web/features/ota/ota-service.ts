@@ -747,8 +747,16 @@ export async function startOtaTask(
 ) {
   const task = await findTaskForScope(db, input);
 
-  if (!["created", "scheduled"].includes(task.status)) {
+  // 终态任务允许重新启动(重试未成功设备);running 等中间态仍拒绝
+  const restart = ["finished", "cancelled"].includes(task.status);
+
+  if (!restart && !["created", "scheduled"].includes(task.status)) {
     throw otaError(409001, "升级任务当前无法启动");
+  }
+
+  // 全部设备已成功则无可重试对象,引导新建任务做全量下发
+  if (restart && !task.records.some((record: { status: string }) => record.status !== "success")) {
+    throw otaError(409001, "所有设备均已升级成功，无需重新启动；如需重新下发请新建任务");
   }
 
   const now = new Date();
@@ -756,7 +764,9 @@ export async function startOtaTask(
     where: { id: task.id },
     data: {
       status: "running",
-      started_at: now
+      started_at: now,
+      // 重启清掉上次结束时间;首次启动该字段本就为 null
+      finished_at: null
     },
     include: { product: true, firmware: true, records: { include: { device: true } } }
   });
@@ -764,19 +774,26 @@ export async function startOtaTask(
   await db.otaRecord.updateMany({
     where: {
       task_id: task.id,
-      status: { in: ["created", "scheduled"] }
+      // 重启仅重置未成功记录(失败/已取消);首次启动记录必为 created/scheduled
+      status: restart ? { notIn: ["success"] } : { in: ["created", "scheduled"] }
     },
     data: {
       status: "notified",
       progress: 0,
-      started_at: now
+      started_at: now,
+      error_message: null,
+      finished_at: null
     }
   });
 
   // 同一任务的所有设备收到相同 payload,预签名一次在循环外复用
   const notifyPayload = await otaNotifyPayload(started);
+  // 恰好向被重置的设备下发;started.records 为重置前状态,按与 updateMany 相同的范围过滤
+  const notifyRecords = started.records.filter((record: { status: string }) =>
+    restart ? record.status !== "success" : ["created", "scheduled"].includes(record.status)
+  );
 
-  for (const record of started.records) {
+  for (const record of notifyRecords) {
     const topic = `/ota/${started.product.product_key}/${record.device.device_key}/upgrade/notify`;
     await publishMqtt(topic, notifyPayload);
   }

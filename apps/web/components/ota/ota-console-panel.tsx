@@ -654,20 +654,33 @@ export function OtaConsolePanel() {
               ) : (
                 "-"
               )
-            ) : canWriteOta ? (
-              <button
-                className="inline-flex items-center gap-1 rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-700 hover:bg-rose-50"
-                key={task.id}
-                onClick={() => {
-                  setMessage("");
-                  setError("");
-                  setDeletingTask(task);
-                }}
-                type="button"
-              >
-                <Trash2 className="h-3 w-3" />
-                删除
-              </button>
+            ) : canExecuteOta || canWriteOta ? (
+              <div className="flex justify-end gap-2" key={task.id}>
+                {canExecuteOta && task.record_counts.success < task.record_counts.total ? (
+                  <button
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                    onClick={() => void startTask(task.id)}
+                    type="button"
+                  >
+                    <Play className="h-3 w-3" />
+                    重新启动
+                  </button>
+                ) : null}
+                {canWriteOta ? (
+                  <button
+                    className="inline-flex items-center gap-1 rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-700 hover:bg-rose-50"
+                    onClick={() => {
+                      setMessage("");
+                      setError("");
+                      setDeletingTask(task);
+                    }}
+                    type="button"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    删除
+                  </button>
+                ) : null}
+              </div>
             ) : (
               "-"
             )

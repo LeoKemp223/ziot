@@ -524,6 +524,24 @@ describe("ota service delta firmware", () => {
     return { bodies, fetchMock };
   }
 
+  // 只关心发给了谁:捕获 publish 的 topic
+  function collectPublishTopics() {
+    const topics: string[] = [];
+    const fetchMock = vi.fn(async (url: unknown, init: { body: string }) => {
+      if (String(url).endsWith("/api/v5/login")) {
+        return { ok: true, json: async () => ({ token: "token" }) };
+      }
+
+      const published = JSON.parse(init.body) as { topic: string };
+
+      topics.push(published.topic);
+
+      return { ok: true };
+    });
+
+    return { topics, fetchMock };
+  }
+
   function deltaDb(
     options: {
       count?: number;
@@ -640,7 +658,7 @@ describe("ota service delta firmware", () => {
         patch_format: "bsdiff-heatshrink",
         file_url: "https://example.com/v1.0.1-to-v1.0.2.patch"
       }),
-      records: [record()]
+      records: [record({ status: "created" })]
     });
     const db = {
       otaTask: {
@@ -682,7 +700,7 @@ describe("ota service delta firmware", () => {
   it("omits delta fields for full packages in the notify payload", async () => {
     const runningTask = task({
       status: "running",
-      records: [record()]
+      records: [record({ status: "created" })]
     });
     const db = {
       otaTask: {
@@ -719,7 +737,7 @@ describe("ota service delta firmware", () => {
       firmware: firmware({
         file_url: "minio://ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
       }),
-      records: [record()]
+      records: [record({ status: "created" })]
     });
     const db = {
       otaTask: {
@@ -747,6 +765,176 @@ describe("ota service delta firmware", () => {
     expect(published.firmware.file_url).toBe(
       "https://presigned.example.com/ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
     );
+
+    vi.unstubAllGlobals();
+  });
+
+  it("restarts a cancelled task by resetting non-success records and republishing only to them", async () => {
+    const cancelledTask = task({
+      status: "cancelled",
+      records: [
+        record({ status: "success", device: device({ device_key: "dk_a" }) }),
+        record({
+          status: "failed",
+          error_message: "download error",
+          device: device({ device_key: "dk_b" })
+        }),
+        record({ status: "cancelled", device: device({ device_key: "dk_c" }) })
+      ]
+    });
+    const db = {
+      otaTask: {
+        findFirst: vi.fn().mockResolvedValue(cancelledTask),
+        update: vi.fn().mockResolvedValue(task({ ...cancelledTask, status: "running" }))
+      },
+      otaRecord: {
+        updateMany: vi.fn().mockResolvedValue({})
+      }
+    };
+    const publishTopics = collectPublishTopics();
+
+    vi.stubGlobal("fetch", publishTopics.fetchMock);
+
+    await startOtaTask(db, {
+      orgId: "org_default",
+      userId: "usr_admin",
+      taskId: "ota_demo"
+    });
+
+    expect(db.otaTask.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          status: "running",
+          started_at: expect.any(Date),
+          finished_at: null
+        }
+      })
+    );
+    expect(db.otaRecord.updateMany).toHaveBeenCalledWith({
+      where: { task_id: "ota_demo", status: { notIn: ["success"] } },
+      data: {
+        status: "notified",
+        progress: 0,
+        started_at: expect.any(Date),
+        error_message: null,
+        finished_at: null
+      }
+    });
+    // 已成功的 dk_a 不重发,仅重置的 dk_b/dk_c 收到通知
+    expect(publishTopics.topics).toEqual([
+      "/ota/pk_demo/dk_b/upgrade/notify",
+      "/ota/pk_demo/dk_c/upgrade/notify"
+    ]);
+
+    vi.unstubAllGlobals();
+  });
+
+  it("rejects restarting a task whose records are all successful", async () => {
+    const db = {
+      otaTask: {
+        findFirst: vi.fn().mockResolvedValue(
+          task({
+            status: "finished",
+            records: [
+              record({ status: "success", device: device({ device_key: "dk_a" }) }),
+              record({ status: "success", device: device({ device_key: "dk_b" }) })
+            ]
+          })
+        ),
+        update: vi.fn()
+      },
+      otaRecord: {
+        updateMany: vi.fn()
+      }
+    };
+    const publishTopics = collectPublishTopics();
+
+    vi.stubGlobal("fetch", publishTopics.fetchMock);
+
+    await expect(
+      startOtaTask(db, {
+        orgId: "org_default",
+        userId: "usr_admin",
+        taskId: "ota_demo"
+      })
+    ).rejects.toMatchObject({
+      code: 409001,
+      message: "所有设备均已升级成功，无需重新启动；如需重新下发请新建任务"
+    });
+    expect(db.otaTask.update).not.toHaveBeenCalled();
+    expect(db.otaRecord.updateMany).not.toHaveBeenCalled();
+    expect(publishTopics.topics).toEqual([]);
+
+    vi.unstubAllGlobals();
+  });
+
+  it("still rejects starting a running task", async () => {
+    const db = {
+      otaTask: {
+        findFirst: vi.fn().mockResolvedValue(task({ status: "running" })),
+        update: vi.fn()
+      },
+      otaRecord: {
+        updateMany: vi.fn()
+      }
+    };
+
+    await expect(
+      startOtaTask(db, {
+        orgId: "org_default",
+        userId: "usr_admin",
+        taskId: "ota_demo"
+      })
+    ).rejects.toMatchObject({
+      code: 409001,
+      message: "升级任务当前无法启动"
+    });
+    expect(db.otaTask.update).not.toHaveBeenCalled();
+    expect(db.otaRecord.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("keeps initial start scoped to created and scheduled records only", async () => {
+    const createdTask = task({
+      status: "created",
+      records: [
+        record({ status: "created", device: device({ device_key: "dk_a" }) }),
+        record({ status: "scheduled", device: device({ device_key: "dk_b" }) }),
+        record({ status: "success", device: device({ device_key: "dk_c" }) })
+      ]
+    });
+    const db = {
+      otaTask: {
+        findFirst: vi.fn().mockResolvedValue(createdTask),
+        update: vi.fn().mockResolvedValue(task({ ...createdTask, status: "running" }))
+      },
+      otaRecord: {
+        updateMany: vi.fn().mockResolvedValue({})
+      }
+    };
+    const publishTopics = collectPublishTopics();
+
+    vi.stubGlobal("fetch", publishTopics.fetchMock);
+
+    await startOtaTask(db, {
+      orgId: "org_default",
+      userId: "usr_admin",
+      taskId: "ota_demo"
+    });
+
+    expect(db.otaRecord.updateMany).toHaveBeenCalledWith({
+      where: { task_id: "ota_demo", status: { in: ["created", "scheduled"] } },
+      data: {
+        status: "notified",
+        progress: 0,
+        started_at: expect.any(Date),
+        error_message: null,
+        finished_at: null
+      }
+    });
+    expect(publishTopics.topics).toEqual([
+      "/ota/pk_demo/dk_a/upgrade/notify",
+      "/ota/pk_demo/dk_b/upgrade/notify"
+    ]);
 
     vi.unstubAllGlobals();
   });
