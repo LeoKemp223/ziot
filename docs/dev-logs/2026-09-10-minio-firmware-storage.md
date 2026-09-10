@@ -55,3 +55,13 @@
 3. `download_url` 字段保留但语义变为永久直链（UI 无需改动）；DB 仍存 `minio://` 规范 URI——换域名时链接随环境变量自动更新，不迁移数据。
 4. `presignedPutObjectUrl`（upload-url 浏览器直传）保留——写入不能匿名。
 5. e2e 断言同步调整（直链不再带 `X-Amz-` 参数）。
+
+## 更新（同日）：下载直链支持 HTTP Range（断点续传）
+
+公共直链走 MinIO S3 GetObject，原生支持 Range。实测（17KB 固件）：
+
+- `Range: bytes=0-1023` / `Range: bytes=1024-` 均返回 **206 Partial Content**，分片拼回与完整文件逐字节一致
+- 响应头 `Accept-Ranges: bytes`、`Content-Range: bytes 0-99/<总大小>`——设备可据此计算下载进度
+- 生产链路 nginx `/ziot-firmwares/` 为纯透传代理（无缓存），Range 头与 206 响应原样转发，同样支持
+
+设备端断点续传：本地记录已写入偏移，续传时 `Range: bytes=<偏移>-`；下载完成用 notify 里的 `sha256` 校验全量后再写 flash。注意固件单文件限 5MB，Range 主要作为弱网重连恢复手段。
