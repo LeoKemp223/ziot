@@ -107,9 +107,13 @@ services:
       DATABASE_URL: postgresql://ziot:ziot@postgres:5432/ziot
       REDIS_URL: redis://redis:6379
       EMQX_API_URL: http://emqx:18083
-      MINIO_ENDPOINT: minio
+      # 预签名直链用浏览器可达的公共端点(compose 已发布 9000 端口),服务端读写走内网端点
+      MINIO_ENDPOINT: localhost
       MINIO_PORT: 9000
       MINIO_BUCKET: ziot-firmwares
+      MINIO_INTERNAL_ENDPOINT: minio
+      MINIO_INTERNAL_PORT: 9000
+      MINIO_INTERNAL_USE_SSL: "false"
       MINIO_ACCESS_KEY: ziot
       MINIO_SECRET_KEY: ziot-secret
       JWT_SECRET: local-development-secret-change-before-production
@@ -144,9 +148,12 @@ services:
       DATABASE_URL: postgresql://ziot:ziot@postgres:5432/ziot
       REDIS_URL: redis://redis:6379
       EMQX_API_URL: http://emqx:18083
-      MINIO_ENDPOINT: minio
+      MINIO_ENDPOINT: localhost
       MINIO_PORT: 9000
       MINIO_BUCKET: ziot-firmwares
+      MINIO_INTERNAL_ENDPOINT: minio
+      MINIO_INTERNAL_PORT: 9000
+      MINIO_INTERNAL_USE_SSL: "false"
       MINIO_ACCESS_KEY: ziot
       MINIO_SECRET_KEY: ziot-secret
       JWT_SECRET: local-development-secret-change-before-production

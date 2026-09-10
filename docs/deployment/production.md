@@ -92,7 +92,10 @@ docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml up -
 docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml ps   # 等 7 个 healthy
 ```
 
-MinIO 桶由 `minio-init` 一次性服务自动创建。
+MinIO 桶由 `minio-init` 一次性服务自动创建（应用侧 `ensureFirmwareBucket` 也会在首次使用时兜底建桶）。
+
+固件对象存储：控制台上传的整包/差分固件存 MinIO 私有桶（对象 key `firmwares/<product_key>/<uuid>-<文件名>`），DB `firmware.file_url` 存 `minio://` 规范 URI。服务端 putObject/removeObject 走内网端点（`MINIO_INTERNAL_*`，compose 内 `minio:9000`），避免容器经公网 IP 回环；下载走公共端点预签名直链（控制台约 1 小时、OTA notify 约 24 小时有效），经 nginx `/ziot-firmwares/` 反代（保留 Host 的 SigV4 兼容代理）。桶保持私有，无匿名读。
+> 踩坑：早期版本固件写在容器内 `public/uploads/firmwares/`，运行时写入的 `public/` 文件生产环境不保证被 Next.js 服务、容器重建即丢，导致下载 404——这是迁移到对象存储的根因。
 
 差分固件：镜像构建时已在 `/opt/detools` venv 装好 `detools`（bsdiff+heatshrink 补丁生成工具），并内置 `DETOOLS_BIN=/opt/detools/bin/detools`，无需额外配置。可验证：
 

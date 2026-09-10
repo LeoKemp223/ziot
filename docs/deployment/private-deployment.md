@@ -64,8 +64,13 @@ Set production secrets before exposing the service:
 | `EMQX_API_URL` | EMQX management API URL reachable by web |
 | `EMQX_DASHBOARD_USERNAME` | EMQX API user |
 | `EMQX_DASHBOARD_PASSWORD` | EMQX API password |
-| `MINIO_ENDPOINT` | MinIO/S3 endpoint |
-| `MINIO_BUCKET` | Firmware bucket |
+| `MINIO_ENDPOINT` | MinIO/S3 public endpoint for presigned URLs (browser/device reachable) |
+| `MINIO_PORT` | Public endpoint port (default: 9000, 443 when SSL) |
+| `MINIO_USE_SSL` | `"true"` to sign presigned URLs with https |
+| `MINIO_BUCKET` | Firmware bucket (private; created lazily on first use) |
+| `MINIO_INTERNAL_ENDPOINT` | In-network endpoint for server-side put/remove (defaults to `MINIO_ENDPOINT`) |
+| `MINIO_INTERNAL_PORT` | In-network endpoint port (defaults to `MINIO_PORT`) |
+| `MINIO_INTERNAL_USE_SSL` | `"true"` to use https for in-network ops |
 | `MINIO_ACCESS_KEY` | Object storage access key |
 | `MINIO_SECRET_KEY` | Object storage secret key |
 

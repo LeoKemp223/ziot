@@ -1181,6 +1181,7 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 查询固件列表。需要 `ota:read` 权限。支持 `page` / `page_size` 分页参数（默认每页 20），返回 `{ items, pagination }`；`product_id` 可选过滤。
 
 固件记录字段中，`base_version` / `target_sha256` / `patch_format` 为差分包专有（整包恒为 `null`）：`base_version` 非空即差分包，`sha256` 为补丁文件的校验值，`target_sha256` 为补丁重组出的目标固件（V2）校验值，`patch_format` 固定为 `bsdiff-heatshrink`。
+`file_url` 为固件的存储地址：平台上传的固件为 MinIO 规范 URI（`minio://<bucket>/<object_key>`，非直链）；外部 URL 方式创建的固件为登记时的原始 URL。响应附带 `download_url` 字段——MinIO 存储固件的短时效预签名下载直链（约 1 小时有效，过期后重新查询列表即可取新链接）；外部 URL 固件的 `download_url` 为 `null`。
 
 ### `POST /api/v1/firmwares`
 
@@ -1200,8 +1201,8 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 
 ### `POST /api/v1/firmwares/upload`
 
-直接上传固件文件并创建固件记录。需要 `ota:write` 权限。请求格式为 `multipart/form-data`，服务端会保存文件并自动计算 `file_size` 和 `sha256`，固件创建后即为 `released` 状态。
-限制：单文件不超过 5MB（超限返回 `400001`）；每个用户在每个组织最多 10 个固件（与差分包共用），超量返回 `409001`（删除固件可释放名额）。
+直接上传固件文件并创建固件记录。需要 `ota:write` 权限。请求格式为 `multipart/form-data`，服务端将文件写入 MinIO 私有桶（`firmwares/<product_key>/<uuid>-<文件名>`）并自动计算 `file_size` 和 `sha256`，固件创建后即为 `released` 状态；记录中的 `file_url` 为 `minio://` 规范 URI，响应附带短时效 `download_url` 预签名直链。
+限制：单文件不超过 5MB（超限返回 `400001`）；每个用户在每个组织最多 10 个固件（与差分包共用），超量返回 `409001`（删除固件可释放名额）。MinIO 不可用时上传直接报错（`500001`），不会回落到本地磁盘。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
@@ -1214,7 +1215,7 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 
 上传基线（V1）与目标（V2）固件文件，服务端调用 `detools` 生成 bsdiff+heatshrink 差分补丁并创建差分固件记录。需要 `ota:write` 权限。请求格式为 `multipart/form-data`。
 
-生成过程同步完成（补丁生成通常秒级，超时上限 120s）；V1/V2 原始文件仅写入系统临时目录，生成后即删除，只有补丁文件保留在 `public/uploads/firmwares/` 下。差分包与整包共用升级任务链路和 10 个/用户的固件配额。写入 `firmware.delta.create` 审计日志。
+生成过程同步完成（补丁生成通常秒级，超时上限 120s）；V1/V2 原始文件仅写入系统临时目录，生成后即删除，只有补丁文件保留在 MinIO 私有桶（`firmwares/<product_key>/<uuid>-delta-<V1>-<V2>.patch`，`file_url` 为 `minio://` 规范 URI）。差分包与整包共用升级任务链路和 10 个/用户的固件配额。写入 `firmware.delta.create` 审计日志。
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
@@ -1236,12 +1237,12 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 ### `DELETE /api/v1/firmwares/{firmware_id}`
 
 删除固件。需要 `ota:write` 权限。固件被任何升级任务引用时无法删除（`409001 固件已被升级任务引用，请先删除相关任务`）。
-删除会同时清理本地 `public/uploads/firmwares/` 下的固件文件（外部 URL 不受影响）并释放该用户的固件配额名额，操作不可恢复。写入 `firmware.delete` 审计日志。
+删除会同时清理存储中的固件对象（MinIO 存储的删对象；遗留本地 `public/uploads/firmwares/` 文件删本地；外部 URL 不受影响）并释放该用户的固件配额名额，操作不可恢复。写入 `firmware.delete` 审计日志。
 
 ### `POST /api/v1/firmwares/{firmware_id}/upload-url`
 
 生成固件上传 URL。需要 `ota:write` 权限。
-如果配置了 MinIO 环境变量，返回预签名 PUT URL；本地未配置 MinIO 时返回固件记录中的 `file_url` 作为占位上传地址。
+返回针对对象 `firmwares/<product_key>/<version>.bin` 的预签名 PUT URL（1 小时有效，走 nginx 的 `/ziot-firmwares/` 反代）；MinIO 未配置时返回 `500001`。
 
 ### `GET /api/v1/ota/tasks`
 
@@ -1287,12 +1288,14 @@ notify payload 示例（整包）：
   "task_id": "ota_xxx",
   "firmware": {
     "version": "v1.0.1",
-    "file_url": "https://www.ziot.asia/uploads/firmwares/pk_demo/xxx.bin",
+    "file_url": "https://www.ziot.asia/ziot-firmwares/firmwares/pk_demo/xxx.bin?X-Amz-Algorithm=...",
     "file_size": 1024,
     "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
   }
 }
 ```
+
+平台上传（MinIO 存储）固件的 `file_url` 为预签名 HTTPS 直链，有效期约 24 小时——设备收到通知后应及时下载，不要缓存该 URL 复用；外部 URL 方式登记的固件原样下发登记地址。
 
 差分固件的 payload 附加以下字段（整包不下发，老设备可安全忽略）：`package_type: "delta"`、`base_version`（基线版本 V1）、`target_sha256`（重组出的目标固件校验值）、`patch_format: "bsdiff-heatshrink"`。此时 `file_url` 指向补丁文件、`sha256` 为补丁校验值；设备应自校验当前版本与 `base_version` 一致后下载补丁、校验 `sha256`、本地应用补丁并用 `target_sha256` 校验重组结果，不支持差分的设备请使用整包固件任务。
 

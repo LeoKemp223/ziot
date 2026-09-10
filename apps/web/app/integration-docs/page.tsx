@@ -307,7 +307,7 @@ export default function IntegrationDocsPage() {
   "task_id": "ota_xxx",
   "firmware": {
     "version": "v1.0.1",
-    "file_url": "https://www.ziot.asia/uploads/firmwares/.../fw.bin",
+    "file_url": "https://www.ziot.asia/ziot-firmwares/firmwares/.../fw.bin?X-Amz-Algorithm=...",
     "file_size": 204800,
     "sha256": "0000...64位十六进制"
   }
@@ -318,7 +318,7 @@ export default function IntegrationDocsPage() {
   "task_id": "ota_xxx",
   "firmware": {
     "version": "v1.0.2",
-    "file_url": "https://www.ziot.asia/uploads/firmwares/.../v1.0.1-v1.0.2.patch",
+    "file_url": "https://www.ziot.asia/ziot-firmwares/firmwares/.../v1.0.1-v1.0.2.patch?X-Amz-Algorithm=...",
     "file_size": 10240,
     "sha256": "补丁文件的 sha256",
     "package_type": "delta",
@@ -328,7 +328,7 @@ export default function IntegrationDocsPage() {
   }
 }
 
-# ② 用 HTTP GET 下载 file_url（大文件可 Range 断点续传），
+# ② 用 HTTP GET 下载 file_url（预签名直链约 24 小时有效，收到通知后尽快下载；大文件可 Range 断点续传），
 #    校验 sha256 与 file_size 一致后写入固件分区
 #    差分包：先自校验当前版本 == base_version，下载补丁并校验 sha256，
 #    本地应用补丁（bsdiff+heatshrink），用 target_sha256 校验重组结果
@@ -343,7 +343,7 @@ export default function IntegrationDocsPage() {
 { "task_id": "ota_xxx", "code": 0, "progress": 100, "firmware_version": "v1.0.1" }`}
                   />
                   <p className="mt-2 text-sm text-slate-600">
-                    file_url 的来源由固件管理方式决定：控制台上传的固件由平台 Web 服务器直接提供（无鉴权 GET，单文件 ≤ 5MB）；也可在创建固件时登记任意外部 URL（自建文件服务器 / CDN）。设备只需认 HTTP GET + sha256 校验，下载不经 MQTT。差分固件由平台在控制台一键生成（上传 V1/V2 两个固件），设备端需内置 bsdiff+heatshrink 解补丁能力（可参考 detools 的 C patch 库，与 esp_delta_ota 补丁格式相同），不支持差分的设备请使用整包固件任务。
+                    file_url 的来源由固件管理方式决定：控制台上传的固件存于平台私有对象存储（MinIO），notify 里的 file_url 为预签名 HTTPS 直链（有效期约 24 小时，设备应及时下载、不要缓存链接复用，单文件 ≤ 5MB）；也可在创建固件时登记任意外部 URL（自建文件服务器 / CDN，原样下发）。设备只需认 HTTP GET + sha256 校验，下载不经 MQTT。差分固件由平台在控制台一键生成（上传 V1/V2 两个固件），设备端需内置 bsdiff+heatshrink 解补丁能力（可参考 detools 的 C patch 库，与 esp_delta_ota 补丁格式相同），不支持差分的设备请使用整包固件任务。
                   </p>
                 </DocBlock>
                 <DocBlock title="8. Demo 验证">
