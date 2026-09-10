@@ -31,6 +31,8 @@ type Firmware = {
   target_sha256?: string | null;
   patch_format?: string | null;
   file_url: string;
+  // 对象存储固件的短时效预签名直链;遗留/外部固件为 null,回退 file_url
+  download_url?: string | null;
   file_size: number;
   sha256: string;
   status: string;
@@ -533,11 +535,11 @@ export function OtaConsolePanel() {
             <dd>
               <a
                 className="break-all font-mono text-xs text-blue-700 hover:underline"
-                href={lastUploadedFirmware.file_url}
+                href={lastUploadedFirmware.download_url || lastUploadedFirmware.file_url}
                 rel="noreferrer"
                 target="_blank"
               >
-                {lastUploadedFirmware.file_url}
+                {lastUploadedFirmware.download_url || lastUploadedFirmware.file_url}
               </a>
             </dd>
           </dl>
@@ -576,13 +578,13 @@ export function OtaConsolePanel() {
             </span>,
             <a
               className="block max-w-[220px] truncate font-mono text-xs text-blue-600 hover:underline"
-              href={firmware.file_url}
+              href={firmware.download_url || firmware.file_url}
               key="url"
               rel="noreferrer"
               target="_blank"
-              title={firmware.file_url}
+              title={firmware.download_url || firmware.file_url}
             >
-              {firmware.file_url}
+              {firmware.download_url || firmware.file_url}
             </a>,
             canWriteOta ? (
               <button

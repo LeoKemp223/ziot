@@ -1,20 +1,22 @@
-import { createHash, randomUUID } from "node:crypto";
-import { mkdir, rm, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@ziot/db";
 import { apiErrorResponse } from "@/lib/api-errors";
 import { apiOk } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/identity/session";
 import { createRequestId } from "@/lib/request-id";
-import { createFirmware } from "@/features/ota/ota-service";
+import { createFirmware, findProductForScope } from "@/features/ota/ota-service";
+import {
+  firmwareObjectKey,
+  minioStorageUrl,
+  putFirmwareObject,
+  removeFirmwareObject
+} from "@/features/ota/firmware-storage";
 import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
-import { requestOrigin } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 
 const maxUploadBytes = 5 * 1024 * 1024;
-const uploadRoot = path.join(process.cwd(), "public", "uploads", "firmwares");
 
 function canAccessAllResources(permissions: string[]) {
   return permissions.includes("user:read");
@@ -30,24 +32,9 @@ function badRequest(message: string): never {
   throw Object.assign(new Error(message), { code: 400001 });
 }
 
-function safePathSegment(value: string, fallback: string) {
-  const sanitized = value
-    .trim()
-    .replace(/[^a-zA-Z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
-
-  return sanitized || fallback;
-}
-
-function safeFileName(value: string) {
-  const baseName = path.basename(value || "firmware.bin");
-  return safePathSegment(baseName, "firmware.bin");
-}
-
 export async function POST(request: NextRequest) {
   const requestId = createRequestId();
-  let savedPath: string | null = null;
+  let uploadedKey: string | null = null;
 
   try {
     const user = await getCurrentUser(request);
@@ -73,14 +60,16 @@ export async function POST(request: NextRequest) {
 
     const bytes = Buffer.from(await fileValue.arrayBuffer());
     const sha256 = createHash("sha256").update(bytes).digest("hex");
-    const productDir = safePathSegment(productId, "unknown-product");
-    const storedName = `${randomUUID()}-${safeFileName(fileValue.name)}`;
-    const relativePath = `/uploads/firmwares/${productDir}/${storedName}`;
-    const targetDir = path.join(uploadRoot, productDir);
-    savedPath = path.join(targetDir, storedName);
-
-    await mkdir(targetDir, { recursive: true });
-    await writeFile(savedPath, bytes, { flag: "wx" });
+    // 对象存私有桶(minio://),DB 存规范 URI,下载走预签名直链
+    const product = await findProductForScope(prisma, {
+      orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
+      productId
+    });
+    const objectKey = firmwareObjectKey(product.product_key, fileValue.name);
+    uploadedKey = objectKey;
+    await putFirmwareObject(objectKey, bytes, fileValue.type || "application/octet-stream");
 
     const firmware = await createFirmware(prisma, {
       orgId: user.current_org_id,
@@ -89,7 +78,7 @@ export async function POST(request: NextRequest) {
       canAccessAll: canAccessAllResources(user.permissions),
       productId,
       version,
-      fileUrl: `${requestOrigin(request)}${relativePath}`,
+      fileUrl: minioStorageUrl(objectKey),
       fileSize: fileValue.size,
       sha256,
       ...(typeof releaseNoteValue === "string" ? { releaseNote: releaseNoteValue } : {})
@@ -109,12 +98,13 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    savedPath = null;
+    uploadedKey = null;
 
     return NextResponse.json(apiOk(firmware, requestId), { status: 201 });
   } catch (error) {
-    if (savedPath) {
-      await rm(savedPath, { force: true }).catch(() => undefined);
+    // 登记失败(配额/版本重复等)时回收已上传对象,避免孤儿文件
+    if (uploadedKey) {
+      await removeFirmwareObject(uploadedKey).catch(() => undefined);
     }
 
     return apiErrorResponse(error, requestId);

@@ -1,5 +1,5 @@
-import { createHash, randomUUID } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
@@ -8,15 +8,19 @@ import { apiErrorResponse } from "@/lib/api-errors";
 import { apiOk } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/identity/session";
 import { createRequestId } from "@/lib/request-id";
-import { createDeltaFirmware } from "@/features/ota/ota-service";
+import { createDeltaFirmware, findProductForScope } from "@/features/ota/ota-service";
+import {
+  deltaPatchObjectKey,
+  minioStorageUrl,
+  putFirmwareObject,
+  removeFirmwareObject
+} from "@/features/ota/firmware-storage";
 import { runPatchTool } from "@/features/ota/firmware-patch";
 import { safeWriteAuditLog } from "@/features/logs/audit/audit-service";
-import { requestOrigin } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 
 const maxUploadBytes = 5 * 1024 * 1024;
-const uploadRoot = path.join(process.cwd(), "public", "uploads", "firmwares");
 
 function canAccessAllResources(permissions: string[]) {
   return permissions.includes("user:read");
@@ -30,16 +34,6 @@ function requirePermission(permissions: string[], permission: string) {
 
 function badRequest(message: string): never {
   throw Object.assign(new Error(message), { code: 400001 });
-}
-
-function safePathSegment(value: string, fallback: string) {
-  const sanitized = value
-    .trim()
-    .replace(/[^a-zA-Z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
-
-  return sanitized || fallback;
 }
 
 function requireFirmwareFile(form: FormData, field: string, label: string) {
@@ -63,8 +57,8 @@ function requireFirmwareFile(form: FormData, field: string, label: string) {
 
 export async function POST(request: NextRequest) {
   const requestId = createRequestId();
-  // 补丁成品路径:落库失败时清理;临时目录:无论如何都清理
-  let savedPath: string | null = null;
+  // 已上传对象 key:落库失败时回收;临时目录:无论如何都清理
+  let uploadedKey: string | null = null;
   let tmpDir: string | null = null;
 
   try {
@@ -107,14 +101,16 @@ export async function POST(request: NextRequest) {
     }
 
     const patchSha256 = createHash("sha256").update(patchBytes).digest("hex");
-    const productDir = safePathSegment(productId, "unknown-product");
-    const storedName = `${randomUUID()}-delta-${safePathSegment(baseVersion, "base")}-${safePathSegment(version, "target")}.patch`;
-    const relativePath = `/uploads/firmwares/${productDir}/${storedName}`;
-    const targetDir = path.join(uploadRoot, productDir);
-    savedPath = path.join(targetDir, storedName);
-
-    await mkdir(targetDir, { recursive: true });
-    await writeFile(savedPath, patchBytes, { flag: "wx" });
+    // 补丁存对象存储私有桶,DB 存 minio:// 规范 URI,下载走预签名直链
+    const product = await findProductForScope(prisma, {
+      orgId: user.current_org_id,
+      userId: user.id,
+      canAccessAll: canAccessAllResources(user.permissions),
+      productId
+    });
+    const objectKey = deltaPatchObjectKey(product.product_key, baseVersion, version);
+    uploadedKey = objectKey;
+    await putFirmwareObject(objectKey, patchBytes, "application/octet-stream");
 
     const firmware = await createDeltaFirmware(prisma, {
       orgId: user.current_org_id,
@@ -124,7 +120,7 @@ export async function POST(request: NextRequest) {
       productId,
       version,
       baseVersion,
-      fileUrl: `${requestOrigin(request)}${relativePath}`,
+      fileUrl: minioStorageUrl(objectKey),
       fileSize: patchBytes.length,
       sha256: patchSha256,
       targetSha256,
@@ -150,12 +146,13 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    savedPath = null;
+    uploadedKey = null;
 
     return NextResponse.json(apiOk(firmware, requestId), { status: 201 });
   } catch (error) {
-    if (savedPath) {
-      await rm(savedPath, { force: true }).catch(() => undefined);
+    // 登记失败(配额/版本重复等)时回收已上传补丁对象
+    if (uploadedKey) {
+      await removeFirmwareObject(uploadedKey).catch(() => undefined);
     }
 
     return apiErrorResponse(error, requestId);

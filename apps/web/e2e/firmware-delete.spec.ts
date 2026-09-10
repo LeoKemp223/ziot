@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { minioAvailable } from "./minio-available";
+
+test.skip(!minioAvailable, "MinIO 未启动，跳过固件 e2e");
 
 async function login(page: import("@playwright/test").Page) {
   await page.goto("/login");
@@ -90,9 +93,17 @@ test("firmware delete removes row from list", async ({ page }) => {
   await page.waitForSelector('h2:has-text("创建 OTA 任务")', { timeout: 10000 });
   await page.click('button[aria-label="关闭"]');
 
-  // 找到该固件所在行的删除按钮
+  // 找到该固件所在行
   const row = page.locator("tr", { hasText: version });
   await expect(row).toBeVisible();
+
+  // 行内下载地址为 MinIO 预签名直链,直接 GET 应能取回上传内容
+  const downloadUrl = await row.locator('a[title^="http"]').getAttribute("href");
+  expect(downloadUrl).toMatch(/^http:\/\/localhost:9000\/ziot-firmwares\/firmwares\//);
+  const downloaded = await fetch(downloadUrl!);
+  expect(downloaded.status).toBe(200);
+  expect(Buffer.from(await downloaded.arrayBuffer())).toEqual(Buffer.alloc(1024, 7));
+
   await row.locator('button:has-text("删除")').click();
 
   // 确认弹窗
@@ -104,4 +115,8 @@ test("firmware delete removes row from list", async ({ page }) => {
   await expect(page.locator("tr", { hasText: version })).toHaveCount(0, {
     timeout: 5000
   });
+
+  // 删除后对象随之清理,预签名直链不再可下载
+  const afterDelete = await fetch(downloadUrl!);
+  expect(afterDelete.status).toBe(404);
 });

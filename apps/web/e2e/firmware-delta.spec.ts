@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
+import { minioAvailable } from "./minio-available";
 
 async function login(page: import("@playwright/test").Page) {
   await page.goto("/login");
@@ -14,6 +15,7 @@ const detoolsAvailable =
   spawnSync(process.env.DETOOLS_BIN ?? "detools", ["--help"]).error === undefined;
 
 test.skip(!detoolsAvailable, "detools 未安装，跳过差分固件 e2e");
+test.skip(!minioAvailable, "MinIO 未启动，跳过差分固件 e2e");
 
 test("delta firmware can be created from two binaries", async ({ page }) => {
   const stamp = Date.now() % 100000;
