@@ -19,7 +19,17 @@ OTA 任务"进行中"不占任何进程（启动是同步请求，收敛靠设�
 | `apps/worker/src/index.ts` | 挂载/清理 timer |
 | `docs/api/admin-api.md` | cancel 节后补"升级超时兜底"说明 |
 
+## 踩坑：psql 直改时间与 prisma 查询对不上
+
+本地 PG 时区是 Asia/Shanghai，而 `@prisma/adapter-pg` 读写 timestamptz 用的是**裸 UTC 墙钟字符串**（写入的真实时刻比 +08 墙钟早 8h 落库，读出再 +8h 还原）——纯 prisma 链路完全自洽、UI 显示也正确。但用 psql 直写"真实时刻"（如 `updated_at = now() - interval '25 hours'`）后，prisma 的 where 时间比较会差 8 小时对不上，扫描一度返回 0。让 psql 写出 prisma 语义的时间要：
+
+```sql
+update ota_records set updated_at = (now() - interval '25 hours') at time zone 'utc' ...
+```
+
+生产 Docker 的 PG 若配 UTC 则无此现象。教训：**调试时给 prisma 查询造时间数据，要么走 prisma 自己写，要么 psql 里显式 `at time zone 'utc'`**。
+
 ## 测试
 
 - 单测 3 例：过期记录翻 failed + 受影响任务收敛（断言 where 限定与 records:none 条件）、无过期记录零写入、`OTA_RECORD_TIMEOUT_HOURS` 阈值生效。
-- 真实栈验证：造僵尸记录（SQL 把记录 updated_at 拨回 25h 前）→ 手动触发扫描 → 记录变 failed(升级超时)、任务自动 finished。
+- 真实栈验证：造僵尸记录（按 prisma 语义回拨 updated_at 25h）→ 手动触发扫描 → 记录变 failed(升级超时)、任务自动 finished；重写模块后复测一次同样通过。
