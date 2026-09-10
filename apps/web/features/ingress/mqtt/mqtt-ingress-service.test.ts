@@ -276,4 +276,59 @@ describe("mqtt ingress service", () => {
       })
     });
   });
+
+  it("keeps heartbeat-only updates for already-online devices", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device({ online_status: "online" })),
+        update: vi.fn().mockResolvedValue({})
+      },
+      deviceShadow: {
+        findUnique: vi.fn().mockResolvedValue(null)
+      },
+      deviceLog: {
+        create: vi.fn().mockResolvedValue({})
+      }
+    };
+
+    await recordMqttReport(db, {
+      topic: "/sys/pk_demo/dk_demo/thing/property/post",
+      payload: { id: "report_1", params: { temperature: 23.6 } }
+    });
+
+    expect(db.device.update).toHaveBeenCalledWith({
+      where: { id: "dev_demo" },
+      data: { last_heartbeat_at: expect.any(Date) }
+    });
+  });
+
+  it("flips an offline device back to online on its report", async () => {
+    const db = {
+      device: {
+        findFirst: vi.fn().mockResolvedValue(device({ online_status: "offline" })),
+        update: vi.fn().mockResolvedValue({})
+      },
+      deviceShadow: {
+        findUnique: vi.fn().mockResolvedValue(null)
+      },
+      deviceLog: {
+        create: vi.fn().mockResolvedValue({})
+      }
+    };
+
+    const result = await recordMqttReport(db, {
+      topic: "/sys/pk_demo/dk_demo/thing/property/post",
+      payload: { id: "report_1", params: { temperature: 23.6 } }
+    });
+
+    expect(result).toEqual({ result: "allow" });
+    expect(db.device.update).toHaveBeenCalledWith({
+      where: { id: "dev_demo" },
+      data: {
+        online_status: "online",
+        last_online_at: expect.any(Date),
+        last_heartbeat_at: expect.any(Date)
+      }
+    });
+  });
 });

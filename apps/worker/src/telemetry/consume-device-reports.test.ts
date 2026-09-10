@@ -1,9 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { processTelemetryReport } from "./consume-device-reports";
+import { publishDeviceEvent } from "./publish-device-event";
+
+vi.mock("./publish-device-event", () => ({
+  publishDeviceEvent: vi.fn(async () => undefined)
+}));
 
 const now = "2026-04-30T01:00:00.000Z";
 
-function device() {
+function device(overrides: Record<string, unknown> = {}) {
   return {
     id: "dev_demo",
     org_id: "org_default",
@@ -11,7 +16,8 @@ function device() {
     device_key: "dk_demo",
     product: {
       product_key: "pk_demo"
-    }
+    },
+    ...overrides
   };
 }
 
@@ -66,6 +72,45 @@ describe("telemetry report worker", () => {
         type: "property",
         level: "info"
       })
+    });
+  });
+
+  it("flips an offline device back to online and publishes the status event", async () => {
+    const db = {
+      device: {
+        findFirst: vi
+          .fn()
+          .mockResolvedValue(device({ online_status: "offline" })),
+        update: vi.fn().mockResolvedValue({})
+      },
+      deviceShadow: {
+        findUnique: vi.fn().mockResolvedValue(null)
+      },
+      deviceLog: {
+        create: vi.fn().mockResolvedValue({})
+      }
+    };
+
+    const result = await processTelemetryReport(db, {
+      topic: "/sys/pk_demo/dk_demo/thing/property/post",
+      payload: { id: "report_1", params: { temperature: 24 } },
+      received_at: now
+    });
+
+    expect(result).toEqual({ result: "allow" });
+    expect(db.device.update).toHaveBeenCalledWith({
+      where: { id: "dev_demo" },
+      data: {
+        online_status: "online",
+        last_online_at: new Date(now),
+        last_heartbeat_at: new Date(now)
+      }
+    });
+    expect(publishDeviceEvent).toHaveBeenCalledWith({
+      type: "device.status.changed",
+      device_id: "dev_demo",
+      online_status: "online",
+      occurred_at: now
     });
   });
 

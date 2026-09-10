@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { mergeReportedShadow, parseTopic } from "@ziot/domain";
+import { publishDeviceEvent } from "./publish-device-event";
 
 // 动态 mock 友好的 db 视图,与 apps/web 各 service 的 Db 类型保持同一写法
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -126,10 +127,25 @@ export async function processTelemetryReport(
     }
   }
 
+  // 上报即在线:能收到 publish 必然已连接,自愈丢失的 connected 事件(web 重启期间设备上线等)
+  const wasOffline = device.online_status !== "online";
+
   await db.device.update({
     where: { id: device.id },
-    data: { last_heartbeat_at: now }
+    data: {
+      ...(wasOffline ? { online_status: "online", last_online_at: now } : {}),
+      last_heartbeat_at: now
+    }
   });
+
+  if (wasOffline) {
+    await publishDeviceEvent({
+      type: "device.status.changed",
+      device_id: device.id,
+      online_status: "online",
+      occurred_at: now.toISOString()
+    });
+  }
 
   await db.deviceLog.create({
     data: {

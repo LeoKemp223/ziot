@@ -7,10 +7,6 @@ import {
   signHmacSha256,
   type MqttUsername
 } from "@ziot/domain";
-import {
-  markDeviceOfflineInCache,
-  markDeviceOnlineInCache
-} from "@/lib/devices/online-status";
 import { publishDeviceEvent } from "@/lib/events/device-events";
 
 type Db = { [key: string]: any };
@@ -318,12 +314,6 @@ export async function recordMqttWebhookEvent(
     });
   }
 
-  if (isConnected) {
-    await markDeviceOnlineInCache(device.id);
-  } else {
-    await markDeviceOfflineInCache(device.id);
-  }
-
   await db.deviceLog.create({
     data: {
       id: id("dlg"),
@@ -421,10 +411,25 @@ export async function recordMqttReport(
     }
   }
 
+  // 上报即在线:能收到 publish 必然已连接,顺带自愈丢失的 connected 事件(web 重启期间设备上线等)
+  const wasOffline = device.online_status !== "online";
+
   await db.device.update({
     where: { id: device.id },
-    data: { last_heartbeat_at: now }
+    data: {
+      ...(wasOffline ? { online_status: "online", last_online_at: now } : {}),
+      last_heartbeat_at: now
+    }
   });
+
+  if (wasOffline) {
+    await publishDeviceEvent({
+      type: "device.status.changed",
+      device_id: device.id,
+      online_status: "online",
+      occurred_at: now.toISOString()
+    });
+  }
 
   await db.deviceLog.create({
     data: {

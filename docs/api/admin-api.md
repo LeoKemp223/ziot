@@ -1174,6 +1174,8 @@ EMQX WebHook 回调。当前处理连接生命周期、命令回执和设备主�
 - `/sys/{product_key}/{device_key}/thing/event/post`: 写入事件上报日志。
 - `/sys/{product_key}/{device_key}/thing/log/post`: 写入设备日志上报。
 
+在线语义：`online_status` 以 **MQTT 会话为准**——连接建立即在线、连接断开（含 keepalive 超时触发的 disconnected 事件）即离线，不因"一段时间没有上报"自动转离线。三类上报（property/event/log）到达时会刷新 `last_heartbeat_at`（仅作为"最后数据时间"展示），若设备当时被标记为 `offline`（如 web 重启期间丢失了 connected 事件），上报会将其自愈翻回 `online` 并推送 `device.status.changed` 事件。
+
 ## 9. OTA API
 
 ### `GET /api/v1/firmwares`

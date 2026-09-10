@@ -1,7 +1,6 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { buildPagination } from "@/lib/pagination";
-import { compensateOnlineStatuses } from "./online-status";
 
 type Db = { [key: string]: any };
 type AccessScope = {
@@ -118,7 +117,6 @@ export async function listDevices(
     pageSize?: number;
   }
 ) {
-  await compensateOnlineStatuses(db, input.orgId);
   const page = clampPage(input.page);
   const pageSize = clampPageSize(input.pageSize);
   const where = {
@@ -158,7 +156,6 @@ export async function getDevice(
     deviceId: string;
   }
 ) {
-  await compensateOnlineStatuses(db, input.orgId);
   const device = await db.device.findFirst({
     where: {
       id: input.deviceId,
