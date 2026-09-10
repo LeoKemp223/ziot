@@ -77,6 +77,8 @@ describe("public download url", () => {
     setEnv({
       MINIO_ENDPOINT: "localhost",
       MINIO_PORT: "9000",
+      MINIO_PUBLIC_SCHEME: undefined,
+      MINIO_PUBLIC_PORT: undefined,
       MINIO_BUCKET: "ziot-firmwares",
       MINIO_ACCESS_KEY: "ziot",
       MINIO_SECRET_KEY: "ziot-secret"
@@ -92,6 +94,8 @@ describe("public download url", () => {
       MINIO_ENDPOINT: "www.ziot.asia",
       MINIO_PORT: "443",
       MINIO_USE_SSL: "true",
+      MINIO_PUBLIC_SCHEME: undefined,
+      MINIO_PUBLIC_PORT: undefined,
       MINIO_BUCKET: "ziot-firmwares",
       MINIO_ACCESS_KEY: "ziot",
       MINIO_SECRET_KEY: "ziot-secret"
@@ -99,6 +103,38 @@ describe("public download url", () => {
 
     expect(firmwarePublicUrl("minio://ziot-firmwares/firmwares/pk_demo/abc-fw.bin")).toBe(
       "https://www.ziot.asia/ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
+    );
+  });
+
+  it("lets MINIO_PUBLIC_SCHEME downgrade links to http while the endpoint stays https", () => {
+    setEnv({
+      MINIO_ENDPOINT: "www.ziot.asia",
+      MINIO_PORT: "443",
+      MINIO_USE_SSL: "true",
+      MINIO_PUBLIC_SCHEME: "http",
+      MINIO_BUCKET: "ziot-firmwares",
+      MINIO_ACCESS_KEY: "ziot",
+      MINIO_SECRET_KEY: "ziot-secret"
+    });
+
+    expect(firmwarePublicUrl("minio://ziot-firmwares/firmwares/pk_demo/abc-fw.bin")).toBe(
+      "http://www.ziot.asia/ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
+    );
+  });
+
+  it("honors an explicit MINIO_PUBLIC_PORT", () => {
+    setEnv({
+      MINIO_ENDPOINT: "www.ziot.asia",
+      MINIO_USE_SSL: "true",
+      MINIO_PUBLIC_SCHEME: "http",
+      MINIO_PUBLIC_PORT: "8080",
+      MINIO_BUCKET: "ziot-firmwares",
+      MINIO_ACCESS_KEY: "ziot",
+      MINIO_SECRET_KEY: "ziot-secret"
+    });
+
+    expect(firmwarePublicUrl("minio://ziot-firmwares/firmwares/pk_demo/abc-fw.bin")).toBe(
+      "http://www.ziot.asia:8080/ziot-firmwares/firmwares/pk_demo/abc-fw.bin"
     );
   });
 });

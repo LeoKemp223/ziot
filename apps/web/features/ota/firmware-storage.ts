@@ -187,7 +187,10 @@ export function parseMinioStorageUrl(
 }
 
 // 永久公共直链(匿名只读桶,path-style):桶在 URL 首段,经 nginx /ziot-firmwares/ 反代或本地直连均可。
-// 非常量 minio:// 的遗留/外部 URL 原样透传(null)
+// 非常量 minio:// 的遗留/外部 URL 原样透传(null)。
+// MINIO_PUBLIC_SCHEME/PORT 只覆盖下载直链(设备 OTA 可走明文 http,nginx 80 端口放行 /ziot-firmwares/ 不跳转);
+// 显式覆盖 scheme 时端口回落该 scheme 的默认端口,避免沿用 443 拼出 http://host:443。
+// 浏览器直传的 presigned PUT 仍按 MINIO_USE_SSL 生成 https,https 页面下不触发 mixed-content。
 export function firmwarePublicUrl(fileUrl: string): string | null {
   const stored = parseMinioStorageUrl(fileUrl);
 
@@ -195,9 +198,13 @@ export function firmwarePublicUrl(fileUrl: string): string | null {
     return null;
   }
 
-  const { endPoint, port, useSSL } = endpointConfig("MINIO");
-  const scheme = useSSL ? "https" : "http";
-  const defaultPort = useSSL ? 443 : 80;
+  const { endPoint, port: endpointPort, useSSL } = endpointConfig("MINIO");
+  const schemeOverride = process.env.MINIO_PUBLIC_SCHEME;
+  const scheme = schemeOverride ?? (useSSL ? "https" : "http");
+  const defaultPort = scheme === "https" ? 443 : 80;
+  const port = Number(
+    process.env.MINIO_PUBLIC_PORT ?? (schemeOverride ? defaultPort : endpointPort)
+  );
   const host = port === defaultPort ? endPoint : `${endPoint}:${port}`;
 
   return `${scheme}://${host}/${stored.bucket}/${stored.objectKey}`;

@@ -107,6 +107,8 @@ services:
       MINIO_ENDPOINT: "${PUBLIC_DOMAIN}"
       MINIO_PORT: "443"
       MINIO_USE_SSL: "true"
+      # 设备 OTA 下载直链走明文 http（nginx 80 端口放行 /ziot-firmwares/ 不 301）；不影响上面的 presigned 直传
+      MINIO_PUBLIC_SCHEME: "http"
       MINIO_BUCKET: "${MINIO_BUCKET}"
       # 服务端 putObject/removeObject 走 compose 内网，避免容器经公网 IP 回环（hairpin NAT）
       MINIO_INTERNAL_ENDPOINT: minio

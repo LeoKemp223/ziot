@@ -21,7 +21,7 @@
 | --- | --- |
 | `Dockerfile.prod` | 生产镜像：多阶段构建，web/worker/迁移共用一个镜像 |
 | `docker-compose.prod.yml` | 生产编排（服务、健康检查、资源限额、restart: unless-stopped） |
-| `prod/nginx.conf` | HTTPS 反代：`/` → web，`/ziot-firmwares/` → MinIO（presigned 直传） |
+| `prod/nginx.conf` | HTTPS 反代：`/` → web，`/ziot-firmwares/` → MinIO（443 presigned 直传；80 端口同路径放行明文 HTTP 供设备 OTA 下载） |
 | `prod/emqx.conf` | EMQX 完整配置：HTTP 认证/ACL + 1883 + 8883 SSL（整文件替换 emqx.conf） |
 | `prod/redis.conf` | `maxmemory-policy noeviction`（BullMQ 必需，lightweight 版是 allkeys-lru 会丢任务） |
 | `prod.env` | 全部生产凭证（随机生成，已 gitignore） |
@@ -94,7 +94,7 @@ docker compose --env-file deploy/prod.env -f deploy/docker-compose.prod.yml ps  
 
 MinIO 桶由 `minio-init` 一次性服务自动创建（应用侧 `ensureFirmwareBucket` 也会在首次使用时兜底建桶）。
 
-固件对象存储：控制台上传的整包/差分固件存 MinIO 桶（对象 key `firmwares/<product_key>/<uuid>-<文件名>`），DB `firmware.file_url` 存 `minio://` 规范 URI。服务端 putObject/removeObject 走内网端点（`MINIO_INTERNAL_*`，compose 内 `minio:9000`），避免容器经公网 IP 回环；下载走公共端点**永久直链**（桶为匿名只读，无签名无过期），经 nginx `/ziot-firmwares/` 反代。桶策略由 minio-init（`mc anonymous set download`）与代码内 `ensureFirmwareBucket` 双重幂等保证——**只有 GetObject 匿名可读，对象 key 带 UUID 前缀不可枚举，写入仍需 access key**（按产品决策接受"知道链接即可下载"的权衡）。
+固件对象存储：控制台上传的整包/差分固件存 MinIO 桶（对象 key `firmwares/<product_key>/<uuid>-<文件名>`），DB `firmware.file_url` 存 `minio://` 规范 URI。服务端 putObject/removeObject 走内网端点（`MINIO_INTERNAL_*`，compose 内 `minio:9000`），避免容器经公网 IP 回环；下载走公共端点**永久直链**（桶为匿名只读，无签名无过期），经 nginx `/ziot-firmwares/` 反代。compose 设 `MINIO_PUBLIC_SCHEME=http`：下发给设备的直链是明文 `http://<域名>/ziot-firmwares/...`（nginx 80 端口对 `/ziot-firmwares/` 不做 301，直接反代 MinIO），设备 OTA 无需 TLS；浏览器直传的 presigned PUT 仍走 https 不受影响。桶策略由 minio-init（`mc anonymous set download`）与代码内 `ensureFirmwareBucket` 双重幂等保证——**只有 GetObject 匿名可读，对象 key 带 UUID 前缀不可枚举，写入仍需 access key**（按产品决策接受"知道链接即可下载"的权衡）。
 > 踩坑：早期版本固件写在容器内 `public/uploads/firmwares/`，运行时写入的 `public/` 文件生产环境不保证被 Next.js 服务、容器重建即丢，导致下载 404——这是迁移到对象存储的根因。
 
 差分固件：镜像构建时已在 `/opt/detools` venv 装好 `detools`（bsdiff+heatshrink 补丁生成工具），并内置 `DETOOLS_BIN=/opt/detools/bin/detools`，无需额外配置。可验证：
