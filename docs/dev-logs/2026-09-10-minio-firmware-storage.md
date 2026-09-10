@@ -65,3 +65,24 @@
 - 生产链路 nginx `/ziot-firmwares/` 为纯透传代理（无缓存），Range 头与 206 响应原样转发，同样支持
 
 设备端断点续传：本地记录已写入偏移，续传时 `Range: bytes=<偏移>-`；下载完成用 notify 里的 `sha256` 校验全量后再写 flash。注意固件单文件限 5MB，Range 主要作为弱网重连恢复手段。
+
+## 更新（同日）：设备 OTA 下载直链走明文 HTTP
+
+需求：设备端不经 TLS 直接 http 下载固件（省 TLS 握手/内存，固件本身有 sha256 校验）。两处配合：
+
+1. **nginx**（`deploy/prod/nginx.conf`）：80 端口 server 在 catch-all 301 之前放行 `location /ziot-firmwares/`，直接反代 `ziot_minio`（与 443 侧一致保留 Host）——`http://<域名>/ziot-firmwares/<key>` 不再 301 到 https。
+2. **直链 scheme 可独立覆盖**：`firmwarePublicUrl` 新增 `MINIO_PUBLIC_SCHEME`/`MINIO_PUBLIC_PORT`，只影响下载直链；prod compose 注入 `MINIO_PUBLIC_SCHEME=http`，设备收到的 notify `file_url` 与控制台 `download_url` 均为 `http://<域名>/ziot-firmwares/...`。
+
+关键取舍：不能直接把 `MINIO_USE_SSL` 改 false——那会连 presigned PUT 一起变成 http，https 控制台页面上传固件会被浏览器 mixed-content 拦截。所以覆盖项只作用于公共直链，签名端点仍 `https:443`。显式覆盖 scheme 时端口回落该 scheme 默认端口（http→80），避免沿用 443 拼出 `http://host:443`。
+
+单测：`firmware-storage.test.ts` 新增 scheme 降级、显式 `MINIO_PUBLIC_PORT` 两个用例；存量两个直链用例防御性清空新变量（`setEnv({...: undefined})`），避免跨用例 env 泄漏导致顺序依赖。
+
+明文下载意味着固件内容与 URL 路径在网络上看得到——桶本就匿名只读、key 带 UUID 前缀，且设备侧有 sha256 全量校验，威胁模型不变。
+
+### 部署要点（scripts/prod-deploy.sh）
+
+- **顺序必须先 nginx 后应用**：设备 HTTP 客户端（esp_http_client 等）默认不跟随 301，若 web/worker 先下发 `http://` 直链而 nginx 还是旧配置，下载会撞 301 直接失败。正确流程：`scripts/prod-deploy.sh nginx` → 验证 80 直链 200 → `scripts/prod-deploy.sh`（全量：build + env 变更触发 web/worker 重建 + 健康验证）。
+- **全量脚本对 nginx 只做 `restart`**（`prod-deploy.sh:193`，目的是 web 容器换 IP 后刷新 upstream 解析），不会重读被 git pull 替换掉 inode 的 nginx.conf——必须显式走 `nginx`/`infra` 模块的 force-recreate（与"单文件挂载 inode 坑"同源）。
+- 回滚要 nginx 与应用一起回（git revert 后重跑同样两步）。只回一侧会出现 http URL × 301 跳转的组合，设备下载失败。
+- 验证：`curl -sI http://<域名>/ziot-firmwares/<key>` 期待 200 + `accept-ranges: bytes`（非 301）；`Range: bytes=0-99` 期待 206；控制台上传新固件确认 presigned PUT 仍走 https 正常；真机跑一次完整 OTA（notify → http 下载 → sha256 校验）。
+- 无需改 `prod.env`（`MINIO_PUBLIC_SCHEME: "http"` 是 compose 字面量，非 `${}` 插值）、无 DB 结构变更（sync_db 自动跳过）、80 端口安全组本已开放（ACME 续期共用）。ACME 的 `/.well-known/acme-challenge/` 是独立 location，不受影响。
