@@ -46,8 +46,10 @@ export function ControlConsolePanel() {
     [devices, selectedDeviceId]
   );
 
-  async function loadDevices() {
-    setLoading(true);
+  async function loadDevices(showLoading = true) {
+    if (showLoading) {
+      setLoading(true);
+    }
     setError("");
 
     try {
@@ -67,7 +69,9 @@ export function ControlConsolePanel() {
     } catch {
       setError("请求失败，请确认 Web 服务状态。");
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }
 
@@ -117,6 +121,12 @@ export function ControlConsolePanel() {
 
   useEffect(() => {
     void loadDevices();
+
+    const timer = window.setInterval(() => {
+      void loadDevices(false);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
   }, []);
 
   return (
@@ -216,6 +226,7 @@ export function ControlConsolePanel() {
 
       <DeviceRecordsSection
         deviceId={selectedDeviceId}
+        pollIntervalMs={5000}
         refreshKey={recordsRefreshKey}
       />
     </div>
