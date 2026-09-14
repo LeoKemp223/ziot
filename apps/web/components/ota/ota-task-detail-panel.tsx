@@ -49,8 +49,11 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  async function load(page = pagination.page) {
-    setLoading(true);
+  async function load(page = pagination.page, silent = false) {
+    // 轮询走 silent,不闪全屏 loading/禁用分页
+    if (!silent) {
+      setLoading(true);
+    }
     setError("");
 
     try {
@@ -164,6 +167,21 @@ export function OtaTaskDetailPanel({ taskId }: { taskId: string }) {
   useEffect(() => {
     void load();
   }, [taskId]);
+
+  // 任务进行中每 5s 静默轮询结果;进入终态(完成/取消)后停止
+  const isTaskActive = task !== null && !["finished", "cancelled"].includes(task.status);
+
+  useEffect(() => {
+    if (!isTaskActive) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      void load(pagination.page, true);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [isTaskActive, taskId, pagination.page]);
 
   if (loading && !task) {
     return <div className="p-8 text-sm text-slate-500">正在加载 OTA 任务...</div>;

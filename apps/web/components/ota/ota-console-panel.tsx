@@ -39,6 +39,12 @@ type Firmware = {
   created_at: string;
 };
 
+type TargetStrategy = {
+  target_type?: "all" | "devices" | "group";
+  device_ids?: string[];
+  group_id?: string;
+};
+
 type OtaTask = {
   id: string;
   name: string;
@@ -46,8 +52,27 @@ type OtaTask = {
   firmware_version: string;
   status: string;
   created_at: string;
+  strategy: TargetStrategy;
   record_counts: { total: number; success: number; failed: number; cancelled: number };
 };
+
+// 任务弹窗里供勾选的设备(按固件产品过滤,接口分页上限 100)
+type ModalDevice = {
+  id: string;
+  name: string;
+  device_key: string;
+  online_status: string;
+};
+
+function taskScopeLabel(strategy: TargetStrategy) {
+  if (strategy?.target_type === "devices") {
+    return `指定 ${strategy.device_ids?.length ?? 0} 台设备`;
+  }
+  if (strategy?.target_type === "group") {
+    return "按设备分组";
+  }
+  return "全部设备";
+}
 
 type ApiResponse<T> = {
   code: number;
@@ -83,6 +108,10 @@ export function OtaConsolePanel() {
   const [lastUploadedFirmware, setLastUploadedFirmware] = useState<Firmware | null>(null);
   const [taskName, setTaskName] = useState("");
   const [selectedFirmwareId, setSelectedFirmwareId] = useState("");
+  const [targetType, setTargetType] = useState<"all" | "devices">("all");
+  const [selectedDeviceIds, setSelectedDeviceIds] = useState<string[]>([]);
+  const [modalDevices, setModalDevices] = useState<ModalDevice[]>([]);
+  const [devicesLoading, setDevicesLoading] = useState(false);
   const [firmwareModalOpen, setFirmwareModalOpen] = useState(false);
   const [firmwareFileName, setFirmwareFileName] = useState("");
   const [deltaModalOpen, setDeltaModalOpen] = useState(false);
@@ -104,9 +133,13 @@ export function OtaConsolePanel() {
 
   async function load(
     firmwarePage = firmwarePagination.page,
-    taskPage = taskPagination.page
+    taskPage = taskPagination.page,
+    silent = false
   ) {
-    setLoading(true);
+    // 轮询走 silent,不闪 loading 态(禁用分页/转圈)
+    if (!silent) {
+      setLoading(true);
+    }
     setError("");
 
     try {
@@ -175,6 +208,40 @@ export function OtaConsolePanel() {
       setLoading(false);
     }
   }
+
+  // 选定固件后按其产品拉取可选设备;固件变化时清空已勾选(设备归属可能换了产品)。
+  // 依赖解析出的 product_id 而非固件列表引用,避免列表刷新(引用变化)清掉用户勾选
+  const selectedProductId =
+    allFirmwares.find((item) => item.id === selectedFirmwareId)?.product_id ?? "";
+
+  useEffect(() => {
+    setSelectedDeviceIds([]);
+    setModalDevices([]);
+
+    if (!selectedFirmwareId || !selectedProductId) {
+      return;
+    }
+
+    let cancelled = false;
+    setDevicesLoading(true);
+    fetch(`/api/v1/devices?product_id=${encodeURIComponent(selectedProductId)}&page_size=100`)
+      .then(async (response) => {
+        const body = (await response.json()) as ApiResponse<PaginatedList<ModalDevice>>;
+        if (!cancelled && body.code === 0 && body.data) {
+          setModalDevices(body.data.items);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) {
+          setDevicesLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedFirmwareId, selectedProductId]);
 
   async function createFirmware(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -361,6 +428,11 @@ export function OtaConsolePanel() {
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
 
+    if (targetType === "devices" && selectedDeviceIds.length === 0) {
+      setError("请至少勾选一台目标设备。");
+      return;
+    }
+
     try {
       const response = await fetch("/api/v1/ota/tasks", {
         method: "POST",
@@ -368,7 +440,10 @@ export function OtaConsolePanel() {
         body: JSON.stringify({
           firmware_id: String(form.get("firmware_id") ?? ""),
           name: String(form.get("name") ?? ""),
-          strategy: { target_type: "all" }
+          strategy:
+            targetType === "devices"
+              ? { target_type: "devices", device_ids: selectedDeviceIds }
+              : { target_type: "all" }
         })
       });
       const body = (await response.json()) as ApiResponse<OtaTask>;
@@ -382,6 +457,7 @@ export function OtaConsolePanel() {
       formElement.reset();
       setTaskName("");
       setSelectedFirmwareId("");
+      setTargetType("all");
       setTaskModalOpen(false);
       await load(undefined, 1);
     } catch {
@@ -453,6 +529,23 @@ export function OtaConsolePanel() {
   useEffect(() => {
     void load();
   }, []);
+
+  // 存在进行中的任务时每 5s 静默轮询(任务进度列实时更新);无进行中任务则停
+  const hasActiveTask = tasks.some(
+    (task) => !["finished", "cancelled"].includes(task.status)
+  );
+
+  useEffect(() => {
+    if (!hasActiveTask) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      void load(undefined, undefined, true);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [hasActiveTask, firmwarePagination.page, taskPagination.page]);
 
   // 默认选有设备的产品,避免上传后建任务才发现"目标设备为空"
   const defaultProductId =
@@ -622,9 +715,12 @@ export function OtaConsolePanel() {
           empty="暂无 OTA 任务。"
           headers={["任务", "产品", "固件", "状态", "进度", "操作"]}
           rows={tasks.map((task) => [
-            <a className="font-medium text-blue-600" href={`/ota/tasks/${task.id}`} key={task.id}>
-              {task.name}
-            </a>,
+            <div className="space-y-0.5" key={task.id}>
+              <a className="font-medium text-blue-600" href={`/ota/tasks/${task.id}`}>
+                {task.name}
+              </a>
+              <div className="text-xs text-slate-400">{taskScopeLabel(task.strategy)}</div>
+            </div>,
             task.product_name,
             task.firmware_version,
             <TaskStatusBadge key={task.id} value={task.status} />,
@@ -1169,8 +1265,92 @@ export function OtaConsolePanel() {
                   ))}
                 </select>
               </label>
+              <fieldset className="block">
+                <legend className="mb-1 block text-sm font-medium text-slate-700">目标范围</legend>
+                <div className="flex gap-4">
+                  <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      checked={targetType === "all"}
+                      name="target_type"
+                      onChange={() => setTargetType("all")}
+                      type="radio"
+                      value="all"
+                    />
+                    全部设备
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      checked={targetType === "devices"}
+                      name="target_type"
+                      onChange={() => setTargetType("devices")}
+                      type="radio"
+                      value="devices"
+                    />
+                    指定设备
+                  </label>
+                </div>
+              </fieldset>
+              {targetType === "devices" ? (
+                <div className="block">
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700">
+                      选择设备
+                      {selectedDeviceIds.length > 0 ? `（已选 ${selectedDeviceIds.length} 台）` : ""}
+                    </span>
+                    {modalDevices.length > 0 ? (
+                      <button
+                        className="text-xs text-blue-600 hover:underline"
+                        onClick={() =>
+                          setSelectedDeviceIds((current) =>
+                            current.length === modalDevices.length ? [] : modalDevices.map((device) => device.id)
+                          )
+                        }
+                        type="button"
+                      >
+                        {selectedDeviceIds.length === modalDevices.length ? "清空" : "全选"}
+                      </button>
+                    ) : null}
+                  </div>
+                  {devicesLoading ? (
+                    <p className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-500">
+                      正在加载设备…
+                    </p>
+                  ) : modalDevices.length === 0 ? (
+                    <p className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-500">
+                      该产品下暂无可选设备。
+                    </p>
+                  ) : (
+                    <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border border-slate-200 px-3 py-2">
+                      {modalDevices.map((device) => (
+                        <label
+                          className="flex items-center gap-2 text-sm text-slate-700"
+                          key={device.id}
+                        >
+                          <input
+                            checked={selectedDeviceIds.includes(device.id)}
+                            onChange={(event) => {
+                              // currentTarget 在异步 updater 回调里会被置空,先同步取出
+                              const checked = event.currentTarget.checked;
+                              setSelectedDeviceIds((current) =>
+                                checked
+                                  ? [...current, device.id]
+                                  : current.filter((id) => id !== device.id)
+                              );
+                            }}
+                            type="checkbox"
+                          />
+                          <span className="min-w-0 flex-1 truncate">{device.name}</span>
+                          <span className="text-xs text-slate-400">{device.device_key}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null}
               <p className="text-xs text-slate-400">
-                启动后将对所选固件产品下的全部设备推送升级。
+                {targetType === "devices"
+                  ? `启动后仅向已选的 ${selectedDeviceIds.length} 台设备推送升级。`
+                  : "启动后将对所选固件产品下的全部设备推送升级。"}
               </p>
               {error ? <div className="text-sm text-rose-600">{error}</div> : null}
             </div>
