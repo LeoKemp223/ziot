@@ -7,7 +7,7 @@ import {
   type InputHTMLAttributes,
   type ReactNode
 } from "react";
-import { Play, Plus, RefreshCw, Square, Trash2, X } from "lucide-react";
+import { Play, Plus, RefreshCw, Search, Square, Trash2, X } from "lucide-react";
 import { usePermissions } from "@/components/console/use-permissions";
 import { PaginationBar, type ListPagination } from "@/components/ui/pagination-bar";
 import { FirmwareStatusBadge, TaskStatusBadge } from "@/components/ota/ota-status";
@@ -112,6 +112,7 @@ export function OtaConsolePanel() {
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<string[]>([]);
   const [modalDevices, setModalDevices] = useState<ModalDevice[]>([]);
   const [devicesLoading, setDevicesLoading] = useState(false);
+  const [deviceKeyword, setDeviceKeyword] = useState("");
   const [firmwareModalOpen, setFirmwareModalOpen] = useState(false);
   const [firmwareFileName, setFirmwareFileName] = useState("");
   const [deltaModalOpen, setDeltaModalOpen] = useState(false);
@@ -217,6 +218,7 @@ export function OtaConsolePanel() {
   useEffect(() => {
     setSelectedDeviceIds([]);
     setModalDevices([]);
+    setDeviceKeyword("");
 
     if (!selectedFirmwareId || !selectedProductId) {
       return;
@@ -458,6 +460,7 @@ export function OtaConsolePanel() {
       setTaskName("");
       setSelectedFirmwareId("");
       setTargetType("all");
+      setDeviceKeyword("");
       setTaskModalOpen(false);
       await load(undefined, 1);
     } catch {
@@ -553,6 +556,18 @@ export function OtaConsolePanel() {
   const releasedFirmwares = allFirmwares.filter(
     (firmware) => firmware.status !== "deprecated"
   );
+  // 设备搜索:按名称/device_key 前端过滤当前已加载的列表
+  const deviceKeywordLower = deviceKeyword.trim().toLowerCase();
+  const filteredDevices = deviceKeywordLower
+    ? modalDevices.filter(
+        (device) =>
+          device.name.toLowerCase().includes(deviceKeywordLower) ||
+          device.device_key.toLowerCase().includes(deviceKeywordLower)
+      )
+    : modalDevices;
+  const allFilteredSelected =
+    filteredDevices.length > 0 &&
+    filteredDevices.every((device) => selectedDeviceIds.includes(device.id));
 
   return (
     <div className="space-y-4">
@@ -1296,21 +1311,45 @@ export function OtaConsolePanel() {
                     <span className="text-sm font-medium text-slate-700">
                       选择设备
                       {selectedDeviceIds.length > 0 ? `（已选 ${selectedDeviceIds.length} 台）` : ""}
+                      {deviceKeywordLower ? ` / 匹配 ${filteredDevices.length} 台` : ""}
                     </span>
-                    {modalDevices.length > 0 ? (
+                    {filteredDevices.length > 0 ? (
                       <button
                         className="text-xs text-blue-600 hover:underline"
                         onClick={() =>
                           setSelectedDeviceIds((current) =>
-                            current.length === modalDevices.length ? [] : modalDevices.map((device) => device.id)
+                            allFilteredSelected
+                              ? // 清空仅移除当前过滤命中的,保留其它已选
+                                current.filter(
+                                  (id) => !filteredDevices.some((device) => device.id === id)
+                                )
+                              : Array.from(
+                                  new Set([
+                                    ...current,
+                                    ...filteredDevices.map((device) => device.id)
+                                  ])
+                                )
                           )
                         }
                         type="button"
                       >
-                        {selectedDeviceIds.length === modalDevices.length ? "清空" : "全选"}
+                        {allFilteredSelected ? "清空" : "全选"}
                       </button>
                     ) : null}
                   </div>
+                  {modalDevices.length > 0 ? (
+                    <div className="relative mb-2">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <input
+                        aria-label="搜索设备"
+                        className="h-9 w-full rounded-md border border-slate-200 pl-9 pr-3 text-sm outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                        onChange={(event) => setDeviceKeyword(event.currentTarget.value)}
+                        placeholder="搜索设备名称或 device_key"
+                        type="search"
+                        value={deviceKeyword}
+                      />
+                    </div>
+                  ) : null}
                   {devicesLoading ? (
                     <p className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-500">
                       正在加载设备…
@@ -1319,9 +1358,18 @@ export function OtaConsolePanel() {
                     <p className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-500">
                       该产品下暂无可选设备。
                     </p>
+                  ) : filteredDevices.length === 0 ? (
+                    <p className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-500">
+                      没有匹配的设备。
+                    </p>
                   ) : (
                     <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border border-slate-200 px-3 py-2">
-                      {modalDevices.map((device) => (
+                      {modalDevices.length >= 100 ? (
+                        <p className="pb-1 text-xs text-slate-400">
+                          设备较多，仅显示前 100 台，可搜索缩小范围。
+                        </p>
+                      ) : null}
+                      {filteredDevices.map((device) => (
                         <label
                           className="flex items-center gap-2 text-sm text-slate-700"
                           key={device.id}

@@ -38,15 +38,33 @@ test("ota task can target specific devices", async ({ page }) => {
   if (!firmware) {
     return;
   }
+
+  // 取该产品第一台设备的 device_key,用于验证搜索过滤
+  const deviceList = await page.request.get(
+    `/api/v1/devices?product_id=${firmware.product_id}&page_size=100`
+  );
+  const deviceBody = (await deviceList.json()) as {
+    data?: { items: { id: string; device_key: string }[] };
+  };
+  const targetDevice = deviceBody.data?.items[0];
+  expect(targetDevice).toBeTruthy();
+
   await page.click('button:has-text("创建任务")');
   await page.fill('input[name="name"]', "e2e 指定设备任务");
   await page.selectOption('select[name="firmware_id"]', firmware.id);
   await page.check('input[name="target_type"][value="devices"]');
 
-  // 设备列表加载后勾选第一台(弹窗内的复选框)
-  const firstDevice = page.locator('div[role="dialog"] input[type="checkbox"]').first();
-  await expect(firstDevice).toBeEnabled({ timeout: 10000 });
-  await firstDevice.check();
+  // 搜索 device_key:列表只剩匹配项;清空关键词后恢复,再搜索勾选目标设备
+  const checkboxes = page.locator('div[role="dialog"] input[type="checkbox"]');
+  await expect(checkboxes.first()).toBeEnabled({ timeout: 10000 });
+  const total = await checkboxes.count();
+  await page.fill('input[aria-label="搜索设备"]', targetDevice!.device_key);
+  await expect(checkboxes).toHaveCount(1);
+  await expect(page.getByText("匹配 1 台")).toBeVisible();
+  await page.fill('input[aria-label="搜索设备"]', "");
+  await expect(checkboxes).toHaveCount(total);
+  await page.fill('input[aria-label="搜索设备"]', targetDevice!.device_key);
+  await checkboxes.first().check();
   await expect(page.getByText("已选 1 台")).toBeVisible();
   await page.click('button[type="submit"]:has-text("创建任务")');
 
