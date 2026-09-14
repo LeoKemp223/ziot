@@ -1,8 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import * as echarts from "echarts";
+// 按需引入(整包 1MB+,首页只用到柱状图+基础组件)
+import * as echarts from "echarts/core";
+import { BarChart } from "echarts/charts";
+import {
+  GridComponent,
+  LegendComponent,
+  TooltipComponent
+} from "echarts/components";
+import { CanvasRenderer } from "echarts/renderers";
 import { Activity, AlertTriangle, Cpu, Database, RefreshCw, UploadCloud } from "lucide-react";
+
+echarts.use([BarChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
 
 type DashboardSummary = {
   total_devices: number;
